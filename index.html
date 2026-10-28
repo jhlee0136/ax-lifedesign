@@ -5237,7 +5237,7 @@ function threePanel(dd) {
     <div><h3 class="sub3">핵심역량(참인성·참리더십)</h3><p class="big">${core.tot ?? '-'}<span class="meta"> / 100 · ${coreGrade(core.tot)}(${coreLevel(core.tot)})</span></p>${CORE_GRPS.map((g, i) => `<div class="sub"><span>${g}</span>${bar(core.grp[i])}<span class="lv">${core.grp[i]}</span></div>`).join('')}${CORE_AXES.map((a, i) => `<div class="sub"><span>${a} <span class="meta">${i + 1}-IN</span></span>${bar(core.axes[i])}<span class="lv">${core.axes[i]}</span></div>`).join('')}
       <p class="meta">9요인을 인재상 3축으로 묶으면 ${CORE_AXES[lowAx]} 축이 가장 낮아 ${lowAx + 1}-IN 단계 비교과를 먼저 추천합니다. 인재상과 3-IN 연계는 정책과제 「AI·DX 기반 교과목 가이드라인」 기준이고, 요인→축 연결은 초안입니다.</p></div>
     <div><h3 class="sub3">기초학습역량</h3>${basic.map(b => b.v == null ? `<div class="sub"><span>${b.sub}</span><span class="meta">${AUTH.mode === 'supa' ? '채점 중' : '정답 대기'} · '모르겠다' ${b.dk}문항</span><span class="lv">-</span></div>` : `<div class="sub"><span>${b.sub}</span>${bar(b.v)}<span class="lv">${level(b.v)}</span></div>`).join('')}
-      <p class="meta">${basic.some(b => b.v == null) ? (AUTH.mode === 'supa' ? '서버에서 채점하는 중입니다. ' : '시연(로컬)에는 정답이 없어 채점하지 않습니다. 정답은 서버에만 있습니다. ') : ''}'낮음'이면 기초 보충 교과·튜터링을 추천하고 수업 안 수준별 조편성에 반영합니다.</p></div>
+      <p class="meta">${state.basicSrv && state.basicSrv.demo && state.basicSrv.sig === basicSig() ? '<span class="badge">시연 예시값</span> 시연용 응답이라 기초학습 점수는 같은 학생의 직업기초 결과에 맞춘 예시입니다(실제 응시는 서버가 정답으로 채점). ' : ''}${basic.some(b => b.v == null) ? (AUTH.mode === 'supa' ? '서버에서 채점하는 중입니다. ' : '시연(로컬)에는 정답이 없어 채점하지 않습니다. 정답은 서버에만 있습니다. ') : ''}'낮음'이면 기초 보충 교과·튜터링을 추천하고 수업 안 수준별 조편성에 반영합니다.</p></div>
   </div></div></section>`;
 }
 function facHtml() {
@@ -5524,6 +5524,7 @@ function fillDemo(careless, retest) {
     state.ans = ITEMS.map(it => (it.t === 'self' ? it.sc || 5 : 0));
     state.coreAns = CORE_ITEMS.map(() => 5);
     state.basicAns = BASIC_ITEMS.map(() => 0);
+    state.basicSrv = { sig: basicSig(), v: [12, 8, 10], demo: true }; /* 성의 없는 시연 응답: 낮은 예시값 */
     ['ncs', 'core', 'basic'].forEach(set => { state.times[set] = ansArr(set).map(() => tm(400, 900)); });
     return;
   }
@@ -5545,6 +5546,10 @@ function fillDemo(careless, retest) {
   state.times.ncs = ITEMS.map(it => (it.t === 'self' ? tm(2600, 7000) : tm(9000, 22000)));
   state.times.core = CORE_ITEMS.map(() => tm(3000, 8000));
   state.times.basic = BASIC_ITEMS.map(() => tm(12000, 30000));
+  /* 시연 응답의 기초학습 점수: 정답은 서버에만 있고 시연 로그인은 누구나 쓸 수 있어, 서버가 정답으로 시연 응답을 만들면 정답이 샘.
+     그래서 같은 학생의 직업기초 결과(국어=의사소통 영역, 수학=수리 영역, 영어=외국어소통 하위능력)에 맞춘 예시값을 씀(시연 예시값으로 표시) */
+  const dd = diagData(), subV = n => (dd.subs.find(x => x.s === n) || {}).v ?? 55, cl = v => Math.max(5, Math.min(98, Math.round(v / 5) * 5));
+  state.basicSrv = { sig: basicSig(), v: [cl(dd.vals[0] - 4 + rnd() * 10), cl(dd.vals[1] - 6 + rnd() * 10), cl(subV('외국어소통능력') - 8 + rnd() * 10)], demo: true };
 }
 function diagData() {
   const vals = areaScores();
@@ -8795,6 +8800,8 @@ function setUser(u) {
     useForm(last && last.form ? last.form : 'A');
     loadNorms();
     if (last && last.ans) { state.ans = migrateAns(last.ans, last.subs); state.coreAns = (last.coreAns || []).length === CORE_ITEMS.length ? last.coreAns : CORE_ITEMS.map(() => null); state.basicAns = (last.basicAns || []).length === BASIC_ITEMS.length ? last.basicAns : BASIC_ITEMS.map(() => null); state.times = last.times; state.pendingSnap = false; }
+    /* 저장된 기록의 기초학습 점수(서버 채점 또는 시연 예시값)를 그대로 씀: 같은 응답을 다시 채점하지 않음 */
+    if (last && last.basic && last.basic.some(v => v != null) && (last.basicAns || []).length === BASIC_ITEMS.length && JSON.stringify(last.basicAns) === JSON.stringify(state.basicAns)) state.basicSrv = { sig: basicSig(), v: last.basic, demo: !!last.basicDemo };
     state.plan = null;
     const pl = loadPlan(); state.targetJob = pl && pl.job || null; state.designMode = pl && pl.design ? pl.design.mode : null;
   } else if (u.dept && CURRICULUM.depts.includes(u.dept)) state.dept = u.dept;
@@ -11784,7 +11791,7 @@ function snapshot() {
   const label = !H.length ? '입학 직후' : state.phase === 'end' ? `${H.filter(h => h.end).length + 1}차 학기말 재진단` : '재응시';
   const F = factorScores().filter(f => f.v != null), fac = F.length === 10 ? F.map(f => f.v) : null;
   /* 당해 학기 소속 학과를 기록에 남김: 자유전공학부는 2학기에 전공을 고르고 전과도 자유로워, 학기별 집계는 그때 학과로 해야 함 */
-  const snap = { dept: state.dept, term: acadSchedule(todayISO()).term, label, form: state.form || 'A', fac, tot: fac ? Math.round(fac.reduce((a, b) => a + b, 0) / 10) : null, end: state.phase === 'end' && H.length > 0, date: new Date().toISOString().slice(0, 10), vals: dd.vals, subs: dd.subs.map(x => x.v), core: core.axes, cf: core.fac, basic: basic.map(b => b.v), verdict: reliability().verdict, ans: state.ans.slice(), coreAns: state.coreAns.slice(), basicAns: state.basicAns.slice(), times: JSON.parse(JSON.stringify(state.times)) };
+  const snap = { dept: state.dept, term: acadSchedule(todayISO()).term, label, form: state.form || 'A', fac, tot: fac ? Math.round(fac.reduce((a, b) => a + b, 0) / 10) : null, end: state.phase === 'end' && H.length > 0, date: new Date().toISOString().slice(0, 10), vals: dd.vals, subs: dd.subs.map(x => x.v), core: core.axes, cf: core.fac, basic: basic.map(b => b.v), basicDemo: !!(state.basicSrv && state.basicSrv.demo && state.basicSrv.sig === basicSig()), verdict: reliability().verdict, ans: state.ans.slice(), coreAns: state.coreAns.slice(), basicAns: state.basicAns.slice(), times: JSON.parse(JSON.stringify(state.times)) };
   if (H.length && !snap.end && !H[H.length - 1].end) H[H.length - 1] = { ...snap, label: H[H.length - 1].label === '입학 직후' ? '입학 직후' : snap.label };
   else H.push(snap);
   sSet('user', 'hist', H);
