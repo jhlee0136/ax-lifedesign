@@ -1,0 +1,16 @@
+{
+  "name": "인하공업전문대학 대학 생활 설계 플랫폼",
+  "short_name": "대학 생활 설계",
+  "description": "3종 진단으로 내 역량을 확인하고 교양·융합·비교과를 추천받아 학기별 이수 계획을 세웁니다.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F4F8",
+  "theme_color": "#2E4A7D",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
