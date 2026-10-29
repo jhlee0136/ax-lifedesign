@@ -777,7 +777,7 @@ a.brand:hover .brand-text b { color: var(--signal); }
 .ibsteps button.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); } .ibsteps button.on .ibn-no { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .ibsteps button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 @media (max-width: 900px) { .ibsteps ol { grid-template-columns: 1fr 1fr; } }
-.ibgentabs { margin: 0; } .supgenbar { justify-content: center; } .supmsg { text-align: center; } .p-ibsupgen .tbl { table-layout: fixed; width: 100%; } .p-ibsupgen .tbl th:nth-child(1) { width: 26%; } .p-ibsupgen .tbl th:nth-child(2), .p-ibsupgen .tbl th:nth-child(3), .p-ibsupgen .tbl th:nth-child(4) { width: 15%; } .ibwarnlist { margin: 8px 0; padding-left: 1.2em; } .ibver { display: inline-flex; gap: 6px; align-items: center; } .ibver input { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; width: 9em; }
+.ibgentabs { margin: 0; } .ibverbar { gap: 10px; } .panel .ibformsum th:last-child, .panel .ibformsum td:last-child { text-align: left; } .ibver select { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); } .ibformtbl .f1 { width: 7%; } .ibformtbl .f2 { width: 15%; } .ibformtbl .f3 { width: 20%; } .ibformtbl .f4 { width: 16%; } .ibformtbl .f5 { width: 42%; } .ibformtbl .ibfq { overflow: hidden; text-overflow: ellipsis; white-space: nowrap !important; } .supgenbar { justify-content: center; } .supmsg { text-align: center; } .p-ibsupgen .tbl { table-layout: fixed; width: 100%; } .p-ibsupgen .tbl th:nth-child(1) { width: 26%; } .p-ibsupgen .tbl th:nth-child(2), .p-ibsupgen .tbl th:nth-child(3), .p-ibsupgen .tbl th:nth-child(4) { width: 15%; } .ibwarnlist { margin: 8px 0; padding-left: 1.2em; } .ibver { display: inline-flex; gap: 6px; align-items: center; } .ibver input { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; width: 9em; }
 .ibbt { width: 100%; table-layout: fixed; } .ibbt .b1 { width: 3em; } .ibbt .b2 { width: 13%; } .ibbt .b5 { width: 17%; }
 .panel.p-ibbatch .ibbt td, .panel.p-ibbatch .ibbt th, .panel.p-ibbatch .ibbt td:last-child, .panel.p-ibbatch .ibbt th:last-child { white-space: normal; word-break: keep-all; text-align: left; vertical-align: top; }
 .ibbt .st { display: inline-block; margin: 0 4px 4px 0; } .ibbconf { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 4px; font-size: 14px; }
@@ -7864,7 +7864,7 @@ function ibSupGenHtml() {
 }
 function ibStep3(rows) {
   const mode = state.ibGen === 'par' ? 'par' : 'gap';
-  const tabs = `<div class="tabs ibgentabs" role="tablist"><button role="tab" class="tab" aria-selected="${mode === 'gap'}" data-ibgen="gap">빈 영역 채우기</button><button role="tab" class="tab" aria-selected="${mode === 'par'}" data-ibgen="par">학기말 평행 문항(B형)</button></div>`;
+  const tabs = `<div class="tabs ibgentabs" role="tablist"><button role="tab" class="tab" aria-selected="${mode === 'gap'}" data-ibgen="gap">빈 영역 채우기(새 역량 문항)</button><button role="tab" class="tab" aria-selected="${mode === 'par'}" data-ibgen="par">학기말 평행 문항(같은 능력, 다른 문장)</button></div>`;
   if (mode === 'gap') return `<div class="ibwide">${tabs}</div>` + panelH('p-ibgap', '6대 핵심역량별 문항 출처', '빈 영역 찾기', ibGapHtml(rows)) + panelH('p-ibsupgen p-ibsup', '보완 문항 후보 만들기', '입학 직후 첫 진단에만', ibSupGenHtml());
   const L = ibListHtml(rows, { stName: 'B형', stCell: stTagB, stSort: r => (r.anchor ? '0' : r.r ? '1' + r.r.status : '2'), pick: r => !r.anchor && !r.r, top: ibWhy(state.ibDiag, rows), note: ibSixNote(state.ibDiag) });
   state.ibSel = L.sel && L.sel.key;
@@ -7976,33 +7976,97 @@ function bindStep4(rows) {
   }
 }
 
-/* ⑤ 진단별 문항 확정: 입학 직후(A형)·학기말(B형) 검사지 구성을 학기 버전으로 확정 */
-function ibFormCounts(rows) {
-  const by = d => rows.filter(r => r.diag === d), edits = d => by(d).filter(r => legacySt(r.key) === '수정본 반영').length;
-  const par = d => { const R = by(d); return { anchor: R.filter(r => r.anchor).length, swap: R.filter(r => !r.anchor && r.r && r.r.status === '승인').length, same: R.filter(r => !r.anchor && !(r.r && r.r.status === '승인')).length }; };
-  return IB_DIAGS.map(d => ({ d, a: by(d).length, leg: by(d).filter(r => r.grp === '기존').length, ai: by(d).filter(r => r.grp === 'AI 신규').length, ed: edits(d), sup: d === '핵심역량' ? supItems().length : 0, b: par(d) }));
+/* ⑤ 진단별 문항 확정: 학년도-학기 버전을 고르고, 진단별 입학 직후(A형)·학기말(B형) 검사지를 문항 하나하나 확인한 뒤 확정.
+   확정하면 그 시점의 문항 구성(문항 키·출처, 수정본·평행·보완 문항은 문장까지)을 버전으로 저장(bank().formLocks)해, 나중에 그 버전을 그대로 다시 볼 수 있음 */
+const FORM_DIAGS = [{ dk: 'ncs', d: '직업기초' }, { dk: 'core', d: '핵심역량' }, { dk: 'basic', d: '기초학습' }];
+const FORM_TAGS = ['기존', '수정본', 'AI 신규', '보완', '공통', '평행', 'A형 그대로'];
+/* 현재 문항 은행 상태로 검사지 한 부를 조립: [{ no, key, tag, q, item, sub }] */
+function formItemsNow(dk, form, rows) {
+  const byKey = Object.fromEntries(rows.map(r => [r.key, r])), B = bank(), out = [];
+  const add = (key, tag, item, extra) => { const r = byKey[key]; out.push({ no: out.length + 1, key, tag, item, skill: r ? r.skill : (extra && extra.skill) || '', six: r ? sixTxt(r) : (extra && extra.six) || '', area: r ? r.area : (extra && extra.area) || '', anchor: r ? r.anchor : false, ...(extra || {}) }); };
+  const legTag = (key, ai) => (ai ? 'AI 신규' : legacySt(key) === '수정본 반영' ? '수정본' : '기존');
+  const withEdit = (key, it) => { const L = legacyRec(key); return L && L.edit && L.edit.status === '승인' ? { ...it, q: L.edit.q } : it; };
+  if (dk === 'ncs') ITEMS_A.forEach((it, k) => {
+    const key = bankKey('ncs', k), r = B[key], ai = it.kind === 'N';
+    if (form === 'A') return add(key, legTag(key, ai), withEdit(key, it));
+    if (ANCHOR.ncs.includes(k)) return add(key, '공통', withEdit(key, it));
+    if (r && r.status === '승인' && r.variant) return add(key, '평행', { ...it, ...r.variant });
+    add(key, 'A형 그대로', withEdit(key, it));
+  });
+  if (dk === 'core') {
+    CORE_ORDER.forEach(k => { const key = bankKey('core', k), it = CORE_ITEMS[k]; add(key, form === 'B' ? '공통' : legTag(key, !it.no), withEdit(key, it)); });
+    if (form === 'A') SUP_COMP.forEach(c => c.facets.forEach(f => { const P = supPool(c.k, f); P.forEach(x => add('sup:' + x.id, '보완', { q: x.q, rev: x.rev, sc: 5 }, { skill: f, six: c.k, area: `${c.k} 보완`, rot: P.length > SUP_PER_FACET ? `${P.length}개 중 2개 순환` : '', src: x.src })); }));
+  }
+  if (dk === 'basic') BASIC_A.forEach((it, k) => {
+    const key = bankKey('basic', k), r = basicB(B, k);
+    if (form === 'A') return add(key, '기존', it);
+    if (ANCHOR.basic.includes(k)) return add(key, '공통', it);
+    if (r && r.status === '승인' && !r.official) return add(key, '평행', { ...it, ...r.variant, formB: true });
+    add(key, 'A형 그대로', it);
+  });
+  return out;
 }
+/* 확정본 저장 형태: 문항마다 [키, 출처, (바뀐 문장)] — 기존 문항 원문은 은행에 있으므로 키만, 수정본·평행·보완은 그때 문장을 함께 남김 */
+const packForm = list => list.map(x => (['수정본', '평행', '보완'].includes(x.tag) && x.item.q && !x.item.img ? [x.key, x.tag, x.item.q] : [x.key, x.tag]));
+function formItemsLocked(lock, dk, form, rows) {
+  const now = Object.fromEntries([...formItemsNow(dk, 'A', rows), ...formItemsNow(dk, 'B', rows)].map(x => [x.key + '|' + x.tag, x]));
+  const any = Object.fromEntries(formItemsNow(dk, 'A', rows).map(x => [x.key, x]));
+  return ((lock.forms || {})[dk] || {})[form] ? lock.forms[dk][form].map(([key, tag, q], i) => { const base = now[key + '|' + tag] || any[key] || { key, item: { q: q || key }, skill: '', six: '', area: '' }; return { ...base, no: i + 1, tag, item: q ? { ...base.item, q, img: undefined } : base.item }; }) : [];
+}
+const ibVerOpts = () => { const y = +acadSchedule(todayISO()).term.split('-')[0]; return [y - 1, y, y + 1].flatMap(a => [`${a}-1학기`, `${a}-2학기`]); };
+const ibNextVer = () => { const [ty, tt] = acadSchedule(todayISO()).term.split('-').map(Number); return tt === 2 ? `${ty + 1}-1학기` : `${ty}-2학기`; };
+const FORM_TAG_CLS = { 기존: '', 수정본: '초안', 'AI 신규': '', 보완: '', 공통: '', 평행: '승인', 'A형 그대로': '반려' };
+const formTag = t => (t === 'AI 신규' || t === '보완' ? `<span class="badge ai-new">${t}</span>` : t === '공통' ? '<span class="badge">공통</span>' : `<span class="st ${FORM_TAG_CLS[t] ? 'st-' + FORM_TAG_CLS[t] : ''}">${t}</span>`);
 function ibStep5(rows) {
-  const F = ibFormCounts(rows), S = ibStepStat(rows), locks = ibLocks(), [ty, tt] = acadSchedule(todayISO()).term.split('-').map(Number), ver = tt === 2 ? `${ty + 1}-1학기` : `${ty}-2학기`;
-  const warn = [S[2].left ? `기존 문항 ${S[2].left}개가 아직 검토 전입니다(2단계).` : '', S[4].left ? `검토 대기 후보 ${S[4].left}개가 있습니다(4단계). 확정하면 승인된 문항만 들어갑니다.` : ''].filter(Boolean);
-  return panelH('p-ibfix ibwide', '5. 진단별 문항 확정', '학기 검사지 버전', `<p class="meta">입학 직후(A형)와 학기말 재진단(B형)에 나갈 문항 구성을 확인하고 학기 버전으로 확정합니다. 공통 문항과 동등화 결과는 'B형 검사지·동등화'에서 자세히 봅니다.</p>
-    <div class="scrollx"><table class="tbl"><thead><tr><th>진단</th><th>입학 직후 A형</th><th>구성</th><th>학기말 B형</th><th>구성</th></tr></thead><tbody>
-      ${F.map(x => `<tr><td><b>${x.d}</b></td><td>${x.a + x.sup}</td><td class="meta">기존 ${x.leg}${x.ed ? `(수정본 ${x.ed})` : ''}${x.ai ? ` · AI 신규 ${x.ai}` : ''}${x.sup ? ` · 보완 ${x.sup}(전문성·자기주도성)` : ''}</td><td>${x.a}</td><td class="meta">공통 ${x.b.anchor} · 평행 승인 ${x.b.swap}${x.b.same ? ` · 평행 미승인 ${x.b.same}(A형 문항 그대로)` : ''}</td></tr>`).join('')}
+  const vers = ibVerOpts(), ver = vers.includes(state.ibVer) ? state.ibVer : (state.ibVer = ibNextVer());
+  const lock = ibLocks().filter(l => l.ver === ver).slice(-1)[0], S = ibStepStat(rows);
+  const dk = FORM_DIAGS.some(x => x.dk === state.ibFD) ? state.ibFD : 'ncs', form = state.ibFF === 'B' ? 'B' : 'A', D = FORM_DIAGS.find(x => x.dk === dk).d;
+  const get = (k, f) => (lock && !state.ibLive ? formItemsLocked(lock, k, f, rows) : formItemsNow(k, f, rows));
+  const all = get(dk, form), tags = FORM_TAGS.filter(t => all.some(x => x.tag === t)), tg = tags.includes(state.ibFT) ? state.ibFT : '';
+  const list = all.filter(x => !tg || x.tag === tg), sel = list.find(x => x.key === state.ibFSel) || list[0]; state.ibFSel = sel && sel.key;
+  const warn = [S[2].left ? `기존 문항 ${S[2].left}개가 아직 검토 전입니다(2단계).` : '', S[4].left ? `검토 대기 후보 ${S[4].left}개가 있습니다(4단계). 확정하면 지금 승인된 문항만 들어갑니다.` : ''].filter(Boolean);
+  const viewing = lock && !state.ibLive ? `<span class="st st-승인">확정본</span> ${esc(lock.by)} ${esc(lock.at)} 확정 · 확정 당시 구성을 보여 줍니다` : lock ? '<span class="st st-초안">현재 은행 기준 미리보기</span> 확정본과 다를 수 있습니다' : '<span class="st">미확정</span> 현재 문항 은행 상태로 조립한 미리보기입니다';
+  const head = panelH('p-ibfix ibwide', '5. 진단별 문항 확정', '학년도-학기 버전', `
+    <div class="ibbar ibverbar"><label class="ibver"><span class="meta">버전</span><select id="ibver">${vers.map(v => `<option value="${v}" ${v === ver ? 'selected' : ''}>${v}${ibLocks().some(l => l.ver === v) ? ' · 확정됨' : ''}</option>`).join('')}</select></label>
+      <span class="meta">${viewing}</span>${lock ? `<button class="linkbtn" id="iblive">${state.ibLive ? '확정본 보기' : '현재 은행과 비교해 보기'}</button>` : ''}</div>
+    <div class="scrollx"><table class="tbl ibformsum"><thead><tr><th>진단</th><th>입학 직후 A형</th><th>학기말 B형</th><th>구성(A형 / B형)</th></tr></thead><tbody>
+      ${FORM_DIAGS.map(x => { const A = get(x.dk, 'A'), Bf = get(x.dk, 'B'), c = (L, t) => L.filter(y => y.tag === t).length, supN = c(A, '보완') ? supItems().length : 0;
+        return `<tr><td><b>${x.d}</b></td><td>${A.length - c(A, '보완') + supN}${supN ? ' <span class="meta">(보완 포함)</span>' : ''}</td><td>${Bf.length}</td><td class="meta">${['기존', '수정본', 'AI 신규'].filter(t => c(A, t)).map(t => `${t} ${c(A, t)}`).join(' · ')}${supN ? ` · 보완 ${supN}(후보 ${c(A, '보완')}개 중 학생별)` : ''} / ${['공통', '평행', 'A형 그대로'].filter(t => c(Bf, t)).map(t => `${t} ${c(Bf, t)}`).join(' · ')}</td></tr>`; }).join('')}
     </tbody></table></div>
-    ${warn.length ? `<ul class="meta ibwarnlist">${warn.map(w => `<li>${w}</li>`).join('')}</ul>` : '<p class="meta">검토 전 문항과 대기 후보가 없습니다.</p>'}
-    <div class="actions no-print"><label class="ibver"><span class="meta">버전</span><input id="ibver" value="${esc(ver)}" size="10"></label><button class="btn" id="iblock">이 구성으로 검사지 확정</button><button class="btn ghost" data-go2="forms">B형 검사지·동등화 보기</button><span class="meta" id="iblockmsg" aria-live="polite"></span></div>
-    ${locks.length ? `<h3 class="sub3">확정 기록</h3><div class="scrollx"><table class="tbl"><thead><tr><th>버전</th><th>확정</th><th>A형 문항</th><th>B형 평행 승인</th><th>수정본</th></tr></thead><tbody>${locks.slice().reverse().map(l => `<tr><td><b>${esc(l.ver)}</b></td><td class="meta">${esc(l.by)} ${esc(l.at)}</td><td>${l.a}</td><td>${l.swap}</td><td>${l.ed}</td></tr>`).join('')}</tbody></table></div>` : ''}
-    <p class="meta">시제품에서는 확정 내용(버전·문항 수·확정자)을 기록합니다. 운영판에서는 확정 뒤 바뀐 승인이 다음 버전에만 들어가도록 잠급니다.</p>`);
+    ${warn.length && !(lock && !state.ibLive) ? `<ul class="meta ibwarnlist">${warn.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
+    <div class="actions no-print"><button class="btn" id="iblock">${lock ? `${ver} 다시 확정(현재 구성으로 바꿈)` : `${ver} 검사지로 확정`}</button>${lock ? '<button class="btn ghost" id="ibunlock">확정 취소</button>' : ''}<button class="btn ghost" data-go2="forms">공통 문항·동등화 보기</button><span class="meta" id="iblockmsg" aria-live="polite"></span></div>
+    <p class="meta">아래에서 진단별 A형·B형 검사지를 문항 순서대로 확인한 뒤 확정합니다. 확정한 버전은 그 시점의 문항 구성이 그대로 저장되어, 나중에 버전을 골라 다시 볼 수 있습니다. 운영판에서는 확정 뒤 바뀐 승인이 다음 버전에만 들어가도록 잠급니다.</p>`);
+  const left = `<div class="tabs" role="tablist">${FORM_DIAGS.map(x => `<button role="tab" class="tab" aria-selected="${x.dk === dk}" data-ibfd="${x.dk}">${x.d}</button>`).join('')}</div>
+    <div class="ibbar"><span class="meta">검사지</span>${[['A', '입학 직후 A형'], ['B', '학기말 B형']].map(([f, lb]) => `<button class="chip ${form === f ? 'on' : ''}" data-ibff="${f}" aria-pressed="${form === f}">${lb} ${get(dk, f).length}</button>`).join('')}</div>
+    <div class="ibbar"><span class="meta">출처</span>${['', ...tags].map(t => `<button class="chip ${tg === t ? 'on' : ''}" data-ibft="${t}" aria-pressed="${tg === t}">${t || '전체'}${t ? ` ${all.filter(x => x.tag === t).length}` : ''}</button>`).join('')}<span class="meta ibn">${list.length}문항</span></div>
+    ${dk === 'core' && form === 'A' ? '<p class="meta ibsixnote">보완 문항은 하위 요소마다 후보를 모두 보여 줍니다. 학생에게는 하위 요소별 정·역 1개씩(역량당 8문항)이 학번에 따라 돌아가며 나갑니다.</p>' : ''}
+    <div class="scrollx iblist"><table class="tbl ibtbl ibformtbl"><colgroup><col class="f1"><col class="f2"><col class="f3"><col class="f4"><col class="f5"></colgroup><thead><tr><th>번호</th><th>출처</th><th>측정 능력</th><th>대학 6대 핵심역량</th><th>문항</th></tr></thead><tbody>
+    ${list.map(x => `<tr class="${sel && x.key === sel.key ? 'me' : ''}" data-ibfsel="${esc(x.key)}" tabindex="0"><td class="meta">${x.no}</td><td>${formTag(x.tag)}</td><td><b>${esc(x.skill)}</b></td><td>${esc(x.six) || '<span class="meta">연결 없음</span>'}</td><td class="ibfq">${x.item.img ? `<span class="meta">${esc(x.item.sub || '')} ${x.item.n || ''}번(그림 문항)</span>` : esc(String(x.item.q || '').replace(/\n/g, ' '))}</td></tr>`).join('') || '<tr><td colspan="5" class="meta">문항이 없습니다.</td></tr>'}</tbody></table></div>`;
+  const right = sel ? `<p class="meta"><b>${esc(D)} ${form === 'A' ? '입학 직후 A형' : '학기말 B형'} ${sel.no}번</b> · ${formTag(sel.tag)}${sel.rot ? ` <span class="meta">${sel.rot}</span>` : ''}</p>
+      <p class="meta"><b>측정 능력</b> ${esc(sel.area ? sel.area + ' · ' : '')}${esc(sel.skill)} · <b>대학 6대 핵심역량</b> ${esc(sel.six) || '연결 없음'}</p>
+      ${itemHtml(sel.item, sel.tag === '평행' ? 'B형 평행 문항' : sel.tag === '수정본' ? '수정본(승인)' : sel.tag === '보완' ? `보완 문항 · ${esc(sel.src || '')}` : '문항')}
+      ${sel.tag === 'A형 그대로' ? '<p class="meta">평행 문항이 승인되지 않아 학기말에도 A형 문항을 그대로 씁니다. 4단계에서 평행 문항을 승인하면 바뀝니다.</p>' : ''}
+      ${sel.tag === '공통' ? '<p class="meta">공통 문항은 A·B형에 똑같이 들어가 학기 초·말 점수를 같은 척도로 잇습니다.</p>' : ''}` : '<p class="meta">왼쪽에서 문항을 고르세요.</p>';
+  return head + panelH('p-iblist', `${D} 검사지`, form === 'A' ? '입학 직후 A형' : '학기말 B형', left) + panelH('p-ibed', '문항 확인', '', right);
 }
 function bindStep5(rows) {
-  const b = document.getElementById('iblock'); if (!b) return;
-  b.onclick = () => {
-    const ver = document.getElementById('ibver').value.trim(), F = ibFormCounts(rows);
-    if (!ver) { document.getElementById('iblockmsg').textContent = '버전 이름을 입력하세요.'; return; }
-    const S = ibStepStat(rows); if ((S[2].left || S[4].left) && !confirm('검토 전 문항이나 대기 후보가 남아 있습니다. 승인된 문항만으로 확정할까요?')) return;
-    const B = bank(); B.formLocks = [...ibLocks(), { ver, at: todayISO(), by: state.user.name, a: F.reduce((s, x) => s + x.a + x.sup, 0), swap: F.reduce((s, x) => s + x.b.swap, 0), ed: F.reduce((s, x) => s + x.ed, 0) }]; saveBank(); renderItemBank();
-  };
+  const el = id => document.getElementById(id), R = () => renderItemBank();
+  if (el('ibver')) el('ibver').onchange = e => { state.ibVer = e.target.value; state.ibLive = false; state.ibFSel = null; R(); };
+  if (el('iblive')) el('iblive').onclick = () => { state.ibLive = !state.ibLive; R(); };
+  $view.querySelectorAll('[data-ibfd]').forEach(b => b.onclick = () => { state.ibFD = b.dataset.ibfd; state.ibFT = ''; state.ibFSel = null; R(); });
+  $view.querySelectorAll('[data-ibff]').forEach(b => b.onclick = () => { state.ibFF = b.dataset.ibff; state.ibFT = ''; state.ibFSel = null; R(); });
+  $view.querySelectorAll('[data-ibft]').forEach(b => b.onclick = () => { state.ibFT = b.dataset.ibft; state.ibFSel = null; R(); });
+  $view.querySelectorAll('[data-ibfsel]').forEach(tr => { const f = () => { state.ibFSel = tr.dataset.ibfsel; R(); }; tr.onclick = f; tr.onkeydown = e => { if (e.key === 'Enter') f(); }; });
   $view.querySelectorAll('[data-go2]').forEach(x => x.onclick = () => go(x.dataset.go2));
+  if (el('iblock')) el('iblock').onclick = () => {
+    const ver = state.ibVer, S = ibStepStat(rows), had = ibLocks().some(l => l.ver === ver);
+    if ((S[2].left || S[4].left) && !confirm('검토 전 문항이나 대기 후보가 남아 있습니다. 지금 승인된 문항만으로 확정할까요?')) return;
+    if (had && !confirm(`${ver} 확정본을 현재 구성으로 바꿉니다. 계속할까요?`)) return;
+    const forms = Object.fromEntries(FORM_DIAGS.map(x => [x.dk, { A: packForm(formItemsNow(x.dk, 'A', rows)), B: packForm(formItemsNow(x.dk, 'B', rows)) }]));
+    const n = f => FORM_DIAGS.reduce((s, x) => s + forms[x.dk][f].length, 0);
+    const B = bank(); B.formLocks = [...ibLocks().filter(l => l.ver !== ver), { ver, at: todayISO(), by: state.user.name, a: n('A'), b: n('B'), forms }]; saveBank(); state.ibLive = false; R();
+  };
+  if (el('ibunlock')) el('ibunlock').onclick = () => { if (!confirm(`${state.ibVer} 확정을 취소합니다. 저장된 확정본이 지워집니다.`)) return; const B = bank(); B.formLocks = ibLocks().filter(l => l.ver !== state.ibVer); saveBank(); state.ibLive = false; R(); };
 }
 
 function renderItemBank() {
@@ -8010,7 +8074,7 @@ function renderItemBank() {
   state.ibDiag = IB_DIAGS.includes(state.ibDiag) ? state.ibDiag : '직업기초'; state.ibGrp = state.ibGrp || '전체';
   const S = ibStepStat(rows);
   const step = [1, 2, 3, 4, 5].includes(state.ibStep) ? state.ibStep : (state.ibStep = S[2].left ? 2 : S[4].left ? 4 : 3);
-  const prevBox = document.querySelector('.iblist'), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [step, state.ibGen, state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, state.ibStF, state.ibCK, state.ibCS, state.ibCD, state.ibCM, state.ibC6, JSON.stringify(state.ibSort)].join('|');
+  const prevBox = document.querySelector('.iblist'), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [step, state.ibGen, state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, state.ibStF, state.ibCK, state.ibCS, state.ibCD, state.ibCM, state.ibC6, state.ibVer, state.ibFD, state.ibFF, state.ibFT, state.ibLive, JSON.stringify(state.ibSort)].join('|');
   const keepTop = state.ibViewKey === viewKey ? prevTop : 0; state.ibViewKey = viewKey;
   const body = step === 1 ? ibStep1(rows) : step === 2 ? ibStep2(rows) : step === 3 ? ibStep3(rows) : step === 4 ? ibStep4(rows) : ibStep5(rows);
   $view.innerHTML = `<div class="dash-grid ibgrid">
