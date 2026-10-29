@@ -7479,10 +7479,10 @@ function sixEditHtml(r) {
   if (!K) return r.diag === '기초학습' ? '' : `<p class="meta"><b>대학 6대 핵심역량</b> ${r.diag === '직업기초' ? '응답 확인(타당도) 문항은 점수를 내지 않아 연결할 수 없습니다.' : 'AI 책임 활용은 보조 척도라 9요인 점수에 들어가지 않아 연결할 수 없습니다.'}</p>`;
   const changed = !!(M[K.kind] && K.name in M[K.kind]), now = sixCoreNow();
   const def = K.kind === 'sub' ? SIX_CORE.filter(x => x.sub[K.name]).map(x => x.k + (x.sub[K.name] < 1 ? '(일부)' : '')) : SIX_CORE.filter(x => x.fac.includes(K.name)).map(x => x.k);
+  /* 연결은 체크 하나로 정함. 직업기초에서 기본 연결이 '일부'(가중 0.5)였던 역량은 체크를 유지하면 그 가중을 그대로 둠 */
   const cell = x => {
     const w = K.kind === 'sub' ? x.sub[K.name] || 0 : x.fac.includes(K.name) ? 1 : 0;
-    return K.kind === 'sub' ? `<label class="six-ed"><span>${esc(x.k)}</span><select data-sixw="${esc(x.k)}"><option value="0" ${!w ? 'selected' : ''}>연결 안 함</option><option value="0.5" ${w && w < 1 ? 'selected' : ''}>일부(0.5)</option><option value="1" ${w >= 1 ? 'selected' : ''}>연결</option></select></label>`
-      : `<label class="chk six-ed"><input type="checkbox" data-sixw="${esc(x.k)}" ${w ? 'checked' : ''}> ${esc(x.k)}</label>`;
+    return `<label class="chk six-ed"><input type="checkbox" data-sixw="${esc(x.k)}" data-w="${w > 0 && w < 1 ? w : 1}" ${w ? 'checked' : ''}> ${esc(x.k)}${w > 0 && w < 1 ? ' <span class="meta">일부</span>' : ''}</label>`;
   };
   return `<div class="six-edit"><h3 class="sub3">대학 6대 핵심역량 연결 · ${esc(K.name)}${changed ? ' <span class="badge">관리자 변경</span>' : ''}</h3>
     <p class="meta">${K.kind === 'sub' ? '하위능력' : '요인'} '${esc(K.name)}'의 모든 문항과 학생의 6대 핵심역량 점수 계산에 함께 적용됩니다. 기본 연결(${K.kind === 'sub' ? '지침 제6조 → 2026 표준' : '초안'}): ${def.length ? def.map(esc).join(', ') : '연결 없음'}</p>
@@ -7494,7 +7494,8 @@ function bindSixEdit(r) {
   const put = val => { const B = bank(), M = B.sixMap = { sub: { ...((B.sixMap || {}).sub || {}) }, fac: { ...((B.sixMap || {}).fac || {}) } }; if (val == null) delete M[K.kind][K.name]; else M[K.kind][K.name] = val; M.by = state.user && state.user.name; M.at = todayISO(); saveBank(); renderItemBank(); };
   sv.onclick = () => {
     const els = [...document.querySelectorAll('[data-sixw]')];
-    put(K.kind === 'sub' ? Object.fromEntries(els.map(e => [e.dataset.sixw, +e.value]).filter(([, w]) => w > 0)) : els.filter(e => e.checked).map(e => e.dataset.sixw));
+    const on = els.filter(e => e.checked);
+    put(K.kind === 'sub' ? Object.fromEntries(on.map(e => [e.dataset.sixw, +e.dataset.w || 1])) : on.map(e => e.dataset.sixw));
   };
   const rs = document.getElementById('sixreset'); if (rs) rs.onclick = () => put(null);
 }
