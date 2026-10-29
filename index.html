@@ -7926,10 +7926,21 @@ function bindParDetail(sel, rows) {
 const CAND_KINDS = ['평행 문항', '수정본', '보완 문항'];
 function ibStep4(rows) {
   const C = ibCands(rows), kind = CAND_KINDS.includes(state.ibCK) ? state.ibCK : '', stF = ['검토 대기', '승인', '반려'].includes(state.ibCS) ? state.ibCS : state.ibCS === '' ? '' : '검토 대기';
-  const list = C.filter(c => (!kind || c.kind === kind) && (!stF || c.st === stF));
+  /* 선택 상자: 진단 → 측정 능력(고른 진단 안에서), 대학 6대 핵심역량. 칩 개수는 선택 상자 조건을 따름 */
+  const sixOfC = c => String(c.six || '').split(', ').filter(Boolean), uniq = a => [...new Set(a)];
+  const dgs = ['직업기초', '핵심역량', '핵심역량+', '기초학습'].filter(d => C.some(c => c.diag === d)), dg = dgs.includes(state.ibCD) ? state.ibCD : '';
+  const sks = uniq(C.filter(c => !dg || c.diag === dg).map(c => c.skill)), sk = sks.includes(state.ibCM) ? state.ibCM : '';
+  const sxs = SIX_NAMES.filter(k => C.some(c => sixOfC(c).includes(k))), sx = state.ibC6 === '-' || sxs.includes(state.ibC6) ? state.ibC6 : '';
+  const base = C.filter(c => (!dg || c.diag === dg) && (!sk || c.skill === sk) && (!sx || (sx === '-' ? !sixOfC(c).length : sixOfC(c).includes(sx))));
+  const list = base.filter(c => (!kind || c.kind === kind) && (!stF || c.st === stF));
   const sel = list.find(c => c.id === state.ibCSel) || list[0]; state.ibCSel = sel && sel.id;
-  const n = (k, s) => C.filter(c => (!k || c.kind === k) && (!s || c.st === s)).length;
+  const n = (k, s) => base.filter(c => (!k || c.kind === k) && (!s || c.st === s)).length;
+  const cntIn = f => C.filter(f).length;
   const left = `<p class="meta ibsixnote">3단계에서 만든 후보와 2단계 수정본을 여기서 한꺼번에 검토합니다. 승인한 문항은 5단계에서 검사지를 확정할 때 들어갑니다.</p>
+    <div class="ibbar ibsel"><label><span class="meta">진단</span><select id="ibcd"><option value="">전체 진단</option>${dgs.map(d => `<option value="${esc(d)}" ${d === dg ? 'selected' : ''}>${esc(d)} (${cntIn(c => c.diag === d)})</option>`).join('')}</select></label>
+      <label><span class="meta">측정 능력</span><select id="ibcm"><option value="">전체 측정 능력</option>${sks.map(k => `<option value="${esc(k)}" ${k === sk ? 'selected' : ''}>${esc(k)} (${cntIn(c => (!dg || c.diag === dg) && c.skill === k)})</option>`).join('')}</select></label>
+      <label><span class="meta">대학 6대 핵심역량</span><select id="ibc6"><option value="">전체 역량</option>${sxs.map(k => `<option value="${esc(k)}" ${k === sx ? 'selected' : ''}>${esc(k)} (${cntIn(c => sixOfC(c).includes(k))})</option>`).join('')}${C.some(c => !sixOfC(c).length) ? `<option value="-" ${sx === '-' ? 'selected' : ''}>연결 없음 (${cntIn(c => !sixOfC(c).length)})</option>` : ''}</select></label>
+      ${dg || sk || sx ? '<button class="linkbtn" id="ibcclear">필터 지우기</button>' : ''}</div>
     <div class="ibbar"><span class="meta">종류</span>${['', ...CAND_KINDS].map(k => `<button class="chip ${kind === k ? 'on' : ''}" data-ibck="${k}" aria-pressed="${kind === k}">${k || '전체'} ${n(k, stF)}</button>`).join('')}</div>
     <div class="ibbar"><span class="meta">상태</span>${['검토 대기', '승인', '반려', ''].map(s => `<button class="chip ${stF === s ? 'on' : ''}" data-ibcs="${s}" aria-pressed="${stF === s}">${s || '전체'} ${n(kind, s)}</button>`).join('')}<span class="meta ibn">${list.length}개</span></div>
     <div class="scrollx iblist"><table class="tbl ibtbl"><colgroup><col class="ibc1"><col class="ibc2"><col class="ibc3"><col class="ibc6"><col class="ibc4"><col class="ibc5"></colgroup><thead><tr><th>종류</th><th>진단</th><th>측정 능력</th><th>대학 6대 핵심역량</th><th>출처</th><th>상태</th></tr></thead><tbody>
@@ -7949,6 +7960,9 @@ function ibStep4(rows) {
 }
 function bindStep4(rows) {
   $view.querySelectorAll('[data-ibck]').forEach(b => b.onclick = () => { state.ibCK = b.dataset.ibck; state.ibCSel = null; renderItemBank(); });
+  const pick = (id, f) => { const e = document.getElementById(id); if (e) e.onchange = () => { f(e.value); state.ibCSel = null; renderItemBank(); }; };
+  pick('ibcd', v => { state.ibCD = v; state.ibCM = ''; }); pick('ibcm', v => { state.ibCM = v; }); pick('ibc6', v => { state.ibC6 = v; });
+  const cc = document.getElementById('ibcclear'); if (cc) cc.onclick = () => { state.ibCD = ''; state.ibCM = ''; state.ibC6 = ''; state.ibCSel = null; renderItemBank(); };
   $view.querySelectorAll('[data-ibcs]').forEach(b => b.onclick = () => { state.ibCS = b.dataset.ibcs; state.ibCSel = null; renderItemBank(); });
   $view.querySelectorAll('[data-ibcsel]').forEach(tr => { const f = () => { state.ibCSel = tr.dataset.ibcsel; state.ibDraft = null; state.ibGenMsg = ''; renderItemBank(); }; tr.onclick = f; tr.onkeydown = e => { if (e.key === 'Enter') f(); }; });
   const C = ibCands(rows), sel = C.find(c => c.id === state.ibCSel), el = id => document.getElementById(id);
@@ -7996,7 +8010,7 @@ function renderItemBank() {
   state.ibDiag = IB_DIAGS.includes(state.ibDiag) ? state.ibDiag : '직업기초'; state.ibGrp = state.ibGrp || '전체';
   const S = ibStepStat(rows);
   const step = [1, 2, 3, 4, 5].includes(state.ibStep) ? state.ibStep : (state.ibStep = S[2].left ? 2 : S[4].left ? 4 : 3);
-  const prevBox = document.querySelector('.iblist'), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [step, state.ibGen, state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, state.ibStF, state.ibCK, state.ibCS, JSON.stringify(state.ibSort)].join('|');
+  const prevBox = document.querySelector('.iblist'), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [step, state.ibGen, state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, state.ibStF, state.ibCK, state.ibCS, state.ibCD, state.ibCM, state.ibC6, JSON.stringify(state.ibSort)].join('|');
   const keepTop = state.ibViewKey === viewKey ? prevTop : 0; state.ibViewKey = viewKey;
   const body = step === 1 ? ibStep1(rows) : step === 2 ? ibStep2(rows) : step === 3 ? ibStep3(rows) : step === 4 ? ibStep4(rows) : ibStep5(rows);
   $view.innerHTML = `<div class="dash-grid ibgrid">
