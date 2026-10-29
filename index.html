@@ -5224,10 +5224,25 @@ const SUP_RULE = [
 ].map(([comp, facet, q, rev], i) => ({ id: 'r' + i, comp, facet, q, rev: !!rev, status: '승인', src: '규칙 기반 기본 문항' }));
 const SUP_SCALE = ['전혀 그렇지 않다', '그렇지 않다', '보통이다', '그렇다', '매우 그렇다'];
 function supBankItems() { const S = bank().sup; return S && Array.isArray(S.items) ? S.items : []; }
-/* 역량별 사용 문항: 승인된 문항 은행 문항, 없으면 규칙 기반 기본 문항(담당자가 반려한 기본 문항은 뺌) */
-function supItems() {
+/* 역량별 사용 문항: 하위 요소마다 2문항(정문항 1 + 역문항 1, 한쪽이 없으면 있는 쪽에서 2개) → 역량당 8문항.
+   하위 요소의 후보: 승인된 AI 문항이 2개 이상이면 그것만, 아니면 승인된 AI 문항 + 규칙 기반 기본 문항(담당자가 반려한 기본 문항은 뺌).
+   후보가 2개보다 많으면 학번으로 정한 순번에 따라 학생마다 돌아가며 씀(같은 학생은 늘 같은 문항) */
+const SUP_PER_FACET = 2;
+function supPool(comp, facet) {
   const B = supBankItems(), off = new Set(B.filter(x => x.status === '반려' && x.id[0] === 'r').map(x => x.id));
-  return SUP_COMP.flatMap(c => { const ok = B.filter(x => x.comp === c.k && x.status === '승인' && x.id[0] !== 'r'); return ok.length ? ok : SUP_RULE.filter(x => x.comp === c.k && !off.has(x.id)); });
+  const ai = B.filter(x => x.comp === comp && x.facet === facet && x.status === '승인' && x.id[0] !== 'r');
+  return ai.length >= SUP_PER_FACET ? ai : [...ai, ...SUP_RULE.filter(x => x.comp === comp && x.facet === facet && !off.has(x.id))];
+}
+const supSeed = str => [...str].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+function supPick(pool, seed) {
+  const by = L => [...L].sort((a, b) => a.id.localeCompare(b.id)), at = (L, k) => L[k % L.length];
+  const fw = by(pool.filter(x => !x.rev)), rv = by(pool.filter(x => x.rev));
+  if (fw.length && rv.length) return [at(fw, seed), at(rv, seed >>> 3)];
+  const all = by(pool); return all.length <= SUP_PER_FACET ? all : [at(all, seed), at(all, seed + 1)];
+}
+function supItems(who) {
+  const no = who != null ? String(who) : (state.user && state.user.no) || '';
+  return SUP_COMP.flatMap(c => c.facets.flatMap(f => supPick(supPool(c.k, f), supSeed(no + '|' + f))));
 }
 const supSaved = () => sGet('user', 'sup');
 function supScore(items, ans) {
@@ -5277,10 +5292,10 @@ function renderSupSurvey() {
 }
 /* 관리자: 문항 은행의 보완 문항 패널(AI 초안 → 검토 → 승인) */
 function supBankHtml() {
-  const c = SUP_COMP.find(x => x.k === state.supComp) || SUP_COMP[0], B = supBankItems(), use = new Set(supItems().map(x => x.id));
+  const c = SUP_COMP.find(x => x.k === state.supComp) || SUP_COMP[0], B = supBankItems(), pools = Object.fromEntries(c.facets.map(f => [f, supPool(c.k, f)]));
   const rows = [...B.filter(x => x.comp === c.k && x.id[0] !== 'r'), ...SUP_RULE.filter(x => x.comp === c.k).map(x => ({ ...x, status: (B.find(y => y.id === x.id) || {}).status === '반려' ? '반려' : '승인' }))];
-  const tag = x => `<span class="st st-${x.status}">${x.status}</span>${use.has(x.id) ? ' <span class="badge">사용 중</span>' : ''}`;
-  return panelH('p-ibsup', '⑤ 6대 핵심역량 보완 문항', '입학 직후 첫 진단에만', `<p class="meta">3종 진단으로 근거가 부족한 <b>전문성</b>(핵심역량진단 문항 없음)과 <b>자기주도성</b>(직업기초 연결 없음)을 첫 진단 때 5점 자기보고 문항으로 보완합니다. AI 초안은 승인해야 학생에게 나가고, 역량별로 승인한 AI 문항이 없으면 규칙 기반 기본 문항을 씁니다. 재검사 때는 이 문항 대신 가산점(운영 설정)을 씁니다.</p>
+  const tag = x => `<span class="st st-${x.status}">${x.status}</span>${(P => (P && P.some(y => y.id === x.id) ? ` <span class="badge">${P.length > SUP_PER_FACET ? `순환(${P.length}개 중 ${SUP_PER_FACET}개)` : '사용 중'}</span>` : ''))(pools[x.facet])}`;
+  return panelH('p-ibsup', '⑤ 6대 핵심역량 보완 문항', '입학 직후 첫 진단에만', `<p class="meta">3종 진단으로 근거가 부족한 <b>전문성</b>(핵심역량진단 문항 없음)과 <b>자기주도성</b>(직업기초 연결 없음)을 첫 진단 때 5점 자기보고 문항으로 보완합니다. 학생 한 명에게는 역량마다 8문항(하위 요소별 정문항 1·역문항 1)이 나갑니다. AI 초안은 승인해야 쓰이고, 하위 요소에 승인한 AI 문항이 2개 이상이면 기본 문항 대신 그 문항들을 씁니다. 후보가 2개보다 많으면 학번에 따라 학생마다 돌아가며 씁니다. 재검사 때는 이 문항 대신 가산점(운영 설정)을 씁니다.</p>
     <div class="tabs" role="tablist">${SUP_COMP.map(x => `<button role="tab" class="tab" aria-selected="${x.k === c.k}" data-supc="${x.k}">${x.k}</button>`).join('')}</div>
     <p class="meta"><b>정의(초안)</b> ${esc(c.def)} · <b>하위 요소</b> ${c.facets.map(esc).join(', ')}</p>
     <div class="actions no-print"><button class="btn sm" id="supgen" ${state.supPend ? 'disabled' : ''}>${state.supPend ? 'AI 초안 작성 중…' : `AI로 ${c.k} 보완 문항 만들기(하위 요소별 2개씩)`}</button><span class="meta" id="supmsg" aria-live="polite">${esc(state.supMsg || '')}</span></div>
