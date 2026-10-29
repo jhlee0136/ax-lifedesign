@@ -767,7 +767,7 @@ a.brand:hover .brand-text b { color: var(--signal); }
 .logform .btn { justify-self: start; }
 /* 관리자 */
 .p-relstd { grid-column: span 5; }
-.p-ibbatch, .p-ibsup { grid-column: 1 / -1; }
+.p-ibbatch { grid-column: 1 / -1; }
 .ibbt { width: 100%; table-layout: fixed; } .ibbt .b1 { width: 3em; } .ibbt .b2 { width: 13%; } .ibbt .b5 { width: 17%; }
 .panel.p-ibbatch .ibbt td, .panel.p-ibbatch .ibbt th, .panel.p-ibbatch .ibbt td:last-child, .panel.p-ibbatch .ibbt th:last-child { white-space: normal; word-break: keep-all; text-align: left; vertical-align: top; }
 .ibbt .st { display: inline-block; margin: 0 4px 4px 0; } .ibbconf { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 4px; font-size: 14px; }
@@ -915,7 +915,7 @@ body.no-demo .phase, body.no-demo .badge.amber, body.no-demo .resfoot, body.no-d
 .flow li b { display: block; color: var(--ink); font-size: 14px; }
 .flow li b::before { content: counter(f) ". "; color: var(--signal); }
 @media (max-width: 1000px) { .flow { grid-template-columns: 1fr 1fr; } }
-.p-ibin { grid-column: span 12; } .p-iblist { grid-column: span 5; } .p-ibed { grid-column: span 7; }
+.p-ibin { grid-column: span 12; } .p-iblist { grid-column: span 5; } .p-ibed { grid-column: span 7; } .p-iblist.ibwide { grid-column: 1 / -1; }
 @media (max-width: 1100px) { .p-iblist, .p-ibed { grid-column: 1 / -1; } }
 .p-fbp { grid-column: span 6; } .p-feq { grid-column: span 6; } .p-frule { grid-column: span 12; }
 .iblist { max-height: 560px; overflow: auto; }
@@ -5190,17 +5190,17 @@ function coreNorms(dept) {
 }
 /* 6대 핵심역량(교양교육과정 편성 및 운영에 관한 지침 2025.11.17. 제2·5조: 지성인 = 전문성·자기주도성, 직업인 = 성실성·창의·융합, 사회인 = 의사소통·외국어)
    직업기초 연결: 지침 제6조 표는 개편 전 직업기초능력(10영역 34개 하위영역) 기준이라, 한국산업인력공단 「직업공통능력 표준 개편(2025.12)」의
-   현행→개편 대응표(수정·보완 = 1, 일부 반영 = 0.5)로 2026 표준 21개 하위능력에 옮김. 예: 사고력·문제처리(성실성·창의·융합) → 문제분석·대안발굴(1)·의사결정(0.5),
-   정보처리(의사소통) → 디지털활용(1)·AI활용(0.5), 공동체윤리(전문성) → 직장공동체의식.
+   현행→개편 대응표로 2026 표준 21개 하위능력에 옮김(수정·보완·일부 반영 모두 연결, 지침처럼 가중 없이 같은 비중). 예: 사고력·문제처리(성실성·창의·융합) → 문제분석·대안발굴·의사결정,
+   정보처리(의사소통) → 디지털활용·AI활용, 공동체윤리(전문성) → 직장공동체의식.
    개편으로 영역이 없어진 연결: 조직이해·국제감각(자기주도성), 자아인식·자기관리(전문성), 기술능력(성실성·창의·융합).
    그래서 자기주도성은 직업기초 연결이 없고 핵심역량진단으로만 잼. 구두소통(경청·의사표현)은 제6조에 표시가 없어 명칭 기준으로 의사소통에 붙임(보완, 검토 필요).
    신설 디지털책임의식·산업안전보건의식은 제6조에 대응 항목이 없어 연결하지 않음(지침 개정 때 정할 사항) */
 const SIX_CORE = [
-  { k: '전문성', ax: 0, fac: [], fit: '없음', sub: { 경력개발능력: 1, 적응학습능력: 0.5, 근로윤리: 1, 직장공동체의식: 1 }, thin: '핵심역량진단 문항이 없고, 직업기초 연결도 개편으로 줄었습니다(자아인식·자기관리 삭제).' },
+  { k: '전문성', ax: 0, fac: [], fit: '없음', sub: { 경력개발능력: 1, 적응학습능력: 1, 근로윤리: 1, 직장공동체의식: 1 }, thin: '핵심역량진단 문항이 없고, 직업기초 연결도 개편으로 줄었습니다(자아인식·자기관리 삭제).' },
   { k: '자기주도성', ax: 0, fac: ['자기인식', '목표수립', '실행력', '자기효능감'], fit: '직접', sub: {}, thin: '직업기초 연결(조직이해·국제감각)이 개편으로 없어져 핵심역량진단으로만 잽니다.' },
-  { k: '성실성', ax: 1, fac: ['책임감', '자기존중'], fit: '직접', sub: { 문제분석능력: 1, 대안발굴능력: 1, 의사결정능력: 0.5, 시간관리능력: 1, 협업능력: 1, 리더십: 1, 갈등관리능력: 1 } },
-  { k: '창의·융합', ax: 1, fac: ['창의성'], fit: '부분', sub: { 문제분석능력: 1, 대안발굴능력: 1, 의사결정능력: 0.5, 시간관리능력: 1, 협업능력: 1, 리더십: 1 } },
-  { k: '의사소통', ax: 2, fac: ['공동체의식'], fit: '부분', sub: { 문서소통능력: 1, 구두소통능력: 1, 연산능력: 1, 통계활용능력: 1, 도표활용능력: 1, 디지털활용능력: 1, AI활용능력: 0.5 }, basic: [0, 1], extra: '구두소통은 명칭 기준 보완 연결' },
+  { k: '성실성', ax: 1, fac: ['책임감', '자기존중'], fit: '직접', sub: { 문제분석능력: 1, 대안발굴능력: 1, 의사결정능력: 1, 시간관리능력: 1, 협업능력: 1, 리더십: 1, 갈등관리능력: 1 } },
+  { k: '창의·융합', ax: 1, fac: ['창의성'], fit: '부분', sub: { 문제분석능력: 1, 대안발굴능력: 1, 의사결정능력: 1, 시간관리능력: 1, 협업능력: 1, 리더십: 1 } },
+  { k: '의사소통', ax: 2, fac: ['공동체의식'], fit: '부분', sub: { 문서소통능력: 1, 구두소통능력: 1, 연산능력: 1, 통계활용능력: 1, 도표활용능력: 1, 디지털활용능력: 1, AI활용능력: 1 }, basic: [0, 1], extra: '구두소통은 명칭 기준 보완 연결' },
   { k: '외국어', ax: 2, fac: [], fit: '없음', sub: { 외국어소통능력: 1 }, basic: [2], thin: '핵심역량진단 문항이 없어 직업기초 외국어소통과 기초학습 영어로 잽니다.' }
 ];
 const SIX_NAMES = SIX_CORE.map(x => x.k);
@@ -5209,12 +5209,12 @@ const SIX_UNLINKED = ['디지털책임의식', '산업안전보건의식'];
    ext.sup: 입학 직후 보완 문항 점수(전문성·자기주도성). 핵심역량진단과 같은 자기보고라 핵심역량 몫에 함께 넣음(9요인 연결이 있으면 둘의 평균)
    ext.bonus: 재검사 가산점(전문성 = 전공 성적·목표 직무 능력단위 이수율, 자기주도성 = 자기주도 학습 실천률). 진단 점수에 더하고 100점을 넘지 않음 */
 /* 관리자가 문항 은행에서 바꾼 연결(bank().sixMap)을 SIX_CORE 기본 연결 위에 덮어씀.
-   sixMap.sub[하위능력] = { 역량: 1 또는 0.5 }, sixMap.fac[요인] = [역량…]. 항목이 있으면 그 하위능력·요인의 기본 연결은 모두 그것으로 바뀜 */
+   sixMap.sub[하위능력] = { 역량: 1 }(예전에 저장된 0.5도 1로 봄), sixMap.fac[요인] = [역량…]. 항목이 있으면 그 하위능력·요인의 기본 연결은 모두 그것으로 바뀜 */
 function sixCoreNow() {
   let M = {}; try { M = bank().sixMap || {}; } catch (e) { /* 문항 은행을 아직 못 읽는 초기 계산 */ } const MS = M.sub || {}, MF = M.fac || {};
   return SIX_CORE.map(x => {
     const sub = Object.fromEntries(Object.entries(x.sub).filter(([n]) => !(n in MS)));
-    Object.entries(MS).forEach(([n, w]) => { if (w[x.k]) sub[n] = w[x.k]; });
+    Object.entries(MS).forEach(([n, w]) => { if (w[x.k]) sub[n] = 1; });
     return { ...x, sub, fac: [...x.fac.filter(f => !(f in MF)), ...Object.keys(MF).filter(f => MF[f].includes(x.k))] };
   });
 }
@@ -5327,16 +5327,17 @@ function renderSupSurvey() {
     state.supAns = null; toast(`보완 문항을 저장했습니다. 전문성 ${v['전문성'] ?? '-'} · 자기주도성 ${v['자기주도성'] ?? '-'}점을 6대 핵심역량에 반영했습니다.`); go('home');
   };
 }
-/* 관리자: 문항 은행의 보완 문항 패널(AI 초안 → 검토 → 승인) */
-function supBankHtml() {
+/* 관리자: 문항 목록의 '핵심역량+' 탭(6대 핵심역량 보완 문항: AI 초안 → 검토 → 승인) */
+function supBankBody() {
   const c = SUP_COMP.find(x => x.k === state.supComp) || SUP_COMP[0], B = supBankItems(), pools = Object.fromEntries(c.facets.map(f => [f, supPool(c.k, f)]));
   const rows = [...B.filter(x => x.comp === c.k && x.id[0] !== 'r'), ...SUP_RULE.filter(x => x.comp === c.k).map(x => ({ ...x, status: (B.find(y => y.id === x.id) || {}).status === '반려' ? '반려' : '승인' }))];
+  rows.sort((a, b) => c.facets.indexOf(a.facet) - c.facets.indexOf(b.facet) || a.rev - b.rev);
   const tag = x => `<span class="st st-${x.status}">${x.status}</span>${(P => (P && P.some(y => y.id === x.id) ? ` <span class="badge">${P.length > SUP_PER_FACET ? `순환(${P.length}개 중 ${SUP_PER_FACET}개)` : '사용 중'}</span>` : ''))(pools[x.facet])}`;
-  return panelH('p-ibsup', '⑤ 6대 핵심역량 보완 문항', '입학 직후 첫 진단에만', `<p class="meta">3종 진단으로 근거가 부족한 <b>전문성</b>(핵심역량진단 문항 없음)과 <b>자기주도성</b>(직업기초 연결 없음)을 첫 진단 때 핵심역량진단 끝에 붙는 5점 자기보고 문항으로 보완합니다(이미 진단을 마친 학생은 따로 응답). 학생 한 명에게는 역량마다 8문항(하위 요소별 정문항 1·역문항 1)이 나갑니다. AI 초안은 승인해야 쓰이고, 하위 요소에 승인한 AI 문항이 2개 이상이면 기본 문항 대신 그 문항들을 씁니다. 후보가 2개보다 많으면 학번에 따라 학생마다 돌아가며 씁니다. 재검사 때는 이 문항 대신 가산점(운영 설정)을 씁니다.</p>
-    <div class="tabs" role="tablist">${SUP_COMP.map(x => `<button role="tab" class="tab" aria-selected="${x.k === c.k}" data-supc="${x.k}">${x.k}</button>`).join('')}</div>
+  return `<p class="meta ibsixnote">3종 진단 문항이 적은 <b>전문성</b>·<b>자기주도성</b>을 입학 직후 첫 진단에서 핵심역량진단 끝에 붙는 5점 문항으로 보완합니다. 학생마다 역량별 8문항(하위 요소별 정문항 1·역문항 1)이 나가고, 하위 요소에 승인한 AI 문항이 2개 이상이면 기본 문항 대신 쓰며, 더 많으면 학번에 따라 돌아가며 씁니다. 학기말 재진단에서는 이 문항 대신 가산점을 씁니다.</p>
+    <div class="ibbar"><span class="meta">역량</span>${SUP_COMP.map(x => `<button class="chip ${x.k === c.k ? 'on' : ''}" data-supc="${x.k}" aria-pressed="${x.k === c.k}">${x.k}</button>`).join('')}</div>
     <p class="meta"><b>정의(초안)</b> ${esc(c.def)} · <b>하위 요소</b> ${c.facets.map(esc).join(', ')}</p>
     <div class="actions no-print"><button class="btn sm" id="supgen" ${state.supPend ? 'disabled' : ''}>${state.supPend ? 'AI 초안 작성 중…' : `AI로 ${c.k} 보완 문항 만들기(하위 요소별 2개씩)`}</button><span class="meta" id="supmsg" aria-live="polite">${esc(state.supMsg || '')}</span></div>
-    <div class="scrollx"><table class="tbl"><thead><tr><th>하위 요소</th><th>문항</th><th>방향</th><th>출처</th><th>상태</th><th></th></tr></thead><tbody>${rows.map(x => `<tr><td class="meta">${esc(x.facet)}</td><td>${esc(x.q)}${x.why ? `<br><span class="meta">${esc(x.why)}</span>` : ''}</td><td>${x.rev ? '역문항' : '정문항'}</td><td class="meta">${esc(x.src || '')}</td><td>${tag(x)}</td><td class="no-print">${x.status !== '승인' ? `<button class="linkbtn" data-supok="${x.id}">승인</button> ` : ''}${x.status !== '반려' ? `<button class="linkbtn" data-supno="${x.id}">반려</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`);
+    <div class="scrollx"><table class="tbl"><thead><tr><th>하위 요소</th><th>문항</th><th>방향</th><th>출처</th><th>상태</th><th></th></tr></thead><tbody>${rows.map(x => `<tr><td class="meta">${esc(x.facet)}</td><td>${esc(x.q)}${x.why ? `<br><span class="meta">${esc(x.why)}</span>` : ''}</td><td>${x.rev ? '역문항' : '정문항'}</td><td class="meta">${esc(x.src || '')}</td><td>${tag(x)}</td><td class="no-print">${x.status !== '승인' ? `<button class="linkbtn" data-supok="${x.id}">승인</button> ` : ''}${x.status !== '반려' ? `<button class="linkbtn" data-supno="${x.id}">반려</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function bindSupBank() {
   const box = document.querySelector('.p-ibsup'); if (!box) return;
@@ -5386,7 +5387,7 @@ function sixPanelHtml() {
     <p class="meta">대학 교육목표(교양교육과정 지침 제2·5조)의 6대 핵심역량으로 3종 진단을 모아 본 결과입니다. 아래의 직업기초 7영역(2026 직업공통능력 표준)·핵심역량 9요인·기초학습은 이 점수를 만든 세부 결과입니다.</p>
     ${supDue() ? `<p class="ai-sum">전문성·자기주도성은 3종 진단 문항이 적어 근거가 부족합니다. 보완 문항(${supItems().length}문항, 2~3분)에 답하면 점수에 반영됩니다. <button class="btn sm" data-go="supsurvey" type="button">보완 문항 답하기</button></p>` : ''}
     <p class="meta">입학 직후에는 보완 문항으로 전문성·자기주도성을 함께 재고, 학기말 재검사에서는 진단 점수에 가산점을 더합니다: 전문성 최대 +${W.bonusPro ?? 10}점(전공 교과 평점·목표 직무 능력단위 이수율), 자기주도성 최대 +${W.bonusSelf ?? 10}점(자기주도 학습 실천률). 외국어는 기초학습 영어·직업기초 외국어소통으로 잽니다.</p>
-    <details class="peek"><summary>연결 근거 보기</summary><p class="meta">직업기초는 지침 제6조의 연결표를 한국산업인력공단 「직업공통능력 표준 개편(2025.12)」의 현행→개편 대응표로 2026 표준 21개 하위능력에 옮겨 계산합니다(수정·보완 1, 일부 반영 0.5).</p><ul class="meta">${SIX_CORE.map(x => `<li><b>${x.k}</b>: ${Object.entries(x.sub).map(([n, w]) => n + (w < 1 ? '(일부)' : '')).join('·') || '직업기초 연결 없음'}${x.fac.length ? ` / 핵심역량 ${x.fac.join('·')}` : ''}${x.basic ? ` / 기초학습 ${x.basic.map(i => BASIC_SUBJ[i]).join('·')}` : ''}${x.thin ? ` — ${x.thin}` : ''}${x.extra ? ` (${x.extra})` : ''}</li>`).join('')}<li>지침에 연결이 없는 2026 신설 하위능력: ${SIX_UNLINKED.join('·')}(지침 개정 때 정할 사항)</li></ul></details>
+    <details class="peek"><summary>연결 근거 보기</summary><p class="meta">직업기초는 지침 제6조의 연결표를 한국산업인력공단 「직업공통능력 표준 개편(2025.12)」의 현행→개편 대응표로 2026 표준 21개 하위능력에 옮겨 계산합니다. 지침처럼 연결한 하위능력은 모두 같은 비중입니다.</p><ul class="meta">${SIX_CORE.map(x => `<li><b>${x.k}</b>: ${Object.keys(x.sub).join('·') || '직업기초 연결 없음'}${x.fac.length ? ` / 핵심역량 ${x.fac.join('·')}` : ''}${x.basic ? ` / 기초학습 ${x.basic.map(i => BASIC_SUBJ[i]).join('·')}` : ''}${x.thin ? ` — ${x.thin}` : ''}${x.extra ? ` (${x.extra})` : ''}</li>`).join('')}<li>지침에 연결이 없는 2026 신설 하위능력: ${SIX_UNLINKED.join('·')}(지침 개정 때 정할 사항)</li></ul></details>
     </div></div></div></section>`;
 }
 function coreDetailHtml() {
@@ -7453,17 +7454,17 @@ const BASIC_SKILL = Object.fromEntries(Object.entries({
   ma: { '수와 연산': [1, 2, 3, 13], '문자와 식·함수': [4, 14, 15, 16], '규칙성': [5, 6, 7, 8], '도형·측정': [9, 10, 11, 12], '자료·통계': [17, 18, 19, 20] },
   en: { '어휘': [1, 2, 3, 4], '문법': [5, 6, 7, 8, 9, 10], '독해': [11, 12, 13, 14], '생활 의사소통(대화)': [15, 16, 17, 18, 19, 20] }
 }).flatMap(([p, g]) => Object.entries(g).flatMap(([s, ns]) => ns.map(n => [p + String(n).padStart(2, '0'), s]))));
-/* 문항이 잇는 대학 6대 핵심역량(SIX_CORE와 같은 연결): 직업기초 = 하위능력(지침 제6조를 2026 표준으로 옮김, 0.5는 '일부'),
+/* 문항이 잇는 대학 6대 핵심역량(SIX_CORE와 같은 연결): 직업기초 = 하위능력(지침 제6조를 2026 표준으로 옮김, 모두 같은 비중),
    핵심역량 = 9요인 연결(초안), 기초학습 = 과목(지침 제6조에서 수리능력은 의사소통, 기초외국어는 외국어). 연결이 없으면 빈 배열 */
 function sixOf(r) {
   const C = sixCoreNow();
-  if (r.diag === '직업기초') return C.filter(x => x.sub[r.item.s]).map(x => ({ k: x.k, part: x.sub[r.item.s] < 1 }));
+  if (r.diag === '직업기초') return C.filter(x => x.sub[r.item.s]).map(x => ({ k: x.k, part: false }));
   if (r.diag === '핵심역량') return C.filter(x => x.fac.includes(r.item.f)).map(x => ({ k: x.k, part: false }));
   return SIX_CORE.filter(x => x.basic && x.basic.includes(BASIC_SUBJ.indexOf(r.item.sub))).map(x => ({ k: x.k, part: false }));
 }
 /* 문항 목록 위 한 줄 안내: 탭마다 6대 핵심역량을 어떤 근거로 이었는지 */
 function ibSixNote(diag) {
-  const t = { 직업기초: '지침 제6조를 2026 표준으로 옮긴 연결입니다(일부 = 가중 0.5). 문항을 고르면 ③에서 하위능력별로 바꿀 수 있습니다.',
+  const t = { 직업기초: '지침 제6조를 2026 표준으로 옮긴 연결입니다(연결한 역량은 모두 같은 비중). 문항을 고르면 ③에서 하위능력별로 바꿀 수 있습니다.',
     핵심역량: '9요인 연결은 초안입니다. 봉사·AI 책임 활용은 기본 연결이 없고, 문항을 고르면 ③에서 요인별로 바꿀 수 있습니다.',
     기초학습: '지침 제6조에 따라 국어·수학은 의사소통, 영어는 외국어입니다. 세부 능력은 발문을 보고 나눈 초안입니다.' }[diag];
   return t ? `<p class="meta ibsixnote">${t}</p>` : '';
@@ -7478,11 +7479,11 @@ function sixEditHtml(r) {
   const K = sixEditKey(r), M = bank().sixMap || {};
   if (!K) return r.diag === '기초학습' ? '' : `<p class="meta"><b>대학 6대 핵심역량</b> ${r.diag === '직업기초' ? '응답 확인(타당도) 문항은 점수를 내지 않아 연결할 수 없습니다.' : 'AI 책임 활용은 보조 척도라 9요인 점수에 들어가지 않아 연결할 수 없습니다.'}</p>`;
   const changed = !!(M[K.kind] && K.name in M[K.kind]), now = sixCoreNow();
-  const def = K.kind === 'sub' ? SIX_CORE.filter(x => x.sub[K.name]).map(x => x.k + (x.sub[K.name] < 1 ? '(일부)' : '')) : SIX_CORE.filter(x => x.fac.includes(K.name)).map(x => x.k);
-  /* 연결은 체크 하나로 정함. 직업기초에서 기본 연결이 '일부'(가중 0.5)였던 역량은 체크를 유지하면 그 가중을 그대로 둠 */
+  const def = K.kind === 'sub' ? SIX_CORE.filter(x => x.sub[K.name]).map(x => x.k) : SIX_CORE.filter(x => x.fac.includes(K.name)).map(x => x.k);
+  /* 연결은 체크 하나로 정하고, 연결한 역량은 모두 같은 비중으로 계산 */
   const cell = x => {
     const w = K.kind === 'sub' ? x.sub[K.name] || 0 : x.fac.includes(K.name) ? 1 : 0;
-    return `<label class="chk six-ed"><input type="checkbox" data-sixw="${esc(x.k)}" data-w="${w > 0 && w < 1 ? w : 1}" ${w ? 'checked' : ''}> ${esc(x.k)}${w > 0 && w < 1 ? ' <span class="meta">일부</span>' : ''}</label>`;
+    return `<label class="chk six-ed"><input type="checkbox" data-sixw="${esc(x.k)}" ${w ? 'checked' : ''}> ${esc(x.k)}</label>`;
   };
   return `<div class="six-edit"><h3 class="sub3">대학 6대 핵심역량 연결 · ${esc(K.name)}${changed ? ' <span class="badge">관리자 변경</span>' : ''}</h3>
     <p class="meta">${K.kind === 'sub' ? '하위능력' : '요인'} '${esc(K.name)}'의 모든 문항과 학생의 6대 핵심역량 점수 계산에 함께 적용됩니다. 기본 연결(${K.kind === 'sub' ? '지침 제6조 → 2026 표준' : '초안'}): ${def.length ? def.map(esc).join(', ') : '연결 없음'}</p>
@@ -7495,11 +7496,11 @@ function bindSixEdit(r) {
   sv.onclick = () => {
     const els = [...document.querySelectorAll('[data-sixw]')];
     const on = els.filter(e => e.checked);
-    put(K.kind === 'sub' ? Object.fromEntries(on.map(e => [e.dataset.sixw, +e.dataset.w || 1])) : on.map(e => e.dataset.sixw));
+    put(K.kind === 'sub' ? Object.fromEntries(on.map(e => [e.dataset.sixw, 1])) : on.map(e => e.dataset.sixw));
   };
   const rs = document.getElementById('sixreset'); if (rs) rs.onclick = () => put(null);
 }
-const sixTxt = r => (r.six.length ? r.six.map(x => x.k + (x.part ? '(일부)' : '')).join(', ') : '');
+const sixTxt = r => r.six.map(x => x.k).join(', ');
 const T_NAME = { ach: '성취형', sjt: '상황판단형', case: '사례형', self: '자기보고' };
 const tName = it => (it && it.sc === 7 ? (it.kind === 'S' || it.lvl ? '선택형(7점)' : '척도형(7점)') : null);
 function itemPayload(row) {
@@ -7646,7 +7647,8 @@ function renderItemBank() {
   /* 같은 목록 안에서 문항만 바꿔 고를 때는 목록 스크롤 위치를 유지 */
   const prevBox = document.querySelector(".iblist"), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, JSON.stringify(state.ibSort)].join("|");
   const keepTop = state.ibViewKey === viewKey ? prevTop : 0; state.ibViewKey = viewKey;
-  const list0 = rows.filter(r => r.diag === state.ibDiag);
+  const supMode = state.ibDiag === '핵심역량+';
+  const list0 = rows.filter(r => r.diag === (supMode ? '핵심역량' : state.ibDiag));
   const ibGrps = ['전체', ...new Set(list0.map(r => r.grp))];
   const ibGrp = ibGrps.includes(state.ibGrp) ? state.ibGrp : '전체';
   const ibSort = state.ibSort || { k: null, dir: 1 };
@@ -7683,8 +7685,8 @@ function renderItemBank() {
     ${panelH('p-ibin', '① 현행 문항 입력', '', `<p class="meta">운영 중인 문항을 양식(CSV)에 맞춰 올리면 문항 은행에 등록됩니다. 지금은 시제품 문항 ${rows.length}개가 들어 있습니다.</p>
       <p class="meta">양식 열: 진단, 하위능력, 유형(성취형·상황판단형·사례형·자기보고), 문항, 선택지(| 구분), 정답 또는 선택지별 배점, 역문항, 원 문항 번호</p>
       <div class="actions"><button class="btn ghost sm" id="ibtpl">입력 양식 내려받기</button><label class="btn ghost sm filebtn">문항 파일 올리기<input type="file" id="ibfile" accept=".csv" hidden></label><span class="meta" id="ibmsg" aria-live="polite"></span></div>`)}
-    ${panelH('p-iblist', '② 문항 목록', '', `<div class="tabs" role="tablist">${['직업기초', '핵심역량', '기초학습'].map(d => `<button role="tab" class="tab" aria-selected="${d === state.ibDiag}" data-ibd="${d}">${d}</button>`).join('')}</div>
-      ${ibWhy(state.ibDiag, rows)}
+    ${panelH(supMode ? 'p-iblist ibwide p-ibsup' : 'p-iblist', '② 문항 목록', supMode ? '입학 직후 첫 진단에만' : '', `<div class="tabs" role="tablist">${['직업기초', '핵심역량', '핵심역량+', '기초학습'].map(d => `<button role="tab" class="tab" aria-selected="${d === state.ibDiag}" data-ibd="${d}">${d}</button>`).join('')}</div>
+      ${supMode ? supBankBody() : `      ${ibWhy(state.ibDiag, rows)}
       <div class="ibbar ibsel"><label><span class="meta">영역</span><select id="ibarea"><option value="">전체 영역</option>${ibAreas.map(a => `<option value="${esc(a)}" ${a === ibArea ? 'selected' : ''}>${esc(a)} (${list0.filter(r => r.area === a).length})</option>`).join('')}</select></label>
         <label><span class="meta">${skillLb}</span><select id="ibskill"><option value="">전체 ${skillLb}</option>${ibSkills.map(k => `<option value="${esc(k)}" ${k === ibSkill ? 'selected' : ''}>${esc(k)} (${list0.filter(r => r.skill === k && (!ibArea || r.area === ibArea)).length})</option>`).join('')}</select></label>
         <label><span class="meta">대학 6대 핵심역량</span><select id="ibsix"><option value="">전체 역량</option>${ibSixes.map(k => `<option value="${esc(k)}" ${k === ibSix ? 'selected' : ''}>${esc(k)} (${list0.filter(r => r.six.some(x => x.k === k)).length})</option>`).join('')}${list0.some(r => !r.six.length) ? `<option value="-" ${ibSix === '-' ? 'selected' : ''}>연결 없음 (${list0.filter(r => !r.six.length).length})</option>` : ''}</select></label>
@@ -7693,8 +7695,8 @@ function renderItemBank() {
       <div class="ibbar"><span class="meta">구분</span>${ibGrps.map(g => `<button class="chip ${ibGrp === g ? 'on' : ''}" data-ibg="${g}" aria-pressed="${ibGrp === g}">${g}${g === '전체' ? '' : ` ${list0.filter(r => r.grp === g).length}`}</button>`).join('')}<span class="meta ibn">${list.length}문항</span></div>
       <div class="scrollx iblist"><table class="tbl ibtbl"><colgroup><col class="ibc1"><col class="ibc2"><col class="ibc3"><col class="ibc6"><col class="ibc4"><col class="ibc5"></colgroup>
         <thead><tr>${IB_COLS.map(([k, lb]) => [k, k === 'skill' ? skillLb : lb]).map(([k, lb]) => `<th aria-sort="${ibSort.k === k ? (ibSort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button class="ibsort" data-ibs="${k}">${lb}<span aria-hidden="true">${ibSort.k === k ? (ibSort.dir > 0 ? '▲' : '▼') : '↕'}</span></button></th>`).join('')}</tr></thead>
-        <tbody>${list.map(r => `<tr class="${r.key === sel.key ? 'me' : ''}" data-ib="${r.key}" tabindex="0" title="${esc(r.item.q.replace(/\n/g, ' '))}"><td>${r.grp === 'AI 신규' ? '<span class="badge ai-new">AI 신규</span>' : `<span class="meta">${r.grp}</span>`}</td><td>${esc(r.area)}</td><td><b>${esc(r.skill)}</b>${r.note ? ` <span class="meta">${r.note}</span>` : ''}</td><td>${r.six.length ? r.six.map(x => `${esc(x.k)}${x.part ? ' <span class="meta">일부</span>' : ''}`).join('<br>') : '<span class="meta">연결 없음</span>'}</td><td>${ibType(r)}</td><td>${stTag(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="meta">조건에 맞는 문항이 없습니다. 구분이나 영역 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`)}
-    ${panelH('p-ibed', '③ AI 고도화와 검토', esc(sel.sub), `
+        <tbody>${list.map(r => `<tr class="${r.key === sel.key ? 'me' : ''}" data-ib="${r.key}" tabindex="0" title="${esc(r.item.q.replace(/\n/g, ' '))}"><td>${r.grp === 'AI 신규' ? '<span class="badge ai-new">AI 신규</span>' : `<span class="meta">${r.grp}</span>`}</td><td>${esc(r.area)}</td><td><b>${esc(r.skill)}</b>${r.note ? ` <span class="meta">${r.note}</span>` : ''}</td><td>${r.six.length ? r.six.map(x => `${esc(x.k)}`).join('<br>') : '<span class="meta">연결 없음</span>'}</td><td>${ibType(r)}</td><td>${stTag(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="meta">조건에 맞는 문항이 없습니다. 구분이나 영역 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`}`)}
+    ${supMode ? '' : panelH('p-ibed', '③ AI 고도화와 검토', esc(sel.sub), `
       <p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel).construct_definition)}</p>
       ${sixEditHtml(sel)}
       <div class="itm-pair">${itemHtml(sel.item, `A형(현행) · ${tName(sel.item) || T_NAME[sel.t]}${sel.anchor ? ' · 공통 문항' : ''}`)}
@@ -7707,7 +7709,6 @@ function renderItemBank() {
         <div class="actions no-print"><button class="btn" id="ibok">승인하고 B형에 등록</button><button class="btn ghost" id="ibno">반려</button><span class="meta" id="ibrmsg" aria-live="polite"></span></div>` : ''}
       ${dataPeek(itemPayload(sel), 'AI에 보내는 요청 보기')}`)}
     ${batchHtml(rows)}
-    ${supBankHtml()}
   </div>`;
   { const box = document.querySelector(".iblist"); if (box) { box.scrollTop = keepTop; if (keepTop) { const me = box.querySelector("tr.me"); if (me) me.focus({ preventScroll: true }); } } }
   $view.querySelectorAll('[data-ibd]').forEach(b => b.onclick = () => { state.ibDiag = b.dataset.ibd; state.ibSel = null; state.ibGrp = '전체'; state.ibArea = ''; state.ibSkill = ''; state.ibSix = ''; state.ibDraft = null; state.ibGenMsg = ''; renderItemBank(); });
