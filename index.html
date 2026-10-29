@@ -1781,6 +1781,8 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 /* v29: 줄바꿈 정리 — 끝줄에 한두 어절만 남지 않게, 넓은 곳에서 글 폭을 과하게 묶지 않게 */
 p, .lede, .fine { text-wrap: pretty; }
 li, dd, dt, td, th, label, figcaption, summary, .meta, .jobcard span, .chip, .badge { text-wrap: balance; }
+/* 문단으로 쓰는 안내 글(p.meta 등)은 줄 길이를 맞추면(balance) 짧은 줄이 여럿 생겨, 화면 너비만큼 채우고 끝줄만 다듬음(pretty) */
+p.meta, div.meta, ul.meta, ol.meta { text-wrap: pretty; word-break: keep-all; overflow-wrap: anywhere; }
 h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: balance; }
 .lede { max-width: 46em; } .login-intro .lede { max-width: 40em; }
 .facts { max-width: 56em; }
