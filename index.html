@@ -7389,7 +7389,8 @@ function bankRows() {
     rows.push({ key: bankKey('ncs', k), k, diag: '직업기초', grp: it.kind === 'N' ? 'AI 신규' : '기존', area, skill, sub: `${area} · ${skill}`, t: it.t, item: it, anchor: ANCHOR.ncs.includes(k), r: B[bankKey('ncs', k)], note: it.rev ? '역문항' : '' });
   });
   CORE_ITEMS.forEach((it, k) => rows.push({ key: bankKey('core', k), k, diag: '핵심역량', grp: it.no ? '기존' : 'AI 신규', area: it.g, skill: it.f, sub: `${it.g} · ${it.f}`, t: 'self', item: it, anchor: true, r: B[bankKey('core', k)], note: it.rev ? '역문항' : '' }));
-  BASIC_A.forEach((it, k) => rows.push({ key: bankKey('basic', k), k, diag: '기초학습', grp: '기존', area: it.sub, skill: `${it.n}번`, sub: `${it.sub} ${it.n}번`, t: 'ach', item: it, anchor: ANCHOR.basic.includes(k), r: basicB(B, k) }));
+  /* 기초학습은 문항별 측정 능력 자료가 없어, 과목이 연결된 대학 6대 핵심역량(국어·수학 → 의사소통, 영어 → 외국어)을 측정 능력 칸에 씀 */
+  BASIC_A.forEach((it, k) => rows.push({ key: bankKey('basic', k), k, diag: '기초학습', grp: '기존', area: it.sub, skill: (SIX_CORE.find(x => x.basic && x.basic.includes(BASIC_SUBJ.indexOf(it.sub))) || {}).k || it.sub, note: `${it.n}번`, sub: `${it.sub} ${it.n}번`, t: 'ach', item: it, anchor: ANCHOR.basic.includes(k), r: basicB(B, k) }));
   return rows;
 }
 const T_NAME = { ach: '성취형', sjt: '상황판단형', case: '사례형', self: '자기보고' };
@@ -7549,6 +7550,7 @@ function renderItemBank() {
   const ibArea = ibAreas.includes(state.ibArea) ? state.ibArea : '';
   const ibSkills = uniq(list0.filter(r => !ibArea || r.area === ibArea).map(r => r.skill));
   const ibSkill = ibSkills.includes(state.ibSkill) ? state.ibSkill : '';
+  const skillLb = state.ibDiag === '기초학습' ? '대학 6대 핵심역량' : '측정 능력';
   const list = list0.map((r, i) => ({ r, i })).filter(x => (ibGrp === '전체' || x.r.grp === ibGrp) && (!ibArea || x.r.area === ibArea) && (!ibSkill || x.r.skill === ibSkill))
     .sort((x, y) => (ibSort.k ? ibSort.dir * String(sortVal(x.r, ibSort.k)).localeCompare(String(sortVal(y.r, ibSort.k)), 'ko') : 0) || x.i - y.i).map(x => x.r);
   const sel = list.find(r => r.key === state.ibSel) || list.find(r => !r.anchor) || list[0] || list0[0];
@@ -7574,11 +7576,11 @@ function renderItemBank() {
     ${panelH('p-iblist', '② 문항 목록', '', `<div class="tabs" role="tablist">${['직업기초', '핵심역량', '기초학습'].map(d => `<button role="tab" class="tab" aria-selected="${d === state.ibDiag}" data-ibd="${d}">${d}</button>`).join('')}</div>
       ${ibWhy(state.ibDiag, rows)}
       <div class="ibbar ibsel"><label><span class="meta">영역</span><select id="ibarea"><option value="">전체 영역</option>${ibAreas.map(a => `<option value="${esc(a)}" ${a === ibArea ? 'selected' : ''}>${esc(a)} (${list0.filter(r => r.area === a).length})</option>`).join('')}</select></label>
-        <label><span class="meta">측정 능력</span><select id="ibskill"><option value="">전체 측정 능력</option>${ibSkills.map(k => `<option value="${esc(k)}" ${k === ibSkill ? 'selected' : ''}>${esc(k)} (${list0.filter(r => r.skill === k && (!ibArea || r.area === ibArea)).length})</option>`).join('')}</select></label>
+        <label><span class="meta">${skillLb}</span><select id="ibskill"><option value="">전체 ${skillLb}</option>${ibSkills.map(k => `<option value="${esc(k)}" ${k === ibSkill ? 'selected' : ''}>${esc(k)} (${list0.filter(r => r.skill === k && (!ibArea || r.area === ibArea)).length})</option>`).join('')}</select></label>
         ${ibArea || ibSkill ? '<button class="linkbtn" id="ibclear">필터 지우기</button>' : ''}</div>
       <div class="ibbar"><span class="meta">구분</span>${ibGrps.map(g => `<button class="chip ${ibGrp === g ? 'on' : ''}" data-ibg="${g}" aria-pressed="${ibGrp === g}">${g}${g === '전체' ? '' : ` ${list0.filter(r => r.grp === g).length}`}</button>`).join('')}<span class="meta ibn">${list.length}문항</span></div>
       <div class="scrollx iblist"><table class="tbl ibtbl"><colgroup><col class="ibc1"><col class="ibc2"><col class="ibc3"><col class="ibc4"><col class="ibc5"></colgroup>
-        <thead><tr>${IB_COLS.map(([k, lb]) => `<th aria-sort="${ibSort.k === k ? (ibSort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button class="ibsort" data-ibs="${k}">${lb}<span aria-hidden="true">${ibSort.k === k ? (ibSort.dir > 0 ? '▲' : '▼') : '↕'}</span></button></th>`).join('')}</tr></thead>
+        <thead><tr>${IB_COLS.map(([k, lb]) => [k, k === 'skill' ? skillLb : lb]).map(([k, lb]) => `<th aria-sort="${ibSort.k === k ? (ibSort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button class="ibsort" data-ibs="${k}">${lb}<span aria-hidden="true">${ibSort.k === k ? (ibSort.dir > 0 ? '▲' : '▼') : '↕'}</span></button></th>`).join('')}</tr></thead>
         <tbody>${list.map(r => `<tr class="${r.key === sel.key ? 'me' : ''}" data-ib="${r.key}" tabindex="0" title="${esc(r.item.q.replace(/\n/g, ' '))}"><td>${r.grp === 'AI 신규' ? '<span class="badge ai-new">AI 신규</span>' : `<span class="meta">${r.grp}</span>`}</td><td>${esc(r.area)}</td><td><b>${esc(r.skill)}</b>${r.note ? ` <span class="meta">${r.note}</span>` : ''}</td><td>${ibType(r)}</td><td>${stTag(r)}</td></tr>`).join('') || '<tr><td colspan="5" class="meta">조건에 맞는 문항이 없습니다. 구분이나 영역 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`)}
     ${panelH('p-ibed', '③ AI 고도화와 검토', esc(sel.sub), `
       <p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel).construct_definition)}</p>
