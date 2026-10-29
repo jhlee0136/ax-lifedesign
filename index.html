@@ -5283,7 +5283,7 @@ function supBankHtml() {
   return panelH('p-ibsup', '⑤ 6대 핵심역량 보완 문항', '입학 직후 첫 진단에만', `<p class="meta">3종 진단으로 근거가 부족한 <b>전문성</b>(핵심역량진단 문항 없음)과 <b>자기주도성</b>(직업기초 연결 없음)을 첫 진단 때 5점 자기보고 문항으로 보완합니다. AI 초안은 승인해야 학생에게 나가고, 역량별로 승인한 AI 문항이 없으면 규칙 기반 기본 문항을 씁니다. 재검사 때는 이 문항 대신 가산점(운영 설정)을 씁니다.</p>
     <div class="tabs" role="tablist">${SUP_COMP.map(x => `<button role="tab" class="tab" aria-selected="${x.k === c.k}" data-supc="${x.k}">${x.k}</button>`).join('')}</div>
     <p class="meta"><b>정의(초안)</b> ${esc(c.def)} · <b>하위 요소</b> ${c.facets.map(esc).join(', ')}</p>
-    <div class="actions no-print"><button class="btn sm" id="supgen" ${state.supPend ? 'disabled' : ''}>${state.supPend ? 'AI 초안 작성 중…' : `AI로 ${c.k} 보완 문항 8개 만들기`}</button><span class="meta" id="supmsg" aria-live="polite">${esc(state.supMsg || '')}</span></div>
+    <div class="actions no-print"><button class="btn sm" id="supgen" ${state.supPend ? 'disabled' : ''}>${state.supPend ? 'AI 초안 작성 중…' : `AI로 ${c.k} 보완 문항 만들기(하위 요소별 2개씩)`}</button><span class="meta" id="supmsg" aria-live="polite">${esc(state.supMsg || '')}</span></div>
     <div class="scrollx"><table class="tbl"><thead><tr><th>하위 요소</th><th>문항</th><th>방향</th><th>출처</th><th>상태</th><th></th></tr></thead><tbody>${rows.map(x => `<tr><td class="meta">${esc(x.facet)}</td><td>${esc(x.q)}${x.why ? `<br><span class="meta">${esc(x.why)}</span>` : ''}</td><td>${x.rev ? '역문항' : '정문항'}</td><td class="meta">${esc(x.src || '')}</td><td>${tag(x)}</td><td class="no-print">${x.status !== '승인' ? `<button class="linkbtn" data-supok="${x.id}">승인</button> ` : ''}${x.status !== '반려' ? `<button class="linkbtn" data-supno="${x.id}">반려</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`);
 }
 function bindSupBank() {
@@ -5306,7 +5306,7 @@ function bindSupBank() {
       if (!r.ok || !j.result) throw new Error(j.error || 'AI 연결 안 됨');
       const B = bank(), S = B.sup = { items: [...supBankItems()] }, at = todayISO();
       j.result.items.forEach((x, k) => S.items.push({ id: 'a' + Date.now().toString(36) + k, comp: c.k, facet: x.facet, q: x.stem, rev: !!x.reverse_keyed, why: x.rationale, status: '검토 대기', src: `AI 초안(${j.model || 'AI'}) ${at}`, at }));
-      saveBank(); state.supMsg = `${j.result.items.length}개 초안을 만들었습니다. 문장을 확인하고 승인하세요.`;
+      saveBank(); const miss = j.result.missing_facets || []; state.supMsg = `${j.result.items.length}개 초안을 만들었습니다(하위 요소별 ${c.facets.map(f => `${f} ${j.result.items.filter(x => x.facet === f).length}`).join(' · ')}). ${miss.length ? `${miss.join('·')}은(는) 2개가 안 돼 한 번 더 만들어 보세요. ` : ''}문장을 확인하고 승인하세요.`;
     } catch (e) { state.supMsg = `AI 초안을 만들지 못했습니다(${e.message}). 지금은 규칙 기반 기본 문항을 그대로 씁니다.`; }
     state.supPend = false; renderItemBank();
   };
