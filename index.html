@@ -924,13 +924,19 @@ body.no-demo .phase, body.no-demo .badge.amber, body.no-demo .resfoot, body.no-d
 .itq { max-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .iblist td:not(.itq) { white-space: nowrap; }
 .ibtbl { width: 100%; table-layout: fixed; }
-.ibtbl { min-width: 560px; } .ibtbl .ibc1 { width: 12%; } .ibtbl .ibc2 { width: 17%; } .ibtbl .ibc3 { width: 23%; } .ibtbl .ibc6 { width: 20%; } .ibtbl .ibc4 { width: 14%; } .ibtbl .ibc5 { width: 14%; }
+.ibtbl { min-width: 560px; }
+.six-edit { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px; } .six-eds { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; margin: 6px 0; }
+.six-ed { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .six-ed select { min-width: 0; } .six-ed.chk { justify-content: flex-start; } .ibtbl .ibc1 { width: 12%; } .ibtbl .ibc2 { width: 17%; } .ibtbl .ibc3 { width: 23%; } .ibtbl .ibc6 { width: 20%; } .ibtbl .ibc4 { width: 14%; } .ibtbl .ibc5 { width: 14%; }
 .iblist .ibtbl td { white-space: normal; word-break: keep-all; vertical-align: middle; }
 .ibtbl th { padding: 0; } .ibsort { all: unset; cursor: pointer; display: flex; gap: 4px; align-items: center; padding: 7px 10px 7px 0; font-weight: 700; }
 .ibsort span { color: var(--muted); font-size: 11px; } .ibsort:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .ibbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0 8px; } .ibbar .ibn { margin-left: auto; }
-.ibsel { gap: 10px 14px; } .ibsel label { display: flex; gap: 6px; align-items: center; }
-.ibsel select { font: inherit; font-size: 13.5px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); max-width: 13em; }
+.ibsel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 6px 10px; align-items: end; }
+.ibsel label { display: flex; flex-direction: column; gap: 2px; min-width: 0; } .ibsel label .meta { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ibsel select { width: 100%; } .ibsel .linkbtn { white-space: nowrap; padding-bottom: 6px; }
+@media (max-width: 520px) { .ibsel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.ibsixnote { max-width: none; margin: 0 0 8px; font-size: 13px; word-break: keep-all; }
+.ibsel select { font: inherit; font-size: 13.5px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); max-width: none; }
 .ibbar .chip { border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 13px; cursor: pointer; }
 .ibbar .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .ibwhy { border-left: 3px solid var(--line); padding: 4px 0 4px 12px; margin: 10px 0 4px; font-size: 14px; }
@@ -4711,7 +4717,7 @@ function renderIntro() {
   const retest = isEnd && H.length && !H.some(h => h.end);
   const needRetake = last && last.verdict === '재실시';
   const doneNow = H.length && !needRetake && (!isEnd || H.some(h => h.end));
-  const pg0 = sGet('user', 'progress'), pg = pg0 && pg0.ans && pg0.ans.length === ITEMS.length && (pg0.coreAns || []).length === CORE_ITEMS.length && (pg0.basicAns || []).length === BASIC_ITEMS.length ? pg0 : null, pgN = pg ? [pg.ans, pg.coreAns, pg.basicAns].reduce((a, arr) => a + arr.filter(v => v !== null).length, 0) : 0;
+  const pg0 = sGet('user', 'progress'), pg = pg0 && pg0.ans && pg0.ans.length === ITEMS.length && (pg0.coreAns || []).length === CORE_ITEMS.length && (pg0.basicAns || []).length === BASIC_ITEMS.length ? pg0 : null, pgN = pg ? [pg.ans, pg.coreAns, pg.basicAns, pg.supArr || []].reduce((a, arr) => a + arr.filter(v => v !== null).length, 0) : 0;
   const title = retest ? '학기말 재진단' : '3종 진단';
   const status = !H.length ? '아직 응시 기록이 없습니다. 입학 직후 진단으로 시작합니다.'
     : needRetake ? `최근 응시(${last.date})가 재실시 판정을 받았습니다. 문항을 천천히 읽고 다시 응시해 주세요.`
@@ -4723,33 +4729,53 @@ function renderIntro() {
     <p class="lede">${status}</p>
     <ul class="facts">
       <li><b>직업기초역량진단</b> 직업기초진단검사 137문항(선택형 23 · 척도형 114, 7점 척도)과 2026 NCS 표준 신설 하위능력 [AI 신규] 20문항 · 10개 요인과 7영역 21개 하위능력으로 결과를 냅니다</li>
-      <li><b>핵심역량진단</b> 기존 참(眞)인성/리더십 72문항(참인성 6요인 · 참리더십 3요인, 5점 척도)과 [AI 신규] AI 책임 활용 2문항 · 결과는 대학 6대 핵심역량과도 연결해 보여 줍니다</li>
+      <li><b>핵심역량진단</b> 기존 참(眞)인성/리더십 72문항(참인성 6요인 · 참리더십 3요인, 5점 척도)과 [AI 신규] AI 책임 활용 2문항 · 결과는 대학 6대 핵심역량과도 연결해 보여 줍니다${supInDiag(retest) ? ` · 입학 직후 첫 진단에는 6대 핵심역량(전문성·자기주도성) 보완 문항 ${supItems().length}개가 끝에 붙습니다` : ''}</li>
       <li><b>기초학습역량진단</b> 기존 기초학습능력진단 국어·수학·영어 각 20문항(60문항, 5지선다) · 학기말에는 같은 번호의 후보 문항(B형)으로 다시 잽니다</li>
       <li>세 진단은 하나씩 나눠 받을 수 있습니다. 한 진단을 마칠 때마다 쉬었다가 나중에 이어서 받으면 됩니다.</li>
       <li>응답 시간과 일관성을 함께 살펴, 성의 없이 답한 경우 다시 응시하도록 안내합니다.</li>
     </ul>
-    ${pgN ? `<div class="resume"><p><b>진행 중인 진단이 있습니다</b> ${pgN} / ${QSEQ.length}문항 응답 · 마지막 저장 ${esc(pg.at || '')}${pg.form === 'B' ? ' · 학기말 B형' : ''}</p><div class="actions"><button class="btn" id="resume">이어서 응시</button><button class="linkbtn" id="discard">처음부터 다시</button></div></div>` : ''}
+    ${pgN ? `<div class="resume"><p><b>진행 중인 진단이 있습니다</b> ${pgN} / ${QSEQ.length || ITEMS.length + CORE_ITEMS.length + BASIC_ITEMS.length + (pg.supIds || []).length}문항 응답 · 마지막 저장 ${esc(pg.at || '')}${pg.form === 'B' ? ' · 학기말 B형' : ''}</p><div class="actions"><button class="btn" id="resume">이어서 응시</button><button class="linkbtn" id="discard">처음부터 다시</button></div></div>` : ''}
     <div class="actions">
       ${doneNow ? '<button class="btn" data-go="result">결과 보기</button><button class="btn ghost" id="start">다시 응시(시연)</button>' : `<button class="btn" id="start">${retest ? '재진단 시작' : needRetake ? '다시 응시하기' : '진단 시작'}</button>`}
       ${opsMode() ? '' : `<button class="linkbtn" id="demo">시연용 응답으로 ${retest ? '재진단' : '결과'} 보기</button>`}
       <button class="linkbtn" id="demo2">불성실 응답 시연(재실시 판정)</button>
     </div>`;
   setDial(last ? last.vals : AREAS.map(() => null), last ? { poly: true } : {}, last ? `${last.label} 결과입니다.` : '직업기초역량 7개 영역의 다이얼입니다. 영역을 마칠 때마다 눈금이 올라갑니다.');
-  document.getElementById('start').onclick = () => { newOrder(); resetDiag(); useForm(retest ? 'B' : 'A'); state.step = 'quiz'; render(); };
+  document.getElementById('start').onclick = () => { newOrder(); resetDiag(); useForm(retest ? 'B' : 'A'); buildQseq(supInDiag(retest) ? supItems().map(x => x.id) : null); state.step = 'quiz'; render(); };
   if (document.getElementById('demo')) document.getElementById('demo').onclick = () => { fillDemo(false, retest); go(retest ? 'growth' : 'result'); if (retest) { state.pendingSnap = false; snapshot(); render(); } };
   document.getElementById('demo2').onclick = () => { fillDemo(true); go('result'); };
   const rs = document.getElementById('resume');
-  if (rs) rs.onclick = () => { useForm(pg.form || 'A'); Object.assign(state, { ans: pg.ans, coreAns: pg.coreAns, basicAns: pg.basicAns, times: pg.times, order: pg.order, qi: Math.min(pg.qi, QSEQ.length - 1), relOverride: false, pendingSnap: true, step: 'quiz' }); render(); };
+  if (rs) rs.onclick = () => { useForm(pg.form || 'A'); state.supArr = pg.supArr || null; buildQseq(pg.supIds || null); Object.assign(state, { ans: pg.ans, coreAns: pg.coreAns, basicAns: pg.basicAns, times: { sup: [], ...pg.times }, order: pg.order, qi: Math.min(pg.qi, QSEQ.length - 1), relOverride: false, pendingSnap: true, step: 'quiz' }); render(); };
   const dc = document.getElementById('discard');
   if (dc) dc.onclick = () => { sSet('user', 'progress', null); renderIntro(); };
 }
 
-const QSEQ = [...ITEMS.map((_, k) => ({ set: 'ncs', k })), ...CORE_ORDER.map(k => ({ set: 'core', k })), ...BASIC_ITEMS.map((_, k) => ({ set: 'basic', k }))];
-function ansArr(set) { return set === 'ncs' ? state.ans : set === 'core' ? state.coreAns : state.basicAns; }
-function qType(q) { return q.set === 'ncs' ? ITEMS[q.k].t : q.set === 'core' ? 'self' : 'ach'; }
+/* 문항 순서. 입학 직후 첫 진단에는 핵심역량진단 끝에 6대 핵심역량 보완 문항(set 'sup', 승인 문항 중 학생별 16문항)을 붙임.
+   보완 문항은 핵심역량진단의 일부로 보여 주고(진행 막대·안내), 점수는 9요인이 아니라 6대 핵심역량(전문성·자기주도성)에만 씀 */
+let QSEQ = [];
+function buildQseq(ids) {
+  state.supIds = ids && ids.length ? ids : null;
+  state.supArr = state.supIds ? (state.supArr && state.supArr.length === state.supIds.length ? state.supArr : state.supIds.map(() => null)) : [];
+  QSEQ = [...ITEMS.map((_, k) => ({ set: 'ncs', k })), ...CORE_ORDER.map(k => ({ set: 'core', k })), ...(state.supIds || []).map((_, k) => ({ set: 'sup', k })), ...BASIC_ITEMS.map((_, k) => ({ set: 'basic', k }))];
+}
+/* 이번 응시에 보완 문항을 넣을지: 학기말 재진단이 아니고, 아직 보완 문항 응답이 없을 때 */
+const supInDiag = retest => !retest && !(state.history || []).some(h => h.end) && !(supSaved() && supSaved().v);
+const supItemById = id => supItems().find(x => x.id === id) || [...supBankItems(), ...SUP_RULE].find(x => x.id === id);
+const dGrp = set => (set === 'sup' ? 'core' : set);
+/* 진단별 진행률(보완 문항은 핵심역량진단에 합쳐 셈) */
+const diagProg = () => DIAGS.map(d => { const a = [...ansArr(d.id), ...(d.id === 'core' ? ansArr('sup') : [])]; return a.filter(v => v !== null).length / a.length; });
+function ansArr(set) { return set === 'ncs' ? state.ans : set === 'core' ? state.coreAns : set === 'sup' ? state.supArr || [] : state.basicAns; }
+function qType(q) { return q.set === 'ncs' ? ITEMS[q.k].t : q.set === 'core' || q.set === 'sup' ? 'self' : 'ach'; }
+/* 진단 안에서 받은 보완 문항 응답을 점수로 저장(스냅샷이 supSaved()를 씀) */
+buildQseq(null);
+function saveSupFromDiag() {
+  if (!state.supIds || !state.supArr || state.supArr.some(v => v == null)) return;
+  const items = state.supIds.map(supItemById).filter(Boolean), A = Object.fromEntries(state.supIds.map((id, k) => [id, state.supArr[k]]));
+  sSet('user', 'sup', { ans: A, v: supScore(items, A), items: state.supIds, at: todayISO(), inDiag: true });
+}
 function resetDiag() {
   state.ans = new Array(ITEMS.length).fill(null); state.coreAns = new Array(CORE_ITEMS.length).fill(null); state.basicAns = new Array(BASIC_ITEMS.length).fill(null);
-  state.times = { ncs: [], core: [], basic: [] }; state.qi = 0; state.relOverride = false; state.plan = null; state.pendingSnap = true;
+  state.times = { ncs: [], core: [], basic: [], sup: [] }; state.supArr = null; buildQseq(null); state.qi = 0; state.relOverride = false; state.plan = null; state.pendingSnap = true;
 }
 function coreScores() {
   const sc = CORE_ITEMS.map((it, k) => { const v = state.coreAns[k]; if (v == null) return null; return ((it.rev ? 6 - v : v) - 1) / 4 * 100; });
@@ -4795,7 +4821,7 @@ function basicScores() {
 }
 function reliability() {
   const R = state.rel;
-  const seq = QSEQ.map(q => ({ q, t: qType(q), time: state.times[q.set][q.k], v: ansArr(q.set)[q.k] }));
+  const seq = QSEQ.map(q => ({ q, t: qType(q), time: (state.times[q.set] || [])[q.k], v: ansArr(q.set)[q.k] }));
   const timed = seq.filter(x => x.time != null);
   const speed = timed.length ? timed.filter(x => x.time < MIN_T[x.t]).length / timed.length * 100 : 0;
   const pairs = [...new Set(CORE_ITEMS.filter(it => it.pair).map(it => it.pair))].map(pid => {
@@ -4838,10 +4864,10 @@ function renderQuiz() {
     return;
   }
   const q = QSEQ[state.qi], set = q.set, arr = ansArr(set), cur = arr[q.k];
-  const it = set === 'ncs' ? ITEMS[q.k] : set === 'core' ? CORE_ITEMS[q.k] : BASIC_ITEMS[q.k];
+  const it = set === 'ncs' ? ITEMS[q.k] : set === 'core' ? CORE_ITEMS[q.k] : set === 'sup' ? supItemById(state.supIds[q.k]) || { q: '보완 문항', comp: '' } : BASIC_ITEMS[q.k];
   const t = qType(q);
-  const prog = DIAGS.map(d => { const a = ansArr(d.id); return a.filter(v => v !== null).length / a.length; });
-  const di = DIAGS.findIndex(d => d.id === set);
+  const prog = diagProg();
+  const di = DIAGS.findIndex(d => d.id === dGrp(set));
   let optHtml;
   if (t === 'self') {
     const m = it.sc || 5, ends = it.kind === 'S' || it.lvl ? S_ENDS : SCALE_ENDS;
@@ -4855,7 +4881,7 @@ function renderQuiz() {
     optHtml = `<ul class="opts${set === 'basic' ? ' opts-b' : ''}" role="radiogroup" aria-label="선택지">` + ord.map((k, pos) =>
       `<li class="opt"><input type="radio" name="a" id="o${k}" value="${k}" ${cur === k ? 'checked' : ''}><label for="o${k}"><span class="mk">${mk[pos]}</span><span>${ops[k] ? (set === 'basic' ? esc(ops[k]) : ops[k]) : `<span class="meta">그림의 ${mk[pos]}</span>`}</span></label></li>`).join('') + `</ul>`;
   }
-  const where = set === 'ncs' ? (it.kind === 'S' ? `선택형 ${it.no}` : it.kind === 'L' ? `척도형 ${it.no}번` : `[AI 신규] ${it.no} · ${it.s}`) : set === 'core' ? (it.no ? `${it.no}번` : '[AI 신규] AI 책임 활용') : `${it.sub} ${it.n}번${it.formB ? ' · B형' : ''}`;
+  const where = set === 'ncs' ? (it.kind === 'S' ? `선택형 ${it.no}` : it.kind === 'L' ? `척도형 ${it.no}번` : `[AI 신규] ${it.no} · ${it.s}`) : set === 'core' ? (it.no ? `${it.no}번` : '[AI 신규] AI 책임 활용') : set === 'sup' ? `6대 핵심역량 보완 · ${it.comp}` : `${it.sub} ${it.n}번${it.formB ? ' · B형' : ''}`;
   const last = state.qi === QSEQ.length - 1;
   $view.innerHTML = `
     <div class="dstep" aria-hidden="true">${DIAGS.map((d, i) => `<div class="${i === di ? 'on' : ''}"><span>${i + 1}. ${d.name}</span><i style="--p:${prog[i]}"></i></div>`).join('')}</div>
@@ -4864,6 +4890,7 @@ function renderQuiz() {
     ${set === 'basic' ? `<p class="meta qnote">기존 기초학습능력진단 ${esc(it.sub)} ${it.n}번${it.formB ? '(후보 문항, B형)' : ''} · 모르면 ⑤ '모르겠다'를 고르세요.</p>` : ''}
     ${set === 'ncs' && it.kind === 'N' ? '<p class="meta qnote"><span class="badge ai-new">AI 신규</span> 2026 NCS 표준에 새로 들어간 하위능력을 재려고 AI가 설계한 문항입니다. 예비 시행과 전문가 검토 전 초안입니다.</p>' : ''}
     ${set === 'core' ? `<p class="meta qnote">${it.no ? `기존 참(眞)인성/리더십 핵심역량진단 ${it.no}번 문항` : '<span class="badge ai-new">AI 신규</span> AI 책임 활용 보조 문항입니다. 핵심역량 점수에는 넣지 않고 따로 보여 줍니다.'}</p>` : ''}
+    ${set === 'sup' ? `<p class="meta qnote">대학 6대 핵심역량 중 3종 진단 문항이 적은 ${esc(it.comp)}을(를) 보완하는 문항입니다(입학 직후 첫 진단에만, ${state.supIds.length}문항).</p>` : ''}
     ${set === 'basic' ? basicFig(it) : `<p class="qtext">${it.q.replace(/\n/g, '<br>')}</p>`}
     <form id="f">${optHtml}</form>
     <div class="actions">
@@ -4871,11 +4898,11 @@ function renderQuiz() {
       <button class="btn" id="next" ${cur === null ? 'disabled' : ''}>${last ? '결과 보기' : '다음'}</button>
     </div>`;
   state.qStart = performance.now();
-  const note = set === 'ncs' ? '진행 중입니다. 답한 문항을 바탕으로 영역 눈금이 조금씩 채워집니다.' : set === 'core' ? '직업기초역량진단을 마쳤습니다. 이어서 핵심역량을 진단합니다.' : '마지막으로 기초학습역량을 진단합니다.';
+  const note = set === 'ncs' ? '진행 중입니다. 답한 문항을 바탕으로 영역 눈금이 조금씩 채워집니다.' : set === 'core' || set === 'sup' ? '직업기초역량진단을 마쳤습니다. 이어서 핵심역량을 진단합니다.' : '마지막으로 기초학습역량을 진단합니다.';
   const nowA = set === 'ncs' && it.a != null ? { now: it.a } : {};
   setDial(areaScores(set === 'ncs'), nowA, note);
-  const stamp = () => { const ta = state.times[set]; ta[q.k] = (ta[q.k] || 0) + (performance.now() - state.qStart); };
-  const keep = () => { if (state.user && state.user.role === 'student') sSet('user', 'progress', { qi: state.qi, ans: state.ans, coreAns: state.coreAns, basicAns: state.basicAns, times: state.times, order: state.order, form: state.form || 'A', at: localTime() }); };
+  const stamp = () => { const ta = state.times[set] = state.times[set] || []; ta[q.k] = (ta[q.k] || 0) + (performance.now() - state.qStart); };
+  const keep = () => { if (state.user && state.user.role === 'student') sSet('user', 'progress', { qi: state.qi, ans: state.ans, coreAns: state.coreAns, basicAns: state.basicAns, supIds: state.supIds, supArr: state.supArr, times: state.times, order: state.order, form: state.form || 'A', at: localTime() }); };
   document.querySelectorAll('input[name=a]').forEach(inp => inp.addEventListener('change', e => {
     arr[q.k] = Number(e.target.value);
     keep();
@@ -4885,7 +4912,7 @@ function renderQuiz() {
     if (t === 'self' && !last) { const qi0 = state.qi; setTimeout(() => { if (state.step === 'quiz' && state.qi === qi0 && document.getElementById('next')) document.getElementById('next').click(); }, 380); }
   }));
   document.getElementById('prev').onclick = () => { stamp(); state.qi--; keep(); render(); };
-  document.getElementById('next').onclick = () => { stamp(); if (last) { state.step = 'result'; (state.seen = state.seen || {}).result = true; if (state.user && state.user.role === 'student') sSet('user', 'progress', null); } else { state.qi++; keep(); if (QSEQ[state.qi].set !== set) state.step = 'dbreak'; } render(); window.scrollTo({ top: 0 }); };
+  document.getElementById('next').onclick = () => { stamp(); if (set === 'sup' && QSEQ[state.qi + 1] && QSEQ[state.qi + 1].set !== 'sup') saveSupFromDiag(); if (last) { saveSupFromDiag(); state.step = 'result'; (state.seen = state.seen || {}).result = true; if (state.user && state.user.role === 'student') sSet('user', 'progress', null); } else { state.qi++; keep(); if (dGrp(QSEQ[state.qi].set) !== dGrp(set)) state.step = 'dbreak'; } render(); window.scrollTo({ top: 0 }); };
 }
 
 const POOL = '자유전공학부(공통)';
@@ -5181,9 +5208,19 @@ const SIX_UNLINKED = ['디지털책임의식', '산업안전보건의식'];
 /* 6대 핵심역량 점수: 직업기초(2026 표준 하위능력, 위 연결 가중 평균)·핵심역량진단(9요인 연결, 초안)·기초학습을 운영 설정의 비중으로 합침(없는 출처는 빼고 비중 재조정)
    ext.sup: 입학 직후 보완 문항 점수(전문성·자기주도성). 핵심역량진단과 같은 자기보고라 핵심역량 몫에 함께 넣음(9요인 연결이 있으면 둘의 평균)
    ext.bonus: 재검사 가산점(전문성 = 전공 성적·목표 직무 능력단위 이수율, 자기주도성 = 자기주도 학습 실천률). 진단 점수에 더하고 100점을 넘지 않음 */
+/* 관리자가 문항 은행에서 바꾼 연결(bank().sixMap)을 SIX_CORE 기본 연결 위에 덮어씀.
+   sixMap.sub[하위능력] = { 역량: 1 또는 0.5 }, sixMap.fac[요인] = [역량…]. 항목이 있으면 그 하위능력·요인의 기본 연결은 모두 그것으로 바뀜 */
+function sixCoreNow() {
+  let M = {}; try { M = bank().sixMap || {}; } catch (e) { /* 문항 은행을 아직 못 읽는 초기 계산 */ } const MS = M.sub || {}, MF = M.fac || {};
+  return SIX_CORE.map(x => {
+    const sub = Object.fromEntries(Object.entries(x.sub).filter(([n]) => !(n in MS)));
+    Object.entries(MS).forEach(([n, w]) => { if (w[x.k]) sub[n] = w[x.k]; });
+    return { ...x, sub, fac: [...x.fac.filter(f => !(f in MF)), ...Object.keys(MF).filter(f => MF[f].includes(x.k))] };
+  });
+}
 function sixFrom(subs, cf, basic, ext) {
   const W = settingsNow().six || { ncs: 50, core: 40, basic: 10 };
-  return SIX_CORE.map(x => {
+  return sixCoreNow().map(x => {
     const ws = subs ? Object.entries(x.sub).map(([n, w]) => [subs[SUBNAMES.indexOf(n)], w]).filter(([v]) => v != null) : [];
     const wsum = ws.reduce((a, [, w]) => a + w, 0), ncsV = wsum ? Math.round(ws.reduce((a, [v, w]) => a + v * w, 0) / wsum) : null;
     const cv = cf ? x.fac.map(f => cf[CORE_FNAMES.indexOf(f)]).filter(v => v != null) : [], coreV = cv.length ? Math.round(mean(cv)) : null;
@@ -5295,7 +5332,7 @@ function supBankHtml() {
   const c = SUP_COMP.find(x => x.k === state.supComp) || SUP_COMP[0], B = supBankItems(), pools = Object.fromEntries(c.facets.map(f => [f, supPool(c.k, f)]));
   const rows = [...B.filter(x => x.comp === c.k && x.id[0] !== 'r'), ...SUP_RULE.filter(x => x.comp === c.k).map(x => ({ ...x, status: (B.find(y => y.id === x.id) || {}).status === '반려' ? '반려' : '승인' }))];
   const tag = x => `<span class="st st-${x.status}">${x.status}</span>${(P => (P && P.some(y => y.id === x.id) ? ` <span class="badge">${P.length > SUP_PER_FACET ? `순환(${P.length}개 중 ${SUP_PER_FACET}개)` : '사용 중'}</span>` : ''))(pools[x.facet])}`;
-  return panelH('p-ibsup', '⑤ 6대 핵심역량 보완 문항', '입학 직후 첫 진단에만', `<p class="meta">3종 진단으로 근거가 부족한 <b>전문성</b>(핵심역량진단 문항 없음)과 <b>자기주도성</b>(직업기초 연결 없음)을 첫 진단 때 5점 자기보고 문항으로 보완합니다. 학생 한 명에게는 역량마다 8문항(하위 요소별 정문항 1·역문항 1)이 나갑니다. AI 초안은 승인해야 쓰이고, 하위 요소에 승인한 AI 문항이 2개 이상이면 기본 문항 대신 그 문항들을 씁니다. 후보가 2개보다 많으면 학번에 따라 학생마다 돌아가며 씁니다. 재검사 때는 이 문항 대신 가산점(운영 설정)을 씁니다.</p>
+  return panelH('p-ibsup', '⑤ 6대 핵심역량 보완 문항', '입학 직후 첫 진단에만', `<p class="meta">3종 진단으로 근거가 부족한 <b>전문성</b>(핵심역량진단 문항 없음)과 <b>자기주도성</b>(직업기초 연결 없음)을 첫 진단 때 핵심역량진단 끝에 붙는 5점 자기보고 문항으로 보완합니다(이미 진단을 마친 학생은 따로 응답). 학생 한 명에게는 역량마다 8문항(하위 요소별 정문항 1·역문항 1)이 나갑니다. AI 초안은 승인해야 쓰이고, 하위 요소에 승인한 AI 문항이 2개 이상이면 기본 문항 대신 그 문항들을 씁니다. 후보가 2개보다 많으면 학번에 따라 학생마다 돌아가며 씁니다. 재검사 때는 이 문항 대신 가산점(운영 설정)을 씁니다.</p>
     <div class="tabs" role="tablist">${SUP_COMP.map(x => `<button role="tab" class="tab" aria-selected="${x.k === c.k}" data-supc="${x.k}">${x.k}</button>`).join('')}</div>
     <p class="meta"><b>정의(초안)</b> ${esc(c.def)} · <b>하위 요소</b> ${c.facets.map(esc).join(', ')}</p>
     <div class="actions no-print"><button class="btn sm" id="supgen" ${state.supPend ? 'disabled' : ''}>${state.supPend ? 'AI 초안 작성 중…' : `AI로 ${c.k} 보완 문항 만들기(하위 요소별 2개씩)`}</button><span class="meta" id="supmsg" aria-live="polite">${esc(state.supMsg || '')}</span></div>
@@ -5653,6 +5690,7 @@ function renderGrowth() {
 /* ---------- 플랫폼 공통 ---------- */
 function hasDiag() { return [state.ans, state.coreAns, state.basicAns].every(a => a && a.every(v => v !== null)); }
 function fillDemo(careless, retest) {
+  buildQseq(null);
   newOrder(); resetDiag(); useForm(retest ? 'B' : 'A');
   if (state.user && state.user.role === 'student') sSet('user', 'progress', null);
   const rnd = seededRand(careless ? 11 : retest ? 8 : 7);
@@ -7418,16 +7456,47 @@ const BASIC_SKILL = Object.fromEntries(Object.entries({
 /* 문항이 잇는 대학 6대 핵심역량(SIX_CORE와 같은 연결): 직업기초 = 하위능력(지침 제6조를 2026 표준으로 옮김, 0.5는 '일부'),
    핵심역량 = 9요인 연결(초안), 기초학습 = 과목(지침 제6조에서 수리능력은 의사소통, 기초외국어는 외국어). 연결이 없으면 빈 배열 */
 function sixOf(r) {
-  if (r.diag === '직업기초') return SIX_CORE.filter(x => x.sub[r.item.s]).map(x => ({ k: x.k, part: x.sub[r.item.s] < 1 }));
-  if (r.diag === '핵심역량') return SIX_CORE.filter(x => x.fac.includes(r.item.f)).map(x => ({ k: x.k, part: false }));
+  const C = sixCoreNow();
+  if (r.diag === '직업기초') return C.filter(x => x.sub[r.item.s]).map(x => ({ k: x.k, part: x.sub[r.item.s] < 1 }));
+  if (r.diag === '핵심역량') return C.filter(x => x.fac.includes(r.item.f)).map(x => ({ k: x.k, part: false }));
   return SIX_CORE.filter(x => x.basic && x.basic.includes(BASIC_SUBJ.indexOf(r.item.sub))).map(x => ({ k: x.k, part: false }));
 }
 /* 문항 목록 위 한 줄 안내: 탭마다 6대 핵심역량을 어떤 근거로 이었는지 */
 function ibSixNote(diag) {
-  const t = { 직업기초: '하위능력 → 6대 핵심역량은 교양교육과정 지침 제6조 표를 2026 직업공통능력 표준으로 옮긴 연결입니다. ‘일부’는 개편 대응표에서 일부만 반영된 하위능력(가중 0.5)입니다. 디지털책임의식·산업안전보건의식과 응답 확인 문항은 연결이 없습니다.',
-    핵심역량: '9요인 → 6대 핵심역량 연결은 초안입니다. 봉사와 AI 책임 활용(보조 척도)은 6대 역량 점수에 넣지 않습니다. 전문성은 이 진단에 문항이 없어 입학 직후 보완 문항으로 잽니다.',
-    기초학습: '지침 제6조에서 수리능력(기초연산·기초통계·도표분석·도표작성)과 문서이해·작성은 의사소통, 기초외국어는 외국어에 표시되어 있어 국어·수학은 의사소통, 영어는 외국어로 잇습니다. 세부 능력은 발문을 보고 붙인 분류(초안)입니다.' }[diag];
+  const t = { 직업기초: '지침 제6조를 2026 표준으로 옮긴 연결입니다(일부 = 가중 0.5). 문항을 고르면 ③에서 하위능력별로 바꿀 수 있습니다.',
+    핵심역량: '9요인 연결은 초안입니다. 봉사·AI 책임 활용은 기본 연결이 없고, 문항을 고르면 ③에서 요인별로 바꿀 수 있습니다.',
+    기초학습: '지침 제6조에 따라 국어·수학은 의사소통, 영어는 외국어입니다. 세부 능력은 발문을 보고 나눈 초안입니다.' }[diag];
   return t ? `<p class="meta ibsixnote">${t}</p>` : '';
+}
+/* ③ 패널: 고른 문항의 측정 능력(직업기초 하위능력·핵심역량 요인) 단위로 6대 핵심역량 연결을 바꿈. 같은 측정 능력의 모든 문항과 6대 역량 점수에 함께 적용 */
+function sixEditKey(r) {
+  if (r.diag === '직업기초' && r.item.s) return { kind: 'sub', name: r.item.s };
+  if (r.diag === '핵심역량' && CORE_FNAMES.includes(r.item.f)) return { kind: 'fac', name: r.item.f };
+  return null;
+}
+function sixEditHtml(r) {
+  const K = sixEditKey(r), M = bank().sixMap || {};
+  if (!K) return r.diag === '기초학습' ? '' : `<p class="meta"><b>대학 6대 핵심역량</b> ${r.diag === '직업기초' ? '응답 확인(타당도) 문항은 점수를 내지 않아 연결할 수 없습니다.' : 'AI 책임 활용은 보조 척도라 9요인 점수에 들어가지 않아 연결할 수 없습니다.'}</p>`;
+  const changed = !!(M[K.kind] && K.name in M[K.kind]), now = sixCoreNow();
+  const def = K.kind === 'sub' ? SIX_CORE.filter(x => x.sub[K.name]).map(x => x.k + (x.sub[K.name] < 1 ? '(일부)' : '')) : SIX_CORE.filter(x => x.fac.includes(K.name)).map(x => x.k);
+  const cell = x => {
+    const w = K.kind === 'sub' ? x.sub[K.name] || 0 : x.fac.includes(K.name) ? 1 : 0;
+    return K.kind === 'sub' ? `<label class="six-ed"><span>${esc(x.k)}</span><select data-sixw="${esc(x.k)}"><option value="0" ${!w ? 'selected' : ''}>연결 안 함</option><option value="0.5" ${w && w < 1 ? 'selected' : ''}>일부(0.5)</option><option value="1" ${w >= 1 ? 'selected' : ''}>연결</option></select></label>`
+      : `<label class="chk six-ed"><input type="checkbox" data-sixw="${esc(x.k)}" ${w ? 'checked' : ''}> ${esc(x.k)}</label>`;
+  };
+  return `<div class="six-edit"><h3 class="sub3">대학 6대 핵심역량 연결 · ${esc(K.name)}${changed ? ' <span class="badge">관리자 변경</span>' : ''}</h3>
+    <p class="meta">${K.kind === 'sub' ? '하위능력' : '요인'} '${esc(K.name)}'의 모든 문항과 학생의 6대 핵심역량 점수 계산에 함께 적용됩니다. 기본 연결(${K.kind === 'sub' ? '지침 제6조 → 2026 표준' : '초안'}): ${def.length ? def.map(esc).join(', ') : '연결 없음'}</p>
+    <div class="six-eds">${now.map(cell).join('')}</div>
+    <div class="actions no-print"><button class="btn sm" id="sixsave">연결 저장</button>${changed ? '<button class="btn ghost sm" id="sixreset">기본 연결로 되돌리기</button>' : ''}<span class="meta" id="sixmsg" aria-live="polite"></span></div></div>`;
+}
+function bindSixEdit(r) {
+  const K = sixEditKey(r), sv = document.getElementById('sixsave'); if (!K || !sv) return;
+  const put = val => { const B = bank(), M = B.sixMap = { sub: { ...((B.sixMap || {}).sub || {}) }, fac: { ...((B.sixMap || {}).fac || {}) } }; if (val == null) delete M[K.kind][K.name]; else M[K.kind][K.name] = val; M.by = state.user && state.user.name; M.at = todayISO(); saveBank(); renderItemBank(); };
+  sv.onclick = () => {
+    const els = [...document.querySelectorAll('[data-sixw]')];
+    put(K.kind === 'sub' ? Object.fromEntries(els.map(e => [e.dataset.sixw, +e.value]).filter(([, w]) => w > 0)) : els.filter(e => e.checked).map(e => e.dataset.sixw));
+  };
+  const rs = document.getElementById('sixreset'); if (rs) rs.onclick = () => put(null);
 }
 const sixTxt = r => (r.six.length ? r.six.map(x => x.k + (x.part ? '(일부)' : '')).join(', ') : '');
 const T_NAME = { ach: '성취형', sjt: '상황판단형', case: '사례형', self: '자기보고' };
@@ -7626,6 +7695,7 @@ function renderItemBank() {
         <tbody>${list.map(r => `<tr class="${r.key === sel.key ? 'me' : ''}" data-ib="${r.key}" tabindex="0" title="${esc(r.item.q.replace(/\n/g, ' '))}"><td>${r.grp === 'AI 신규' ? '<span class="badge ai-new">AI 신규</span>' : `<span class="meta">${r.grp}</span>`}</td><td>${esc(r.area)}</td><td><b>${esc(r.skill)}</b>${r.note ? ` <span class="meta">${r.note}</span>` : ''}</td><td>${r.six.length ? r.six.map(x => `${esc(x.k)}${x.part ? ' <span class="meta">일부</span>' : ''}`).join('<br>') : '<span class="meta">연결 없음</span>'}</td><td>${ibType(r)}</td><td>${stTag(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="meta">조건에 맞는 문항이 없습니다. 구분이나 영역 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`)}
     ${panelH('p-ibed', '③ AI 고도화와 검토', esc(sel.sub), `
       <p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel).construct_definition)}</p>
+      ${sixEditHtml(sel)}
       <div class="itm-pair">${itemHtml(sel.item, `A형(현행) · ${tName(sel.item) || T_NAME[sel.t]}${sel.anchor ? ' · 공통 문항' : ''}`)}
         ${cur ? itemHtml(cur.variant, `B형 평행 문항 · ${esc(cur.src || '')}${!draft && sel.r ? ` · ${sel.r.status}` : ' · 초안'}`) : `<div class="itm empty"><p class="meta">B형 문항이 없습니다.${sel.anchor ? ' 공통 문항은 A·B형에 똑같이 들어갑니다.' : ''}</p></div>`}</div>
       ${cur && cur.rationale ? `<p class="meta"><b>바꾼 이유</b> ${esc(cur.rationale)}</p>` : ''}
@@ -7645,7 +7715,7 @@ function renderItemBank() {
   if (ik) ik.onchange = () => { state.ibSkill = ik.value; state.ibDraft = null; renderItemBank(); };
   const i6 = document.getElementById('ibsix'); if (i6) i6.onchange = () => { state.ibSix = i6.value; state.ibDraft = null; renderItemBank(); };
   if (ic) ic.onclick = () => { state.ibArea = ''; state.ibSkill = ''; state.ibSix = ''; renderItemBank(); };
-  bindBatch(rows);
+  bindBatch(rows); bindSixEdit(sel);
   const rb = document.getElementById('ibrefbtn');
   if (rb) rb.onclick = () => { const w = rb.parentElement, on = !w.classList.contains('open'); w.classList.toggle('open', on); rb.setAttribute('aria-expanded', String(on)); };
   $view.querySelectorAll('[data-ibg]').forEach(b => b.onclick = () => { state.ibGrp = b.dataset.ibg; state.ibDraft = null; renderItemBank(); });
@@ -11589,10 +11659,10 @@ function openInbox() {
 
 /* ---------- 진단 나눠 받기: 한 진단을 마칠 때마다 쉬었다가 이어서 ---------- */
 function renderDBreak() {
-  const q = QSEQ[state.qi], di = DIAGS.findIndex(d => d.id === q.set), prev = DIAGS[di - 1];
-  const rest = QSEQ.filter(x => x.set === q.set), mins = Math.max(1, Math.ceil(rest.reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
+  const q = QSEQ[state.qi], di = DIAGS.findIndex(d => d.id === dGrp(q.set)), prev = DIAGS[di - 1];
+  const rest = QSEQ.filter(x => dGrp(x.set) === dGrp(q.set)), mins = Math.max(1, Math.ceil(rest.reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
   const allMins = Math.max(1, Math.ceil(QSEQ.slice(state.qi).reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
-  const prog = DIAGS.map(d => { const a = ansArr(d.id); return a.filter(v => v !== null).length / a.length; });
+  const prog = diagProg();
   let peek = '';
   if (prev.id === 'ncs') { const v = areaScores(), o = v.map((x, k) => k).sort((a, b) => v[b] - v[a]); peek = `<p class="dbpeek"><b>직업기초 미리 보기</b> 강점 ${AREAS[o[0]].short} ${Math.round(v[o[0]])}점 · 보완 ${AREAS[o[o.length - 1]].short} ${Math.round(v[o[o.length - 1]])}점. 세 진단을 모두 마치면 전체 결과와 AI 분석이 나옵니다.</p>`; }
   $view.innerHTML = `
