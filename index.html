@@ -767,7 +767,17 @@ a.brand:hover .brand-text b { color: var(--signal); }
 .logform .btn { justify-self: start; }
 /* 관리자 */
 .p-relstd { grid-column: span 5; }
-.p-ibbatch { grid-column: 1 / -1; }
+.p-ibbatch, .ibgrid .ibwide { grid-column: 1 / -1; } .p-ibgap { grid-column: span 6; } .p-ibsupgen { grid-column: span 6; }
+@media (max-width: 1100px) { .p-ibgap, .p-ibsupgen { grid-column: 1 / -1; } }
+.ibsteps ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.ibsteps button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto 1fr; column-gap: 8px; row-gap: 2px; width: 100%; height: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.ibsteps button .ibn-no { grid-row: 1 / 3; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; border: 1px solid var(--line); color: var(--muted); }
+.ibsteps button b { font-size: 14px; } .ibsteps button .meta { font-size: 12.5px; }
+.ibsteps button.todo .ibn-no { border-color: var(--accent, #2f4a8a); color: var(--accent, #2f4a8a); }
+.ibsteps button.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); } .ibsteps button.on .ibn-no { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.ibsteps button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (max-width: 900px) { .ibsteps ol { grid-template-columns: 1fr 1fr; } }
+.ibgentabs { margin: 0; } .ibwarnlist { margin: 8px 0; padding-left: 1.2em; } .ibver { display: inline-flex; gap: 6px; align-items: center; } .ibver input { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; width: 9em; }
 .ibbt { width: 100%; table-layout: fixed; } .ibbt .b1 { width: 3em; } .ibbt .b2 { width: 13%; } .ibbt .b5 { width: 17%; }
 .panel.p-ibbatch .ibbt td, .panel.p-ibbatch .ibbt th, .panel.p-ibbatch .ibbt td:last-child, .panel.p-ibbatch .ibbt th:last-child { white-space: normal; word-break: keep-all; text-align: left; vertical-align: top; }
 .ibbt .st { display: inline-block; margin: 0 4px 4px 0; } .ibbconf { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 4px; font-size: 14px; }
@@ -4866,7 +4876,8 @@ function renderQuiz() {
     return;
   }
   const q = QSEQ[state.qi], set = q.set, arr = ansArr(set), cur = arr[q.k];
-  const it = set === 'ncs' ? ITEMS[q.k] : set === 'core' ? CORE_ITEMS[q.k] : set === 'sup' ? supItemById(state.supIds[q.k]) || { q: '보완 문항', comp: '' } : BASIC_ITEMS[q.k];
+  const it0 = set === 'ncs' ? ITEMS[q.k] : set === 'core' ? CORE_ITEMS[q.k] : set === 'sup' ? supItemById(state.supIds[q.k]) || { q: '보완 문항', comp: '' } : BASIC_ITEMS[q.k];
+  const ed = (set === 'ncs' && ITEMS[q.k] === ITEMS_A[q.k]) || set === 'core' ? legacyEdit(set, q.k) : null, it = ed ? { ...it0, q: ed } : it0;
   const t = qType(q);
   const prog = diagProg();
   const di = DIAGS.findIndex(d => d.id === dGrp(set));
@@ -5330,52 +5341,20 @@ function renderSupSurvey() {
   };
 }
 /* 관리자: 문항 목록의 '핵심역량+' 탭(6대 핵심역량 보완 문항: AI 초안 → 검토 → 승인) */
-/* 핵심역량+ 탭: 두 역량의 보완 문항을 한 목록에. 필터 = 대학 6대 핵심역량(역량)·측정 능력(하위 요소)·구분 */
-function supRows() {
-  const B = supBankItems(), pools = {};
-  SUP_COMP.forEach(c => c.facets.forEach(f => { pools[c.k + '|' + f] = supPool(c.k, f); }));
-  const all = SUP_COMP.flatMap(c => [...B.filter(x => x.comp === c.k && x.id[0] !== 'r'), ...SUP_RULE.filter(x => x.comp === c.k).map(x => ({ ...x, status: (B.find(y => y.id === x.id) || {}).status === '반려' ? '반려' : '승인' }))]);
-  const ci = x => SUP_COMP.findIndex(c => c.k === x.comp), fi = x => SUP_COMP[ci(x)].facets.indexOf(x.facet);
-  all.sort((a, b) => ci(a) - ci(b) || fi(a) - fi(b) || a.rev - b.rev);
-  const grpOf = x => (x.id[0] === 'r' ? '기본' : 'AI 신규');
-  const comp = SUP_COMP.some(c => c.k === state.supComp) ? state.supComp : '';
-  const facets = SUP_COMP.filter(c => !comp || c.k === comp).flatMap(c => c.facets), facet = facets.includes(state.supFacet) ? state.supFacet : '';
-  const grp = ['기본', 'AI 신규'].includes(state.supGrp) ? state.supGrp : '전체';
-  const rows = all.filter(x => (!comp || x.comp === comp) && (!facet || x.facet === facet) && (grp === '전체' || grpOf(x) === grp));
-  const use = x => (P => (P && P.some(y => y.id === x.id) ? (P.length > SUP_PER_FACET ? `순환(${P.length}개 중 ${SUP_PER_FACET}개)` : '사용 중') : ''))(pools[x.comp + '|' + x.facet]);
-  const sel = rows.find(x => x.id === state.supSel) || rows.find(x => x.status === '검토 대기') || rows[0];
-  return { all, rows, use, sel, comp, facets, facet, grp, grpOf };
-}
-/* ② 패널(핵심역량+ 탭): 필터·AI 초안 만들기·문항 목록 */
-function supListBody() {
-  const { all, rows, use, sel, comp, facets, facet, grp, grpOf } = supRows();
-  const n = st => rows.filter(x => x.status === st).length, inC = x => !comp || x.comp === comp;
-  const genBtn = c => `<button class="btn sm no-print" data-supgen="${c.k}" ${state.supPend ? 'disabled' : ''}>${state.supPend === c.k ? 'AI 초안 작성 중…' : `AI로 ${c.k} 문항 만들기`}</button>`;
-  return `<p class="meta ibsixnote">3종 진단 문항이 적은 전문성·자기주도성을 입학 직후 첫 진단에서 핵심역량진단 끝에 붙는 5점 문항으로 보완합니다. 학생마다 역량별 8문항이 나가고, AI 문항은 하위 요소별 2개씩 만듭니다.</p>
-    <div class="ibbar ibsel"><label><span class="meta">대학 6대 핵심역량</span><select id="supcomp"><option value="">전체 역량</option>${SUP_COMP.map(c => `<option value="${c.k}" ${c.k === comp ? 'selected' : ''}>${c.k} (${all.filter(x => x.comp === c.k).length})</option>`).join('')}</select></label>
-      <label><span class="meta">측정 능력</span><select id="supfacet"><option value="">전체 측정 능력</option>${facets.map(f => `<option value="${esc(f)}" ${f === facet ? 'selected' : ''}>${esc(f)} (${all.filter(x => inC(x) && x.facet === f).length})</option>`).join('')}</select></label>
-      <span></span>${comp || facet ? '<button class="linkbtn" id="supclear">필터 지우기</button>' : ''}</div>
-    <div class="actions no-print">${SUP_COMP.filter(c => !comp || c.k === comp).map(genBtn).join('')}</div>
-    <div class="ibbar"><span class="meta">구분</span>${['전체', '기본', 'AI 신규'].map(g => `<button class="chip ${grp === g ? 'on' : ''}" data-supg="${g}" aria-pressed="${grp === g}">${g}${g === '전체' ? '' : ` ${all.filter(x => inC(x) && grpOf(x) === g).length}`}</button>`).join('')}<span class="meta ibn">${rows.length}문항 · 승인 ${n('승인')} · 검토 대기 ${n('검토 대기')} · 반려 ${n('반려')}</span></div>
-    <p class="meta" id="supmsg" aria-live="polite" ${state.supMsg ? '' : 'hidden'}>${esc(state.supMsg || '')}</p>
-    <div class="scrollx iblist"><table class="tbl ibtbl"><colgroup><col class="ibc1"><col class="ibc2"><col class="ibc3"><col class="ibc6"><col class="ibc4"><col class="ibc5"></colgroup><thead><tr><th>구분</th><th>영역</th><th>측정 능력</th><th>대학 6대 핵심역량</th><th>유형</th><th>상태</th></tr></thead><tbody>${rows.map(x => `<tr class="${sel && x.id === sel.id ? 'me' : ''}" data-supsel="${x.id}" tabindex="0" title="${esc(x.q)}"><td>${x.id[0] === 'r' ? '<span class="meta">기본</span>' : '<span class="badge ai-new">AI 신규</span>'}</td><td>${esc(x.comp)} 보완</td><td><b>${esc(x.facet)}</b>${x.rev ? ' <span class="meta">역문항</span>' : ''}</td><td>${esc(x.comp)}</td><td>척도형 5점</td><td><span class="st st-${x.status}">${x.status}</span>${use(x) ? `<br><span class="badge">${use(x)}</span>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="meta">조건에 맞는 문항이 없습니다. 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`;
-}
-/* ③ 패널(핵심역량+ 탭): 고른 문항의 내용·근거와 승인·반려 */
-function supDetailBody() {
-  const { use, sel } = supRows();
-  if (!sel) return '<p class="meta">조건에 맞는 문항이 없습니다. ②의 필터를 바꾸거나 AI로 문항을 만들어 보세요.</p>';
-  const c = SUP_COMP.find(x => x.k === sel.comp), P = supPool(c.k, sel.facet);
+/* 보완 문항 상세(문항 관리 4단계): 문항 내용·AI 측정 의도·사용 여부와 승인·반려 */
+function supDetailFor(sel) {
+  if (!sel) return '<p class="meta">고른 문항이 없습니다.</p>';
+  const c = SUP_COMP.find(x => x.k === sel.comp), P = supPool(c.k, sel.facet), inUse = P.some(y => y.id === sel.id), use = inUse ? (P.length > SUP_PER_FACET ? `순환(${P.length}개 중 ${SUP_PER_FACET}개)` : '사용 중') : '';
   return `<p class="meta"><b>${esc(c.k)} 정의(초안)</b> ${esc(c.def)}</p>
     <p class="meta"><b>하위 요소</b> ${c.facets.map(f => f === sel.facet ? `<b>${esc(f)}</b>` : esc(f)).join(', ')}</p>
     <div class="itm"><p class="meta">${esc(sel.facet)} · ${sel.rev ? '역문항(동의할수록 낮음)' : '정문항'} · ${esc(sel.src || '')}</p><p class="itm-q">${esc(sel.q)}</p><p class="meta">5점 척도(${SUP_SCALE[0]} ~ ${SUP_SCALE[4]})</p></div>
     ${sel.why ? `<p class="meta"><b>AI가 밝힌 측정 의도</b> ${esc(sel.why)}</p>` : ''}
-    <p class="meta"><b>상태</b> <span class="st st-${sel.status}">${sel.status}</span>${use(sel) ? ` <span class="badge">${use(sel)}</span>` : ''}${sel.reviewer ? ` · ${esc(sel.reviewer)} ${esc(sel.at || '')}` : ''}</p>
-    <p class="meta"><b>이 하위 요소에서 쓰는 문항</b> ${P.length}개(${P.filter(x => !x.rev).length}개 정문항 · ${P.filter(x => x.rev).length}개 역문항)${P.length > SUP_PER_FACET ? ' 중 학생마다 정·역 1개씩 돌아가며 씀' : ''}. 승인한 AI 문항이 2개 이상이 되면 기본 문항 대신 씁니다.</p>
+    <p class="meta"><b>상태</b> <span class="st st-${sel.status === '검토 대기' ? '초안' : sel.status}">${sel.status}</span>${use ? ` <span class="badge">${use}</span>` : ''}${sel.reviewer ? ` · ${esc(sel.reviewer)} ${esc(sel.at || '')}` : ''}</p>
+    <p class="meta"><b>이 하위 요소에서 쓰는 문항</b> ${P.length}개(정문항 ${P.filter(x => !x.rev).length} · 역문항 ${P.filter(x => x.rev).length})${P.length > SUP_PER_FACET ? ' 중 학생마다 정·역 1개씩 돌아가며 씀' : ''}. 승인한 AI 문항이 2개 이상이 되면 기본 문항 대신 씁니다.</p>
     <div class="actions no-print">${sel.status !== '승인' ? `<button class="btn" data-supok="${sel.id}">승인</button>` : ''}${sel.status !== '반려' ? `<button class="btn ghost" data-supno="${sel.id}">반려</button>` : ''}</div>
-    <p class="meta">학기말 재진단에서는 이 문항 대신 가산점(전공 성적·직무 능력단위 이수, 자기주도 학습 실천률)을 씁니다.</p>`;
+    <p class="meta">입학 직후 첫 진단에서 핵심역량진단 끝에 붙습니다. 학기말 재진단에서는 이 문항 대신 가산점(전공 성적·직무 능력단위 이수, 자기주도 학습 실천률)을 씁니다.</p>`;
 }
 function bindSupBank() {
-  if (state.ibDiag !== '핵심역량+') return;
   const box = $view, el = id => document.getElementById(id);
   if (el('supcomp')) el('supcomp').onchange = e => { state.supComp = e.target.value; state.supFacet = ''; state.supSel = null; renderItemBank(); };
   if (el('supfacet')) el('supfacet').onchange = e => { state.supFacet = e.target.value; state.supSel = null; renderItemBank(); };
@@ -7620,8 +7599,8 @@ function ibGroups(rows) {
   return [...NCS_FACTORS.map((f, i) => ({ id: 'f' + i, name: f.k, rows: ncs.filter(r => r.item.f === i) })), { id: 'new', name: '[AI 신규] 신설 하위능력', rows: ncs.filter(r => r.item.kind === 'N') }];
 }
 function batchHtml(rows) {
-  if (state.ibDiag === '기초학습') return panelH('p-ibbatch', '④ 묶음 초안과 일괄 검토', '', `<p class="meta">기초학습은 기존 검사지의 후보 문항을 하나씩 비교해 평행한 것만 승인하므로 AI 일괄 생성을 열지 않았습니다. 정답은 서버에 있어 후보 문항도 바로 채점됩니다.</p>`);
-  if (state.ibDiag !== '직업기초') return panelH('p-ibbatch', '④ 묶음 초안과 일괄 검토', '', `<p class="meta">${state.ibDiag} 문항은 아직 시연용 더미라 일괄 생성을 열지 않았습니다. 실제 문항으로 바꾼 뒤 열면, 그때 만든 평행 문항이 새 문항에 맞게 붙습니다. 지금 만든 초안은 문항 교체 후 쓸 수 없습니다.</p>`);
+  if (state.ibDiag === '기초학습') return panelH('p-ibbatch', '묶음으로 한꺼번에 만들기', '', `<p class="meta">기초학습은 기존 검사지의 후보 문항을 하나씩 비교해 평행한 것만 승인하므로 AI 일괄 생성을 열지 않았습니다. 정답은 서버에 있어 후보 문항도 바로 채점됩니다.</p>`);
+  if (state.ibDiag !== '직업기초') return panelH('p-ibbatch', '묶음으로 한꺼번에 만들기', '', `<p class="meta">${state.ibDiag} 문항은 아직 시연용 더미라 일괄 생성을 열지 않았습니다. 실제 문항으로 바꾼 뒤 열면, 그때 만든 평행 문항이 새 문항에 맞게 붙습니다. 지금 만든 초안은 문항 교체 후 쓸 수 없습니다.</p>`);
   const G = ibGroups(rows), g = G.find(x => x.id === state.ibBatchG) || G[0], B = bank();
   const todo = g.rows.filter(r => !r.anchor && !(r.r && ['승인', '초안'].includes(r.r.status)));
   const drafts = g.rows.filter(r => !r.anchor && r.r && r.r.status === '초안');
@@ -7629,7 +7608,7 @@ function batchHtml(rows) {
   const run = state.ibBatch, fail = (state.ibBatchFail || []).filter(x => g.rows.some(r => r.key === x.key));
   const st = c => g.rows.filter(r => !r.anchor && r.r && r.r.status === c).length;
   const flagsOf = r => draftFlags(r, r.r.variant.q, peers);
-  return panelH('p-ibbatch', '④ 묶음 초안과 일괄 검토', '직업기초 · 요인 단위', `
+  return panelH('p-ibbatch', '묶음으로 한꺼번에 만들기', '직업기초 · 요인 단위', `
     <p class="meta">요인 하나(9~18문항)를 묶어 AI 초안을 한꺼번에 만들고, 같은 묶음 안에서 원 문항과의 유사도, 문항 간 중복, 역문항 방향, 길이를 자동 점검합니다. 승인은 사람이 합니다. 점검에 걸린 초안은 일괄 승인에서 빠지고 ③에서 하나씩 봐야 합니다.</p>
     <div class="ibbar ibsel"><label><span class="meta">묶음</span><select id="ibbg">${G.map(x => `<option value="${x.id}" ${x.id === g.id ? 'selected' : ''}>${esc(x.name)} (평행 ${x.rows.filter(r => !r.anchor).length})</option>`).join('')}</select></label>
       <span class="meta">평행 대상 ${g.rows.filter(r => !r.anchor).length} · 초안 ${st('초안')} · 승인 ${st('승인')} · 반려 ${st('반려')} · 남음 ${todo.length}</span></div>
@@ -7680,116 +7659,343 @@ function bindBatch(rows) {
   if ($('ibbok')) $('ibbok').onclick = act('승인');
   if ($('ibbno')) $('ibbno').onclick = act('반려');
 }
-function renderItemBank() {
-  const rows = bankRows(), B = bank();
-  state.ibDiag = state.ibDiag || '직업기초'; state.ibGrp = state.ibGrp || '전체';
-  /* 같은 목록 안에서 문항만 바꿔 고를 때는 목록 스크롤 위치를 유지 */
-  const prevBox = document.querySelector(".iblist"), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, JSON.stringify(state.ibSort)].join("|");
-  const keepTop = state.ibViewKey === viewKey ? prevTop : 0; state.ibViewKey = viewKey;
-  const supMode = state.ibDiag === '핵심역량+';
-  const list0 = rows.filter(r => r.diag === (supMode ? '핵심역량' : state.ibDiag));
-  const ibGrps = ['전체', ...new Set(list0.map(r => r.grp))];
-  const ibGrp = ibGrps.includes(state.ibGrp) ? state.ibGrp : '전체';
+/* ---------- 문항 은행: 관리자 업무 5단계 ----------
+   1 기존 문항 등록 → 2 기존 문항 검토(측정 능력·6대 핵심역량 연결 확인, 사용 확정 또는 수정본 등록) →
+   3 AI 문항 후보 생성(빈 영역 채우기: 전문성·자기주도성 보완 / 학기말 B형 평행 문항) → 4 후보 검토·확정(한 대기열) → 5 진단별 문항 확정(학기 검사지 버전)
+   기존 문항 문구를 직접 고치면 예전 점수와 비교할 수 없어, 고친 문장은 '수정본'으로 따로 등록해 검토·승인 뒤 검사지에 씀(bank().legacy) */
+const IB_STEPS = [
+  { n: 1, t: '기존 문항 등록', d: '3종 진단 기존 문항 업로드' },
+  { n: 2, t: '기존 문항 검토', d: '측정 능력·6대 연결 확인, 사용 확정·수정본' },
+  { n: 3, t: 'AI 문항 후보 생성', d: '빈 영역 채우기 · 학기말 평행 문항' },
+  { n: 4, t: '후보 검토·확정', d: '체크리스트로 승인·반려' },
+  { n: 5, t: '진단별 문항 확정', d: '학기 검사지 버전 확정' }
+];
+const IB_DIAGS = ['직업기초', '핵심역량', '기초학습'];
+const legacyOf = rows => rows.filter(r => r.grp === '기존');
+const legacyRec = key => (bank().legacy || {})[key] || null;
+/* 기존 문항 검토 상태: 미검토 · 사용 확정 · 수정본 검토 대기 · 수정본 반영 · 수정본 반려 */
+function legacySt(key) {
+  const L = legacyRec(key);
+  if (!L) return '미검토';
+  if (L.edit) return L.edit.status === '승인' ? '수정본 반영' : L.edit.status === '반려' ? '수정본 반려' : '수정본 검토 대기';
+  return '사용 확정';
+}
+/* 진단 화면에 쓰는 기존 문항 문장: 승인된 수정본이 있으면 그것(문장만 바꾸고 측정 능력·배점은 그대로) */
+function legacyEdit(set, k) { const L = legacyRec(bankKey(set, k)); return L && L.edit && L.edit.status === '승인' ? L.edit.q : null; }
+function saveLegacy(key, rec) { const B = bank(); B.legacy = { ...(B.legacy || {}) }; if (rec) B.legacy[key] = rec; else delete B.legacy[key]; saveBank(); }
+/* 4단계 대기열: 평행 문항 초안(직업기초·핵심역량)·기초학습 B형 후보·기존 문항 수정본·보완 문항(AI) */
+function ibCands(rows) {
+  const out = [];
+  rows.forEach(r => {
+    if (r.anchor) return;
+    if (r.diag === '기초학습') { out.push({ id: r.key, kind: '평행 문항', diag: r.diag, skill: r.skill, six: sixTxt(r), st: r.r ? r.r.status : '검토 대기', src: r.r ? r.r.src || '기존 검사지 후보' : '기존 검사지 후보 1·2', row: r }); return; }
+    if (r.r && r.r.variant) out.push({ id: r.key, kind: '평행 문항', diag: r.diag, skill: r.skill, six: sixTxt(r), st: ['초안', '검토 중'].includes(r.r.status) ? '검토 대기' : r.r.status, src: r.r.src || '', row: r });
+  });
+  Object.entries(bank().legacy || {}).forEach(([key, L]) => { const r = L.edit && rows.find(x => x.key === key); if (r) out.push({ id: 'edit:' + key, kind: '수정본', diag: r.diag, skill: r.skill, six: sixTxt(r), st: L.edit.status, src: `${L.edit.by || ''} 수정 ${L.edit.at || ''}`, row: r, edit: L.edit }); });
+  supBankItems().filter(x => x.id[0] !== 'r').forEach(x => out.push({ id: 'sup:' + x.id, kind: '보완 문항', diag: '핵심역량+', skill: x.facet, six: x.comp, st: x.status, src: x.src || '', sup: x }));
+  return out;
+}
+const ibLocks = () => (bank().formLocks || []);
+function ibStepStat(rows) {
+  const L = legacyOf(rows), done = L.filter(r => legacySt(r.key) !== '미검토').length, C = ibCands(rows), pend = C.filter(c => c.st === '검토 대기').length;
+  const par = rows.filter(r => !r.anchor && r.diag !== '기초학습'), parHas = par.filter(r => r.r && r.r.variant).length, supAi = supBankItems().filter(x => x.id[0] !== 'r').length, lock = ibLocks().slice(-1)[0];
+  return {
+    1: { s: `3종 ${rows.length}문항 등록`, left: 0 },
+    2: { s: L.length - done ? `${L.length}개 중 ${L.length - done}개 남음` : `기존 ${L.length}문항 검토 완료`, left: L.length - done },
+    3: { s: `평행 후보 ${parHas}/${par.length} · 보완 후보 ${supAi}`, left: 0 },
+    4: { s: pend ? `검토 대기 ${pend}개` : '검토 대기 없음', left: pend },
+    5: { s: lock ? `${lock.ver} 확정` : '아직 확정 전', left: 0 }
+  };
+}
+function stepperHtml(rows, cur) {
+  const S = ibStepStat(rows);
+  return `<nav class="ibsteps" aria-label="문항 관리 단계"><ol>${IB_STEPS.map(x => `<li><button type="button" data-ibstep="${x.n}" class="${x.n === cur ? 'on' : ''} ${S[x.n].left ? 'todo' : ''}" ${x.n === cur ? 'aria-current="step"' : ''}><span class="ibn-no">${x.n}</span><b>${x.t}</b><span class="meta">${S[x.n].s}</span></button></li>`).join('')}</ol></nav>`;
+}
+/* 문항 목록(2·3단계 공용): 진단 탭·영역·측정 능력·6대 핵심역량 필터·구분 칩·정렬. stCol = 마지막 열(이름, 칸 html, 정렬값) */
+function ibListHtml(rows, opt) {
+  if (!IB_DIAGS.includes(state.ibDiag)) state.ibDiag = '직업기초';
+  const list0 = rows.filter(r => r.diag === state.ibDiag && (!opt.only || opt.only(r)));
+  const ibGrps = ['전체', ...new Set(list0.map(r => r.grp))], ibGrp = ibGrps.includes(state.ibGrp) ? state.ibGrp : '전체';
   const ibSort = state.ibSort || { k: null, dir: 1 };
-  const sortVal = (r, k) => (k === 'type' ? ibType(r) : k === 'six' ? sixTxt(r) || '힣' : k === 'b' ? (r.anchor ? '0' : r.r ? '1' + r.r.status : '2') : r[k] || '');
-  /* 영역·측정 능력 필터: 측정 능력 목록은 고른 영역 안에서만 보여 줌 */
+  const sortVal = (r, k) => (k === 'type' ? ibType(r) : k === 'six' ? sixTxt(r) || '힣' : k === 'b' ? opt.stSort(r) : r[k] || '');
   const uniq = arr => [...new Set(arr)];
-  const ibAreas = uniq(list0.map(r => r.area));
-  const ibArea = ibAreas.includes(state.ibArea) ? state.ibArea : '';
-  const ibSkills = uniq(list0.filter(r => !ibArea || r.area === ibArea).map(r => r.skill));
-  const ibSkill = ibSkills.includes(state.ibSkill) ? state.ibSkill : '';
+  const ibAreas = uniq(list0.map(r => r.area)), ibArea = ibAreas.includes(state.ibArea) ? state.ibArea : '';
+  const ibSkills = uniq(list0.filter(r => !ibArea || r.area === ibArea).map(r => r.skill)), ibSkill = ibSkills.includes(state.ibSkill) ? state.ibSkill : '';
   const skillLb = state.ibDiag === '기초학습' ? '세부 능력' : '측정 능력';
-  /* 대학 6대 핵심역량 필터: 문항이 잇는 역량(여러 개일 수 있음)에 고른 역량이 들어 있으면 보여 줌 */
   const ibSixes = SIX_NAMES.filter(k => list0.some(r => r.six.some(x => x.k === k))), ibSix = state.ibSix === '-' || ibSixes.includes(state.ibSix) ? state.ibSix : '';
   const sixHit = r => !ibSix || (ibSix === '-' ? !r.six.length : r.six.some(x => x.k === ibSix));
-  const list = list0.map((r, i) => ({ r, i })).filter(x => (ibGrp === '전체' || x.r.grp === ibGrp) && (!ibArea || x.r.area === ibArea) && (!ibSkill || x.r.skill === ibSkill) && sixHit(x.r))
+  const stHit = r => !opt.stFilter || !state.ibStF || opt.stFilter(r) === state.ibStF;
+  const list = list0.map((r, i) => ({ r, i })).filter(x => (ibGrp === '전체' || x.r.grp === ibGrp) && (!ibArea || x.r.area === ibArea) && (!ibSkill || x.r.skill === ibSkill) && sixHit(x.r) && stHit(x.r))
     .sort((x, y) => (ibSort.k ? ibSort.dir * String(sortVal(x.r, ibSort.k)).localeCompare(String(sortVal(y.r, ibSort.k)), 'ko') : 0) || x.i - y.i).map(x => x.r);
-  const sel = list.find(r => r.key === state.ibSel) || list.find(r => !r.anchor) || list[0] || list0[0];
-  state.ibSel = sel.key;
-  const cnt = st => rows.filter(r => r.r && r.r.status === st).length;
-  const swap = rows.filter(r => !r.anchor).length;
-  const stTag = r => r.anchor ? '<span class="badge">공통</span>' : r.r ? `<span class="st st-${r.r.status}">${r.r.status}</span>` : '<span class="st">없음</span>';
-  const draft = state.ibDraft && state.ibDraft.key === sel.key ? state.ibDraft : null;
-  const isB = sel.diag === '기초학습' && !sel.anchor, candN = isB ? (state.ibCand && state.ibCand.key === sel.key ? state.ibCand.n : (sel.r && sel.r.cand) || 1) : 0;
-  const cur = isB ? { variant: { ...basicCand(sel.item, candN), sub: sel.item.sub, n: sel.item.n }, rationale: '', src: `기존 검사지 후보 ${candN}` + (sel.r && !sel.r.official ? ` · ${sel.r.status}${sel.r.cand === candN ? '' : `(후보 ${sel.r.cand || 1} 기준)`}` : ' · 평행성 검토 전') }
-    : draft || (sel.r ? { variant: sel.r.variant, rationale: sel.r.rationale || '', src: sel.r.src } : null);
-  $view.innerHTML = `
-  <div class="dash-grid">
-    <section class="panel p-sum">
-      <p class="eyebrow">문항 은행 · AI 문항 고도화</p>
-      <p class="summary">하위능력은 그대로 두고 문항만 바꾼 평행 문항으로 학기말 B형 검사지를 만듭니다.</p>
-      <div class="stats"><div class="stat"><b>${rows.length}개</b><span>현행 문항(3종)</span></div><div class="stat"><b>${rows.filter(r => r.anchor).length}개</b><span>공통 문항(A·B 동일)</span></div><div class="stat"><b>${swap}개</b><span>교체 대상</span></div><div class="stat"><b>${cnt('승인')}개</b><span>B형 승인</span></div><div class="stat"><b>${cnt('초안') + cnt('검토 중')}개</b><span>검토 대기</span></div></div>
-      <ol class="flow"><li><b>현행 문항 입력</b>운영 중인 3종 문항 등록</li><li><b>AI 고도화 초안</b>측정 능력·유형·배점 유지, 맥락 최신화</li><li><b>전문가 검토·승인</b>체크리스트·수정</li><li><b>검사지 구성</b>A형·B형·공통 문항</li><li><b>예비 시행·동등화</b>B형 점수를 A형 척도로</li></ol>
-    </section>
-    ${panelH('p-ibin', '① 현행 문항 입력', '', `<p class="meta">운영 중인 문항을 양식(CSV)에 맞춰 올리면 문항 은행에 등록됩니다. 지금은 시제품 문항 ${rows.length}개가 들어 있습니다.</p>
-      <p class="meta">양식 열: 진단, 하위능력, 유형(성취형·상황판단형·사례형·자기보고), 문항, 선택지(| 구분), 정답 또는 선택지별 배점, 역문항, 원 문항 번호</p>
-      <div class="actions"><button class="btn ghost sm" id="ibtpl">입력 양식 내려받기</button><label class="btn ghost sm filebtn">문항 파일 올리기<input type="file" id="ibfile" accept=".csv" hidden></label><span class="meta" id="ibmsg" aria-live="polite"></span></div>`)}
-    ${panelH(supMode ? 'p-iblist p-ibsup' : 'p-iblist', '② 문항 목록', '', `<div class="tabs" role="tablist">${['직업기초', '핵심역량', '핵심역량+', '기초학습'].map(d => `<button role="tab" class="tab" aria-selected="${d === state.ibDiag}" data-ibd="${d}">${d}</button>`).join('')}</div>
-      ${supMode ? supListBody() : `      ${ibWhy(state.ibDiag, rows)}
+  const sel = list.find(r => r.key === state.ibSel) || (opt.pick && list.find(opt.pick)) || list[0] || list0[0];
+  const cols = IB_COLS.map(([k, lb]) => [k, k === 'skill' ? skillLb : k === 'b' ? opt.stName : lb]);
+  const html = `<div class="tabs" role="tablist">${IB_DIAGS.map(d => `<button role="tab" class="tab" aria-selected="${d === state.ibDiag}" data-ibd="${d}">${d}</button>`).join('')}</div>
+      ${opt.top || ''}
       <div class="ibbar ibsel"><label><span class="meta">영역</span><select id="ibarea"><option value="">전체 영역</option>${ibAreas.map(a => `<option value="${esc(a)}" ${a === ibArea ? 'selected' : ''}>${esc(a)} (${list0.filter(r => r.area === a).length})</option>`).join('')}</select></label>
         <label><span class="meta">${skillLb}</span><select id="ibskill"><option value="">전체 ${skillLb}</option>${ibSkills.map(k => `<option value="${esc(k)}" ${k === ibSkill ? 'selected' : ''}>${esc(k)} (${list0.filter(r => r.skill === k && (!ibArea || r.area === ibArea)).length})</option>`).join('')}</select></label>
         <label><span class="meta">대학 6대 핵심역량</span><select id="ibsix"><option value="">전체 역량</option>${ibSixes.map(k => `<option value="${esc(k)}" ${k === ibSix ? 'selected' : ''}>${esc(k)} (${list0.filter(r => r.six.some(x => x.k === k)).length})</option>`).join('')}${list0.some(r => !r.six.length) ? `<option value="-" ${ibSix === '-' ? 'selected' : ''}>연결 없음 (${list0.filter(r => !r.six.length).length})</option>` : ''}</select></label>
         ${ibArea || ibSkill || ibSix ? '<button class="linkbtn" id="ibclear">필터 지우기</button>' : ''}</div>
-      ${ibSixNote(state.ibDiag)}
-      <div class="ibbar"><span class="meta">구분</span>${ibGrps.map(g => `<button class="chip ${ibGrp === g ? 'on' : ''}" data-ibg="${g}" aria-pressed="${ibGrp === g}">${g}${g === '전체' ? '' : ` ${list0.filter(r => r.grp === g).length}`}</button>`).join('')}<span class="meta ibn">${list.length}문항</span></div>
+      ${opt.note || ''}
+      <div class="ibbar">${opt.stFilter ? `<span class="meta">${opt.stName}</span>${['', ...opt.stVals].map(v => `<button class="chip ${(state.ibStF || '') === v ? 'on' : ''}" data-ibstf="${v}" aria-pressed="${(state.ibStF || '') === v}">${v || '전체'}${v ? ` ${list0.filter(r => opt.stFilter(r) === v).length}` : ''}</button>`).join('')}` : `<span class="meta">구분</span>${ibGrps.map(g => `<button class="chip ${ibGrp === g ? 'on' : ''}" data-ibg="${g}" aria-pressed="${ibGrp === g}">${g}${g === '전체' ? '' : ` ${list0.filter(r => r.grp === g).length}`}</button>`).join('')}`}<span class="meta ibn">${list.length}문항</span></div>
+      ${opt.bar ? opt.bar(list) : ''}
       <div class="scrollx iblist"><table class="tbl ibtbl"><colgroup><col class="ibc1"><col class="ibc2"><col class="ibc3"><col class="ibc6"><col class="ibc4"><col class="ibc5"></colgroup>
-        <thead><tr>${IB_COLS.map(([k, lb]) => [k, k === 'skill' ? skillLb : lb]).map(([k, lb]) => `<th aria-sort="${ibSort.k === k ? (ibSort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button class="ibsort" data-ibs="${k}">${lb}<span aria-hidden="true">${ibSort.k === k ? (ibSort.dir > 0 ? '▲' : '▼') : '↕'}</span></button></th>`).join('')}</tr></thead>
-        <tbody>${list.map(r => `<tr class="${r.key === sel.key ? 'me' : ''}" data-ib="${r.key}" tabindex="0" title="${esc(r.item.q.replace(/\n/g, ' '))}"><td>${r.grp === 'AI 신규' ? '<span class="badge ai-new">AI 신규</span>' : `<span class="meta">${r.grp}</span>`}</td><td>${esc(r.area)}</td><td><b>${esc(r.skill)}</b>${r.note ? ` <span class="meta">${r.note}</span>` : ''}</td><td>${r.six.length ? r.six.map(x => `${esc(x.k)}`).join('<br>') : '<span class="meta">연결 없음</span>'}</td><td>${ibType(r)}</td><td>${stTag(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="meta">조건에 맞는 문항이 없습니다. 구분이나 영역 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`}`)}
-    ${supMode ? panelH('p-ibed', '③ 보완 문항 검토', '입학 직후 첫 진단에만', supDetailBody()) : panelH('p-ibed', '③ AI 고도화와 검토', esc(sel.sub), `
-      <p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel).construct_definition)}</p>
-      ${sixEditHtml(sel)}
-      <div class="itm-pair">${itemHtml(sel.item, `A형(현행) · ${tName(sel.item) || T_NAME[sel.t]}${sel.anchor ? ' · 공통 문항' : ''}`)}
-        ${cur ? itemHtml(cur.variant, `B형 평행 문항 · ${esc(cur.src || '')}${!draft && sel.r ? ` · ${sel.r.status}` : ' · 초안'}`) : `<div class="itm empty"><p class="meta">B형 문항이 없습니다.${sel.anchor ? ' 공통 문항은 A·B형에 똑같이 들어갑니다.' : ''}</p></div>`}</div>
-      ${cur && cur.rationale ? `<p class="meta"><b>바꾼 이유</b> ${esc(cur.rationale)}</p>` : ''}
-      ${cur && !sel.anchor && sel.diag === '직업기초' ? (f => (f.length ? `<p class="meta"><b>자동 점검</b> ${f.map(x => `<span class="st st-반려">${esc(x)}</span>`).join(' ')}</p>` : ''))(draftFlags(sel, cur.variant.q, rows.filter(r => r.diag === '직업기초' && r.key !== sel.key && r.item.f === sel.item.f).map(r => ({ key: r.key, q: r.item.q, label: r.item.no })))) : ''}
-      <div class="actions no-print">${isB ? `<span class="meta">기존 검사지의 같은 번호 후보를 비교해, 같은 능력·난이도를 재는 평행 문항일 때만 승인합니다(그림 문항이라 AI 평행 문항은 만들지 않음).</span> ${[1, 2].map(n => `<button class="chip ${candN === n ? 'on' : ''}" data-ibcand="${n}" aria-pressed="${candN === n}">후보 ${n}</button>`).join(' ')}` : sel.anchor ? `<span class="meta">공통 문항이라 A·B형에 그대로 씁니다(학기 초·말 점수를 같은 척도로 잇는 기준). 고른 기준과 근거는 문항 목록 위 안내를 보세요.</span>` : `<button class="btn sm" id="ibgen">${state.ibPend ? 'AI 초안 작성 중…' : 'AI로 평행 문항 만들기'}</button>`}<span class="meta" id="ibgmsg" aria-live="polite">${state.ibGenMsg || ''}</span></div>
-      ${cur && !sel.anchor ? `<h3 class="sub3">검토 체크리스트</h3><div class="checks">${CHECKS.map((c, i) => `<label class="chk"><input type="checkbox" class="ibchk" ${!draft && sel.r && sel.r.status === '승인' ? 'checked' : ''}> ${c}</label>`).join('')}</div>
-        ${isB ? '' : `<label class="ibedit">문항 다듬기<textarea id="ibq" rows="3">${esc(cur.variant.q)}</textarea></label>`}
-        <div class="actions no-print"><button class="btn" id="ibok">승인하고 B형에 등록</button><button class="btn ghost" id="ibno">반려</button><span class="meta" id="ibrmsg" aria-live="polite"></span></div>` : ''}
-      ${dataPeek(itemPayload(sel), 'AI에 보내는 요청 보기')}`)}
-    ${batchHtml(rows)}
-  </div>`;
-  { const box = document.querySelector(".iblist"); if (box) { box.scrollTop = keepTop; if (keepTop) { const me = box.querySelector("tr.me"); if (me) me.focus({ preventScroll: true }); } } }
+        <thead><tr>${cols.map(([k, lb]) => `<th aria-sort="${ibSort.k === k ? (ibSort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button class="ibsort" data-ibs="${k}">${lb}<span aria-hidden="true">${ibSort.k === k ? (ibSort.dir > 0 ? '▲' : '▼') : '↕'}</span></button></th>`).join('')}</tr></thead>
+        <tbody>${list.map(r => `<tr class="${sel && r.key === sel.key ? 'me' : ''}" data-ib="${r.key}" tabindex="0" title="${esc(r.item.q.replace(/\n/g, ' '))}"><td>${r.grp === 'AI 신규' ? '<span class="badge ai-new">AI 신규</span>' : `<span class="meta">${r.grp}</span>`}</td><td>${esc(r.area)}</td><td><b>${esc(r.skill)}</b>${r.note ? ` <span class="meta">${r.note}</span>` : ''}</td><td>${r.six.length ? r.six.map(x => `${esc(x.k)}`).join('<br>') : '<span class="meta">연결 없음</span>'}</td><td>${ibType(r)}</td><td>${opt.stCell(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="meta">조건에 맞는 문항이 없습니다. 필터를 바꿔 보세요.</td></tr>'}</tbody></table></div>`;
+  return { html, sel, list };
+}
+function bindIbList() {
   $view.querySelectorAll('[data-ibd]').forEach(b => b.onclick = () => { state.ibDiag = b.dataset.ibd; state.ibSel = null; state.ibGrp = '전체'; state.ibArea = ''; state.ibSkill = ''; state.ibSix = ''; state.ibDraft = null; state.ibGenMsg = ''; renderItemBank(); });
-  const ia = document.getElementById('ibarea'), ik = document.getElementById('ibskill'), ic = document.getElementById('ibclear');
-  if (ia) ia.onchange = () => { state.ibArea = ia.value; state.ibSkill = ''; state.ibDraft = null; renderItemBank(); };
-  if (ik) ik.onchange = () => { state.ibSkill = ik.value; state.ibDraft = null; renderItemBank(); };
-  const i6 = document.getElementById('ibsix'); if (i6) i6.onchange = () => { state.ibSix = i6.value; state.ibDraft = null; renderItemBank(); };
-  if (ic) ic.onclick = () => { state.ibArea = ''; state.ibSkill = ''; state.ibSix = ''; renderItemBank(); };
-  bindBatch(rows); bindSixEdit(sel);
-  const rb = document.getElementById('ibrefbtn');
-  if (rb) rb.onclick = () => { const w = rb.parentElement, on = !w.classList.contains('open'); w.classList.toggle('open', on); rb.setAttribute('aria-expanded', String(on)); };
+  const el = id => document.getElementById(id);
+  if (el('ibarea')) el('ibarea').onchange = e => { state.ibArea = e.target.value; state.ibSkill = ''; state.ibDraft = null; renderItemBank(); };
+  if (el('ibskill')) el('ibskill').onchange = e => { state.ibSkill = e.target.value; state.ibDraft = null; renderItemBank(); };
+  if (el('ibsix')) el('ibsix').onchange = e => { state.ibSix = e.target.value; state.ibDraft = null; renderItemBank(); };
+  if (el('ibclear')) el('ibclear').onclick = () => { state.ibArea = ''; state.ibSkill = ''; state.ibSix = ''; renderItemBank(); };
   $view.querySelectorAll('[data-ibg]').forEach(b => b.onclick = () => { state.ibGrp = b.dataset.ibg; state.ibDraft = null; renderItemBank(); });
+  $view.querySelectorAll('[data-ibstf]').forEach(b => b.onclick = () => { state.ibStF = b.dataset.ibstf; state.ibSel = null; renderItemBank(); });
   $view.querySelectorAll('[data-ibs]').forEach(b => b.onclick = () => { const k = b.dataset.ibs, cur = state.ibSort || {}; state.ibSort = cur.k !== k ? { k, dir: 1 } : cur.dir > 0 ? { k, dir: -1 } : { k: null, dir: 1 }; renderItemBank(); });
   $view.querySelectorAll('[data-ib]').forEach(tr => { const f = () => { state.ibSel = tr.dataset.ib; state.ibDraft = null; state.ibGenMsg = ''; renderItemBank(); }; tr.onclick = f; tr.onkeydown = e => { if (e.key === 'Enter') f(); }; });
-  document.getElementById('ibtpl').onclick = () => download('문항입력양식.csv', [['진단', '하위능력', '유형', '문항', '선택지', '정답또는배점', '역문항', '원번호'], ...rows.map(r => [r.diag, r.sub, T_NAME[r.t], r.item.q, r.item.o ? r.item.o.join('|') : '', r.item.p ? r.item.p.join('|') : r.item.c != null ? String(r.item.c + 1) : '', r.item.rev ? 'Y' : '', r.item.no || ''])]);
+  const rb = el('ibrefbtn');
+  if (rb) rb.onclick = () => { const w = rb.parentElement, on = !w.classList.contains('open'); w.classList.toggle('open', on); rb.setAttribute('aria-expanded', String(on)); };
+}
+const stTagB = r => (r.anchor ? '<span class="badge">공통</span>' : r.r ? `<span class="st st-${r.r.status}">${r.r.status}</span>` : '<span class="st">없음</span>');
+const LEG_ST_CLS = { 미검토: '', '사용 확정': '승인', '수정본 검토 대기': '초안', '수정본 반영': '승인', '수정본 반려': '반려' };
+const stTagL = r => { const s = legacySt(r.key); return `<span class="st ${LEG_ST_CLS[s] ? 'st-' + LEG_ST_CLS[s] : ''}">${s}</span>`; };
+
+/* ① 기존 문항 등록 */
+function ibStep1(rows) {
+  const by = d => rows.filter(r => r.diag === d), leg = d => by(d).filter(r => r.grp === '기존').length;
+  return panelH('p-ibin ibwide', '1. 기존 문항 등록', '3종 진단', `<p class="meta">운영 중인 3종 진단 문항을 양식(CSV)에 맞춰 올리면 문항 은행에 등록됩니다. 시제품에는 아래 문항이 들어 있습니다.</p>
+    <div class="scrollx"><table class="tbl"><thead><tr><th>진단</th><th>기존 문항</th><th>AI 신규(이미 작성)</th><th>유형</th><th>측정 단위</th></tr></thead><tbody>
+      <tr><td><b>직업기초역량진단</b></td><td>${leg('직업기초')}</td><td>${by('직업기초').length - leg('직업기초')} <span class="meta">2026 표준 신설 하위능력</span></td><td>선택형·척도형(7점)</td><td>10개 요인 · 21개 하위능력</td></tr>
+      <tr><td><b>핵심역량진단</b></td><td>${leg('핵심역량')}</td><td>${by('핵심역량').length - leg('핵심역량')} <span class="meta">AI 책임 활용(보조)</span></td><td>척도형(5점)</td><td>9요인</td></tr>
+      <tr><td><b>기초학습역량진단</b></td><td>${leg('기초학습')}</td><td>-</td><td>성취형(5지선다, 그림 발문)</td><td>국어·수학·영어 세부 능력</td></tr></tbody></table></div>
+    <p class="meta">양식 열: 진단, 하위능력, 유형(성취형·상황판단형·사례형·자기보고), 문항, 선택지(| 구분), 정답 또는 선택지별 배점, 역문항, 원 문항 번호</p>
+    <div class="actions"><button class="btn ghost sm" id="ibtpl">입력 양식 내려받기</button><label class="btn ghost sm filebtn">문항 파일 올리기<input type="file" id="ibfile" accept=".csv" hidden></label><button class="btn sm" data-ibstep="2">2단계 기존 문항 검토로</button><span class="meta" id="ibmsg" aria-live="polite"></span></div>`);
+}
+function bindStep1(rows) {
+  const t = document.getElementById('ibtpl'); if (!t) return;
+  t.onclick = () => download('문항입력양식.csv', [['진단', '하위능력', '유형', '문항', '선택지', '정답또는배점', '역문항', '원번호'], ...rows.map(r => [r.diag, r.sub, T_NAME[r.t], r.item.q, r.item.o ? r.item.o.join('|') : '', r.item.p ? r.item.p.join('|') : r.item.c != null ? String(r.item.c + 1) : '', r.item.rev ? 'Y' : '', r.item.no || ''])]);
   document.getElementById('ibfile').onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const rd = new FileReader();
     rd.onload = () => { const rr = parseCSV(String(rd.result)); document.getElementById('ibmsg').textContent = `${Math.max(0, rr.length - 1)}행을 읽었습니다. 시제품에서는 형식만 점검하고, 운영판에서 문항 은행에 등록합니다.`; };
     rd.readAsText(f, 'utf-8');
   };
-  const gen = document.getElementById('ibgen');
-  if (gen) gen.onclick = async () => {
+}
+
+/* ② 기존 문항 검토: 측정 능력·6대 핵심역량 연결을 확인하고 사용 확정, 문장을 고칠 문항은 수정본 등록 */
+function ibStep2(rows) {
+  const L = ibListHtml(rows, {
+    only: r => r.grp === '기존', stName: '검토', stCell: stTagL, stSort: r => legacySt(r.key),
+    stFilter: r => legacySt(r.key), stVals: ['미검토', '사용 확정', '수정본 검토 대기', '수정본 반영'],
+    pick: r => legacySt(r.key) === '미검토',
+    note: '<p class="meta ibsixnote">문항마다 측정 능력과 6대 핵심역량 연결이 맞는지 보고 사용을 확정합니다. 문장을 고쳐야 하면 원문은 두고 수정본을 등록해 4단계에서 승인합니다.</p>',
+    bar: list => { const n = list.filter(r => legacySt(r.key) === '미검토').length; return n ? `<div class="actions no-print"><button class="btn ghost sm" id="legall">목록의 미검토 ${n}문항 모두 사용 확정</button></div>` : ''; }
+  });
+  const sel = L.sel; state.ibSel = sel && sel.key;
+  const st = sel ? legacySt(sel.key) : '', rec = sel ? legacyRec(sel.key) : null, isImg = sel && sel.diag === '기초학습';
+  const detail = sel ? `<p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel).construct_definition)}</p>
+      ${itemHtml(rec && rec.edit ? { ...sel.item } : sel.item, `원문 · ${tName(sel.item) || T_NAME[sel.t]}${sel.anchor ? ' · 공통 문항' : ''}`)}
+      ${rec && rec.edit ? `<div class="itm"><p class="meta">수정본 · ${esc(rec.edit.status)} · ${esc(rec.edit.by || '')} ${esc(rec.edit.at || '')}</p><p class="itm-q">${esc(rec.edit.q)}</p></div>` : ''}
+      ${sixEditHtml(sel)}
+      <h3 class="sub3">검토 결과 <span class="st ${LEG_ST_CLS[st] ? 'st-' + LEG_ST_CLS[st] : ''}">${st}</span></h3>
+      <div class="actions no-print"><button class="btn" id="leguse" ${st === '사용 확정' ? 'disabled' : ''}>사용 확정하고 다음 문항</button>${rec ? '<button class="btn ghost" id="legundo">검토 취소</button>' : ''}</div>
+      ${isImg ? '<p class="meta">기초학습은 발문·지문이 그림이라 문장 수정본을 만들지 않습니다. 고칠 문항은 원 검사지를 고쳐 1단계에서 다시 올립니다.</p>' : `<details class="peek" ${rec && rec.edit && rec.edit.status !== '승인' ? 'open' : ''}><summary>문장을 고쳐 수정본 등록</summary>
+        <p class="meta">원문을 덮어쓰지 않고 수정본을 새로 등록합니다. 4단계에서 승인하면 다음에 확정하는 검사지부터 이 문장으로 나가며, 측정 능력·배점은 그대로입니다. 예전 응시 점수와 비교할 때는 문장이 바뀐 문항임을 감안해야 합니다.</p>
+        <label class="ibedit">수정본 문장<textarea id="legq" rows="3">${esc(rec && rec.edit ? rec.edit.q : sel.item.q)}</textarea></label>
+        <div class="actions no-print"><button class="btn sm" id="legedit">수정본 등록</button><span class="meta" id="legmsg" aria-live="polite"></span></div></details>`}`
+    : '<p class="meta">조건에 맞는 문항이 없습니다.</p>';
+  return panelH('p-iblist', '기존 문항 목록', '', L.html) + panelH('p-ibed', '기존 문항 검토', sel ? esc(sel.sub) : '', detail);
+}
+function bindStep2(rows) {
+  bindIbList();
+  const sel = rows.find(r => r.key === state.ibSel), el = id => document.getElementById(id), who = () => ({ by: state.user.name, at: todayISO() });
+  if (!sel) return;
+  const next = () => { const trs = [...document.querySelectorAll('[data-ib]')], i = trs.findIndex(t => t.dataset.ib === sel.key), nx = trs.slice(i + 1).find(t => legacySt(t.dataset.ib) === '미검토'); state.ibSel = nx ? nx.dataset.ib : sel.key; };
+  if (el('leguse')) el('leguse').onclick = () => { saveLegacy(sel.key, { st: '사용', ...who() }); next(); renderItemBank(); };
+  if (el('legundo')) el('legundo').onclick = () => { saveLegacy(sel.key, null); renderItemBank(); };
+  if (el('legedit')) el('legedit').onclick = () => {
+    const q = el('legq').value.trim();
+    if (!q || q === sel.item.q) { el('legmsg').textContent = '원문과 다른 문장을 입력하세요.'; return; }
+    saveLegacy(sel.key, { st: '수정', ...who(), edit: { q, status: '검토 대기', ...who() } }); state.ibGenMsg = ''; renderItemBank();
+  };
+  if (el('legall')) el('legall').onclick = () => {
+    const keys = [...document.querySelectorAll('[data-ib]')].map(t => t.dataset.ib).filter(k => legacySt(k) === '미검토');
+    if (!confirm(`목록에 보이는 미검토 ${keys.length}문항을 모두 '사용 확정'합니다. 측정 능력과 6대 핵심역량 연결을 확인하셨나요?`)) return;
+    const B = bank(); B.legacy = { ...(B.legacy || {}) }; keys.forEach(k => { B.legacy[k] = { st: '사용', ...who() }; }); saveBank(); renderItemBank();
+  };
+  bindSixEdit(sel);
+}
+
+/* ③ AI 문항 후보 생성: 빈 영역 채우기(6대 핵심역량별 문항 출처 표 + 보완 문항 생성) / 학기말 평행 문항(문항별·묶음 생성) */
+function ibGapHtml(rows) {
+  const cnt = (k, d) => rows.filter(r => r.diag === d && r.six.some(x => x.k === k)).length;
+  const supN = k => supItems().filter(x => x.comp === k).length;
+  const body = SIX_NAMES.map(k => {
+    const a = cnt(k, '직업기초'), b = cnt(k, '핵심역량'), c = cnt(k, '기초학습'), s = SUP_COMP.some(x => x.k === k);
+    const why = s ? '<span class="st st-초안">보완 대상</span>' : !b && !a ? '<span class="st st-반려">출처 부족</span>' : '<span class="meta">3종 진단으로 측정</span>';
+    return `<tr><td><b>${k}</b></td><td>${a || '<span class="meta">0</span>'}</td><td>${b || '<span class="meta">0</span>'}</td><td>${c || '<span class="meta">-</span>'}</td><td>${s ? `${supN(k)} <span class="meta">(학생별)</span>` : '<span class="meta">-</span>'}</td><td>${why}</td></tr>`;
+  }).join('');
+  return `<p class="meta">대학 6대 핵심역량마다 어느 진단의 문항으로 재는지 보여 줍니다. 전문성은 핵심역량진단 문항이, 자기주도성은 직업기초 연결이 없어 입학 직후 보완 문항으로 채웁니다. 외국어는 기초학습 영어·직업기초 외국어소통으로 잽니다.</p>
+    <div class="scrollx"><table class="tbl"><thead><tr><th>대학 6대 핵심역량</th><th>직업기초</th><th>핵심역량</th><th>기초학습</th><th>보완 문항</th><th>판단</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="meta">직업기초의 2026 표준 신설 하위능력(디지털활용·AI활용·디지털책임의식·산업안전보건의식 등)은 AI 신규 ${rows.filter(r => r.diag === '직업기초' && r.grp === 'AI 신규').length}문항을 이미 작성해 진단에 넣었습니다. 연결이 비어 있는 하위능력은 2단계에서 6대 핵심역량에 연결할 수 있습니다.</p>`;
+}
+function ibSupGenHtml() {
+  const B = supBankItems();
+  return `<p class="meta">하위 요소마다 2개씩(정문항·역문항) AI 초안을 만듭니다. 만든 초안은 4단계에서 검토합니다. 하위 요소에 승인한 AI 문항이 2개 이상이면 기본 문항 대신 쓰고, 더 많으면 학번에 따라 돌아가며 씁니다.</p>
+    ${SUP_COMP.map(c => `<h3 class="sub3">${c.k}</h3><p class="meta"><b>정의(초안)</b> ${esc(c.def)}</p>
+      <div class="scrollx"><table class="tbl"><thead><tr><th>하위 요소</th><th>기본 문항</th><th>AI 승인</th><th>AI 검토 대기</th><th>학생에게 나가는 문항</th></tr></thead><tbody>${c.facets.map(f => { const ai = B.filter(x => x.comp === c.k && x.facet === f && x.id[0] !== 'r'), P = supPool(c.k, f); return `<tr><td>${esc(f)}</td><td>${SUP_RULE.filter(x => x.comp === c.k && x.facet === f).length}</td><td>${ai.filter(x => x.status === '승인').length}</td><td>${ai.filter(x => x.status === '검토 대기').length}</td><td>${P.every(x => x.id[0] === 'r') ? '기본 문항' : P.some(x => x.id[0] === 'r') ? 'AI + 기본' : 'AI 문항'}${P.length > SUP_PER_FACET ? ` <span class="meta">${P.length}개 중 2개 순환</span>` : ''}</td></tr>`; }).join('')}</tbody></table></div>
+      <div class="actions no-print"><button class="btn sm" data-supgen="${c.k}" ${state.supPend ? 'disabled' : ''}>${state.supPend === c.k ? 'AI 초안 작성 중…' : `AI로 ${c.k} 후보 만들기`}</button></div>`).join('')}
+    <p class="meta" id="supmsg" aria-live="polite" ${state.supMsg ? '' : 'hidden'}>${esc(state.supMsg || '')} ${state.supMsg ? '<button class="linkbtn" data-ibstep="4">4단계에서 검토하기</button>' : ''}</p>`;
+}
+function ibStep3(rows) {
+  const mode = state.ibGen === 'par' ? 'par' : 'gap';
+  const tabs = `<div class="tabs ibgentabs" role="tablist"><button role="tab" class="tab" aria-selected="${mode === 'gap'}" data-ibgen="gap">빈 영역 채우기</button><button role="tab" class="tab" aria-selected="${mode === 'par'}" data-ibgen="par">학기말 평행 문항(B형)</button></div>`;
+  if (mode === 'gap') return `<div class="ibwide">${tabs}</div>` + panelH('p-ibgap', '6대 핵심역량별 문항 출처', '빈 영역 찾기', ibGapHtml(rows)) + panelH('p-ibsupgen p-ibsup', '보완 문항 후보 만들기', '입학 직후 첫 진단에만', ibSupGenHtml());
+  const L = ibListHtml(rows, { stName: 'B형', stCell: stTagB, stSort: r => (r.anchor ? '0' : r.r ? '1' + r.r.status : '2'), pick: r => !r.anchor && !r.r, top: ibWhy(state.ibDiag, rows), note: ibSixNote(state.ibDiag) });
+  state.ibSel = L.sel && L.sel.key;
+  return `<div class="ibwide">${tabs}</div>` + panelH('p-iblist', '평행 문항 대상', '', L.html) + panelH('p-ibed', 'AI 평행 문항 만들기', L.sel ? esc(L.sel.sub) : '', parDetailHtml(L.sel, rows, false)) + batchHtml(rows);
+}
+function bindStep3(rows) {
+  $view.querySelectorAll('[data-ibgen]').forEach(b => b.onclick = () => { state.ibGen = b.dataset.ibgen; renderItemBank(); });
+  bindSupBank();
+  if (state.ibGen !== 'par') return;
+  bindIbList(); bindBatch(rows);
+  bindParDetail(rows.find(r => r.key === state.ibSel), rows);
+}
+
+/* 평행 문항 상세(3단계 만들기·4단계 검토 공용): A형 원문과 B형 초안, 자동 점검, 체크리스트, 승인·반려 */
+function parCtx(sel) {
+  const draft = state.ibDraft && state.ibDraft.key === sel.key ? state.ibDraft : null;
+  const isB = sel.diag === '기초학습' && !sel.anchor, candN = isB ? (state.ibCand && state.ibCand.key === sel.key ? state.ibCand.n : (sel.r && sel.r.cand) || 1) : 0;
+  const cur = isB ? { variant: { ...basicCand(sel.item, candN), sub: sel.item.sub, n: sel.item.n }, rationale: '', src: `기존 검사지 후보 ${candN}` + (sel.r && !sel.r.official ? ` · ${sel.r.status}${sel.r.cand === candN ? '' : `(후보 ${sel.r.cand || 1} 기준)`}` : ' · 평행성 검토 전') }
+    : draft || (sel.r ? { variant: sel.r.variant, rationale: sel.r.rationale || '', src: sel.r.src } : null);
+  return { draft, isB, candN, cur };
+}
+function parDetailHtml(sel, rows, review) {
+  if (!sel) return '<p class="meta">조건에 맞는 문항이 없습니다.</p>';
+  const { draft, isB, candN, cur } = parCtx(sel);
+  return `<p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel).construct_definition)}</p>
+      <div class="itm-pair">${itemHtml(sel.item, `A형(현행) · ${tName(sel.item) || T_NAME[sel.t]}${sel.anchor ? ' · 공통 문항' : ''}`)}
+        ${cur ? itemHtml(cur.variant, `B형 평행 문항 · ${esc(cur.src || '')}${!draft && sel.r ? ` · ${sel.r.status}` : ' · 초안'}`) : `<div class="itm empty"><p class="meta">B형 문항이 없습니다.${sel.anchor ? ' 공통 문항은 A·B형에 똑같이 들어갑니다.' : ''}</p></div>`}</div>
+      ${cur && cur.rationale ? `<p class="meta"><b>바꾼 이유</b> ${esc(cur.rationale)}</p>` : ''}
+      ${cur && !sel.anchor && sel.diag === '직업기초' ? (f => (f.length ? `<p class="meta"><b>자동 점검</b> ${f.map(x => `<span class="st st-반려">${esc(x)}</span>`).join(' ')}</p>` : ''))(draftFlags(sel, cur.variant.q, rows.filter(r => r.diag === '직업기초' && r.key !== sel.key && r.item.f === sel.item.f).map(r => ({ key: r.key, q: r.item.q, label: r.item.no })))) : ''}
+      <div class="actions no-print">${isB ? `<span class="meta">기존 검사지의 같은 번호 후보를 비교해, 같은 능력·난이도를 재는 평행 문항일 때만 승인합니다(그림 문항이라 AI 평행 문항은 만들지 않음).</span> ${[1, 2].map(n => `<button class="chip ${candN === n ? 'on' : ''}" data-ibcand="${n}" aria-pressed="${candN === n}">후보 ${n}</button>`).join(' ')}` : sel.anchor ? `<span class="meta">공통 문항이라 A·B형에 그대로 씁니다(학기 초·말 점수를 같은 척도로 잇는 기준).</span>` : `<button class="btn sm ${review ? 'ghost' : ''}" id="ibgen">${state.ibPend ? 'AI 초안 작성 중…' : cur ? 'AI로 다시 만들기' : 'AI로 평행 문항 만들기'}</button>`}<span class="meta" id="ibgmsg" aria-live="polite">${state.ibGenMsg || ''}</span></div>
+      ${cur && !sel.anchor ? `<h3 class="sub3">검토 체크리스트</h3><div class="checks">${CHECKS.map(c => `<label class="chk"><input type="checkbox" class="ibchk" ${!draft && sel.r && sel.r.status === '승인' ? 'checked' : ''}> ${c}</label>`).join('')}</div>
+        ${isB ? '' : `<label class="ibedit">문항 다듬기<textarea id="ibq" rows="3">${esc(cur.variant.q)}</textarea></label>`}
+        <div class="actions no-print"><button class="btn" id="ibok">승인하고 B형에 등록</button><button class="btn ghost" id="ibno">반려</button><span class="meta" id="ibrmsg" aria-live="polite"></span></div>` : ''}
+      ${review ? '' : dataPeek(itemPayload(sel), 'AI에 보내는 요청 보기')}`;
+}
+function bindParDetail(sel, rows) {
+  if (!sel) return;
+  const { isB, candN, cur } = parCtx(sel), el = id => document.getElementById(id);
+  if (el('ibgen')) el('ibgen').onclick = async () => {
     state.ibPend = true; state.ibGenMsg = ''; renderItemBank();
     let d = await aiItemDraft(sel);
     if (!d) { d = ruleDraft(sel); state.ibGenMsg = d ? (state.aiMode ? 'AI 응답을 받지 못해 시연용 사전 작성 초안을 보여 줍니다. 잠시 뒤 다시 시도하세요.' : 'AI 서버가 연결되지 않아 시연용 사전 작성 초안을 보여 줍니다.') : 'AI 서버가 연결되면 이 문항의 평행 문항 초안을 만듭니다.'; }
     state.ibPend = false;
-    if (d) state.ibDraft = { key: sel.key, ...d };
+    if (d) { state.ibDraft = { key: sel.key, ...d }; const B2 = bank(); if (!B2[sel.key] || B2[sel.key].status !== '승인') { B2[sel.key] = { status: '초안', src: d.src, rationale: d.rationale, check: d.check, variant: d.variant, at: todayISO(), by: state.user && state.user.name }; saveBank(); } }
     renderItemBank();
   };
-  const ok = document.getElementById('ibok');
-  if (ok) ok.onclick = () => {
-    if ([...document.querySelectorAll('.ibchk')].some(c => !c.checked)) { document.getElementById('ibrmsg').textContent = '체크리스트를 모두 확인해야 승인할 수 있습니다.'; return; }
+  if (el('ibok')) el('ibok').onclick = () => {
+    if ([...document.querySelectorAll('.ibchk')].some(c => !c.checked)) { el('ibrmsg').textContent = '체크리스트를 모두 확인해야 승인할 수 있습니다.'; return; }
     const B2 = bank();
-    B2[sel.key] = isB ? { status: '승인', src: `기존 검사지 후보 ${candN}`, cand: candN, reviewer: state.user.name, at: new Date().toISOString().slice(0, 10), rationale: '담당자가 평행 문항으로 검토·승인', variant: basicCand(sel.item, candN) }
-      : { status: '승인', src: cur.src, reviewer: state.user.name, at: new Date().toISOString().slice(0, 10), rationale: cur.rationale, variant: { ...cur.variant, q: document.getElementById('ibq').value.trim() || cur.variant.q } };
+    B2[sel.key] = isB ? { status: '승인', src: `기존 검사지 후보 ${candN}`, cand: candN, reviewer: state.user.name, at: todayISO(), rationale: '담당자가 평행 문항으로 검토·승인', variant: basicCand(sel.item, candN) }
+      : { status: '승인', src: cur.src, reviewer: state.user.name, at: todayISO(), rationale: cur.rationale, variant: { ...cur.variant, q: el('ibq').value.trim() || cur.variant.q } };
     saveBank(); state.ibDraft = null; state.ibGenMsg = '승인했습니다. 학기말 B형에 들어갑니다.'; EQUATE = null; renderItemBank();
   };
-  const no = document.getElementById('ibno');
-  bindSupBank();
+  if (el('ibno')) el('ibno').onclick = () => { const B2 = bank(); if (isB) B2[sel.key] = { status: '반려', src: `기존 검사지 후보 ${candN}`, cand: candN, reviewer: state.user.name, at: todayISO(), variant: basicCand(sel.item, candN) }; else if (B2[sel.key]) Object.assign(B2[sel.key], { status: '반려', reviewer: state.user.name, at: todayISO() }); saveBank(); state.ibDraft = null; state.ibGenMsg = '반려했습니다. 승인 문항이 없으면 B형에도 A형 문항이 들어갑니다.'; EQUATE = null; renderItemBank(); };
   $view.querySelectorAll('[data-ibcand]').forEach(b => b.onclick = () => { state.ibCand = { key: sel.key, n: +b.dataset.ibcand }; renderItemBank(); });
-  if (no) no.onclick = () => { const B2 = bank(); if (isB) B2[sel.key] = { status: '반려', src: `기존 검사지 후보 ${candN}`, cand: candN, reviewer: state.user.name, at: new Date().toISOString().slice(0, 10), variant: basicCand(sel.item, candN) }; else if (B2[sel.key]) B2[sel.key].status = '반려'; saveBank(); state.ibDraft = null; state.ibGenMsg = '반려했습니다. 승인 문항이 없으면 B형에도 A형 문항이 들어갑니다.'; EQUATE = null; renderItemBank(); };
+}
+
+/* ④ 후보 검토·확정: 평행 문항·수정본·보완 문항을 한 대기열에서 */
+const CAND_KINDS = ['평행 문항', '수정본', '보완 문항'];
+function ibStep4(rows) {
+  const C = ibCands(rows), kind = CAND_KINDS.includes(state.ibCK) ? state.ibCK : '', stF = ['검토 대기', '승인', '반려'].includes(state.ibCS) ? state.ibCS : state.ibCS === '' ? '' : '검토 대기';
+  const list = C.filter(c => (!kind || c.kind === kind) && (!stF || c.st === stF));
+  const sel = list.find(c => c.id === state.ibCSel) || list[0]; state.ibCSel = sel && sel.id;
+  const n = (k, s) => C.filter(c => (!k || c.kind === k) && (!s || c.st === s)).length;
+  const left = `<p class="meta ibsixnote">3단계에서 만든 후보와 2단계 수정본을 여기서 한꺼번에 검토합니다. 승인한 문항은 5단계에서 검사지를 확정할 때 들어갑니다.</p>
+    <div class="ibbar"><span class="meta">종류</span>${['', ...CAND_KINDS].map(k => `<button class="chip ${kind === k ? 'on' : ''}" data-ibck="${k}" aria-pressed="${kind === k}">${k || '전체'} ${n(k, stF)}</button>`).join('')}</div>
+    <div class="ibbar"><span class="meta">상태</span>${['검토 대기', '승인', '반려', ''].map(s => `<button class="chip ${stF === s ? 'on' : ''}" data-ibcs="${s}" aria-pressed="${stF === s}">${s || '전체'} ${n(kind, s)}</button>`).join('')}<span class="meta ibn">${list.length}개</span></div>
+    <div class="scrollx iblist"><table class="tbl ibtbl"><colgroup><col class="ibc1"><col class="ibc2"><col class="ibc3"><col class="ibc6"><col class="ibc4"><col class="ibc5"></colgroup><thead><tr><th>종류</th><th>진단</th><th>측정 능력</th><th>대학 6대 핵심역량</th><th>출처</th><th>상태</th></tr></thead><tbody>
+    ${list.map(c => `<tr class="${sel && c.id === sel.id ? 'me' : ''}" data-ibcsel="${esc(c.id)}" tabindex="0"><td>${c.kind === '보완 문항' ? '<span class="badge ai-new">보완</span>' : c.kind === '수정본' ? '<span class="badge">수정본</span>' : '<span class="meta">평행</span>'}</td><td>${esc(c.diag)}</td><td><b>${esc(c.skill)}</b></td><td>${esc(c.six) || '<span class="meta">연결 없음</span>'}</td><td class="meta">${esc(String(c.src).replace(/\s*\d{4}-\d{2}-\d{2}$/, ''))}</td><td><span class="st st-${c.st === '검토 대기' ? '초안' : c.st}">${c.st}</span></td></tr>`).join('') || `<tr><td colspan="6" class="meta">${stF === '검토 대기' ? '검토할 후보가 없습니다. 3단계에서 AI로 후보를 만들거나 2단계에서 수정본을 등록하세요.' : '조건에 맞는 후보가 없습니다.'}</td></tr>`}</tbody></table></div>`;
+  let right = '<p class="meta">왼쪽에서 후보를 고르세요.</p>', cap = '';
+  if (sel && sel.kind === '평행 문항') { state.ibSel = sel.row.key; right = parDetailHtml(sel.row, rows, true); cap = esc(sel.row.sub); }
+  else if (sel && sel.kind === '보완 문항') { right = supDetailFor(sel.sup); cap = `${esc(sel.sup.comp)} 보완`; }
+  else if (sel && sel.kind === '수정본') {
+    cap = esc(sel.row.sub);
+    right = `<p class="meta"><b>측정 능력 정의</b> ${esc(itemPayload(sel.row).construct_definition)}</p>
+      <div class="itm-pair">${itemHtml(sel.row.item, '원문(기존 문항)')}<div class="itm"><p class="meta">수정본 · ${esc(sel.edit.by || '')} ${esc(sel.edit.at || '')}</p><p class="itm-q">${esc(sel.edit.q)}</p>${sel.row.item.o ? '<p class="meta">선택지·배점은 원문과 같습니다.</p>' : ''}</div></div>
+      <h3 class="sub3">검토 체크리스트</h3><div class="checks">${['측정 능력이 원문과 같다', '응답 방향(정·역문항)이 원문과 같다', '특정 학과·성별 등에 유리하거나 불리하지 않다', '전문대학 학생이 바로 이해할 수 있는 문장이다'].map(c => `<label class="chk"><input type="checkbox" class="edchk" ${sel.st === '승인' ? 'checked' : ''}> ${c}</label>`).join('')}</div>
+      <p class="meta">승인하면 다음에 확정하는 검사지부터 이 문장으로 나갑니다. 예전 응시 점수와 비교할 때는 문장이 바뀐 문항임을 감안합니다.</p>
+      <div class="actions no-print">${sel.st !== '승인' ? '<button class="btn" id="edok">수정본 승인</button>' : ''}${sel.st !== '반려' ? '<button class="btn ghost" id="edno">반려(원문 사용)</button>' : ''}<span class="meta" id="edmsg" aria-live="polite"></span></div>`;
+  }
+  return panelH('p-iblist', '검토할 후보', '', left) + panelH('p-ibed', sel ? `${sel.kind} 검토` : '후보 검토', cap, right);
+}
+function bindStep4(rows) {
+  $view.querySelectorAll('[data-ibck]').forEach(b => b.onclick = () => { state.ibCK = b.dataset.ibck; state.ibCSel = null; renderItemBank(); });
+  $view.querySelectorAll('[data-ibcs]').forEach(b => b.onclick = () => { state.ibCS = b.dataset.ibcs; state.ibCSel = null; renderItemBank(); });
+  $view.querySelectorAll('[data-ibcsel]').forEach(tr => { const f = () => { state.ibCSel = tr.dataset.ibcsel; state.ibDraft = null; state.ibGenMsg = ''; renderItemBank(); }; tr.onclick = f; tr.onkeydown = e => { if (e.key === 'Enter') f(); }; });
+  const C = ibCands(rows), sel = C.find(c => c.id === state.ibCSel), el = id => document.getElementById(id);
+  if (!sel) return;
+  if (sel.kind === '평행 문항') bindParDetail(sel.row, rows);
+  if (sel.kind === '보완 문항') bindSupBank();
+  if (sel.kind === '수정본') {
+    const set = st => { const L = legacyRec(sel.row.key); saveLegacy(sel.row.key, { ...L, edit: { ...L.edit, status: st, reviewer: state.user.name, revAt: todayISO() } }); renderItemBank(); };
+    if (el('edok')) el('edok').onclick = () => { if ([...document.querySelectorAll('.edchk')].some(c => !c.checked)) { el('edmsg').textContent = '체크리스트를 모두 확인해야 승인할 수 있습니다.'; return; } set('승인'); };
+    if (el('edno')) el('edno').onclick = () => set('반려');
+  }
+}
+
+/* ⑤ 진단별 문항 확정: 입학 직후(A형)·학기말(B형) 검사지 구성을 학기 버전으로 확정 */
+function ibFormCounts(rows) {
+  const by = d => rows.filter(r => r.diag === d), edits = d => by(d).filter(r => legacySt(r.key) === '수정본 반영').length;
+  const par = d => { const R = by(d); return { anchor: R.filter(r => r.anchor).length, swap: R.filter(r => !r.anchor && r.r && r.r.status === '승인').length, same: R.filter(r => !r.anchor && !(r.r && r.r.status === '승인')).length }; };
+  return IB_DIAGS.map(d => ({ d, a: by(d).length, leg: by(d).filter(r => r.grp === '기존').length, ai: by(d).filter(r => r.grp === 'AI 신규').length, ed: edits(d), sup: d === '핵심역량' ? supItems().length : 0, b: par(d) }));
+}
+function ibStep5(rows) {
+  const F = ibFormCounts(rows), S = ibStepStat(rows), locks = ibLocks(), [ty, tt] = acadSchedule(todayISO()).term.split('-').map(Number), ver = tt === 2 ? `${ty + 1}-1학기` : `${ty}-2학기`;
+  const warn = [S[2].left ? `기존 문항 ${S[2].left}개가 아직 검토 전입니다(2단계).` : '', S[4].left ? `검토 대기 후보 ${S[4].left}개가 있습니다(4단계). 확정하면 승인된 문항만 들어갑니다.` : ''].filter(Boolean);
+  return panelH('p-ibfix ibwide', '5. 진단별 문항 확정', '학기 검사지 버전', `<p class="meta">입학 직후(A형)와 학기말 재진단(B형)에 나갈 문항 구성을 확인하고 학기 버전으로 확정합니다. 공통 문항과 동등화 결과는 'B형 검사지·동등화'에서 자세히 봅니다.</p>
+    <div class="scrollx"><table class="tbl"><thead><tr><th>진단</th><th>입학 직후 A형</th><th>구성</th><th>학기말 B형</th><th>구성</th></tr></thead><tbody>
+      ${F.map(x => `<tr><td><b>${x.d}</b></td><td>${x.a + x.sup}</td><td class="meta">기존 ${x.leg}${x.ed ? `(수정본 ${x.ed})` : ''}${x.ai ? ` · AI 신규 ${x.ai}` : ''}${x.sup ? ` · 보완 ${x.sup}(전문성·자기주도성)` : ''}</td><td>${x.a}</td><td class="meta">공통 ${x.b.anchor} · 평행 승인 ${x.b.swap}${x.b.same ? ` · 평행 미승인 ${x.b.same}(A형 문항 그대로)` : ''}</td></tr>`).join('')}
+    </tbody></table></div>
+    ${warn.length ? `<ul class="meta ibwarnlist">${warn.map(w => `<li>${w}</li>`).join('')}</ul>` : '<p class="meta">검토 전 문항과 대기 후보가 없습니다.</p>'}
+    <div class="actions no-print"><label class="ibver"><span class="meta">버전</span><input id="ibver" value="${esc(ver)}" size="10"></label><button class="btn" id="iblock">이 구성으로 검사지 확정</button><button class="btn ghost" data-go2="forms">B형 검사지·동등화 보기</button><span class="meta" id="iblockmsg" aria-live="polite"></span></div>
+    ${locks.length ? `<h3 class="sub3">확정 기록</h3><div class="scrollx"><table class="tbl"><thead><tr><th>버전</th><th>확정</th><th>A형 문항</th><th>B형 평행 승인</th><th>수정본</th></tr></thead><tbody>${locks.slice().reverse().map(l => `<tr><td><b>${esc(l.ver)}</b></td><td class="meta">${esc(l.by)} ${esc(l.at)}</td><td>${l.a}</td><td>${l.swap}</td><td>${l.ed}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <p class="meta">시제품에서는 확정 내용(버전·문항 수·확정자)을 기록합니다. 운영판에서는 확정 뒤 바뀐 승인이 다음 버전에만 들어가도록 잠급니다.</p>`);
+}
+function bindStep5(rows) {
+  const b = document.getElementById('iblock'); if (!b) return;
+  b.onclick = () => {
+    const ver = document.getElementById('ibver').value.trim(), F = ibFormCounts(rows);
+    if (!ver) { document.getElementById('iblockmsg').textContent = '버전 이름을 입력하세요.'; return; }
+    const S = ibStepStat(rows); if ((S[2].left || S[4].left) && !confirm('검토 전 문항이나 대기 후보가 남아 있습니다. 승인된 문항만으로 확정할까요?')) return;
+    const B = bank(); B.formLocks = [...ibLocks(), { ver, at: todayISO(), by: state.user.name, a: F.reduce((s, x) => s + x.a + x.sup, 0), swap: F.reduce((s, x) => s + x.b.swap, 0), ed: F.reduce((s, x) => s + x.ed, 0) }]; saveBank(); renderItemBank();
+  };
+  $view.querySelectorAll('[data-go2]').forEach(x => x.onclick = () => go(x.dataset.go2));
+}
+
+function renderItemBank() {
+  const rows = bankRows();
+  state.ibDiag = IB_DIAGS.includes(state.ibDiag) ? state.ibDiag : '직업기초'; state.ibGrp = state.ibGrp || '전체';
+  const S = ibStepStat(rows);
+  const step = [1, 2, 3, 4, 5].includes(state.ibStep) ? state.ibStep : (state.ibStep = S[2].left ? 2 : S[4].left ? 4 : 3);
+  const prevBox = document.querySelector('.iblist'), prevTop = prevBox ? prevBox.scrollTop : 0, viewKey = [step, state.ibGen, state.ibDiag, state.ibGrp, state.ibArea, state.ibSkill, state.ibSix, state.ibStF, state.ibCK, state.ibCS, JSON.stringify(state.ibSort)].join('|');
+  const keepTop = state.ibViewKey === viewKey ? prevTop : 0; state.ibViewKey = viewKey;
+  const body = step === 1 ? ibStep1(rows) : step === 2 ? ibStep2(rows) : step === 3 ? ibStep3(rows) : step === 4 ? ibStep4(rows) : ibStep5(rows);
+  $view.innerHTML = `<div class="dash-grid ibgrid">
+    <section class="panel p-sum ibhead"><p class="summary">기존 3종 진단 문항을 검토하고, AI로 빈 영역과 학기말 평행 문항을 채워 학기 검사지를 확정합니다.</p>${stepperHtml(rows, step)}</section>
+    ${body}
+  </div>`;
+  { const box = document.querySelector('.iblist'); if (box) { box.scrollTop = keepTop; if (keepTop) { const me = box.querySelector('tr.me'); if (me) me.focus({ preventScroll: true }); } } }
+  $view.querySelectorAll('[data-ibstep]').forEach(b => b.onclick = () => { state.ibStep = +b.dataset.ibstep; state.ibSel = null; state.ibCSel = null; state.ibDraft = null; state.ibGenMsg = ''; renderItemBank(); window.scrollTo({ top: 0 }); });
+  if (step === 1) bindStep1(rows);
+  if (step === 2) bindStep2(rows);
+  if (step === 3) bindStep3(rows);
+  if (step === 4) bindStep4(rows);
+  if (step === 5) bindStep5(rows);
 }
 
 /* ---------- 검사지 구성과 동등화(가상 예비 시행) ---------- */
@@ -8441,8 +8647,8 @@ const TOUR_DIAG = [
   S_('진단·성과 담당 · 홈', '이 계정은 진단 운영, 문항, 알림, 학점 연계, 성과 분석 메뉴만 보입니다. 홈의 지금 할 일과 운영 프로세스가 학기 시점에 맞춰 바뀝니다.', '.p-todo', adm('diag')),
   S_('운영 프로세스', '학기 초 → 학기 중 → 학기말 단계별로 무엇을 했고 무엇이 남았는지 봅니다.', '.p-proc', async () => go('ahome')),
   S_('진단 운영 · 신뢰성 기준', '응답 시간, 일관성 문항, 한쪽으로 몰아 답하기 같은 신뢰성 판정 기준값을 정합니다.', '.p-relstd', async () => go('diagops')),
-  S_('문항 은행 · 현행 문항', '현재 쓰는 문항을 입력하거나 파일로 올리고 목록에서 관리합니다.', '.p-ibin', async () => go('itembank')),
-  S_('문항 은행 · AI 고도화', '문항 하나를 골라 AI가 같은 능력을 재는 평행 문항(학기말 B형) 초안을 만들고, 담당자가 검토해 채택합니다.', '.p-ibed', async () => go('itembank')),
+  S_('문항 은행 · 현행 문항', '현재 쓰는 문항을 입력하거나 파일로 올리고 목록에서 관리합니다.', '.p-ibin', async () => { state.ibStep = 1; go('itembank'); }),
+  S_('문항 은행 · AI 고도화', '문항 하나를 골라 AI가 같은 능력을 재는 평행 문항(학기말 B형) 초안을 만들고, 담당자가 검토해 채택합니다.', '.p-ibed', async () => { state.ibStep = 3; state.ibGen = 'par'; go('itembank'); }),
   S_('문항 분석', '예비 시행 응답으로 난이도·변별도·신뢰도를 계산해 고칠 문항을 찾습니다.', '.p-qabad', async () => go('itemqa')),
   S_('검사지 구성 · 동등화', 'A형·B형 검사지 설계표와 동등화 결과로 학기 초와 학기말 점수를 같은 척도로 맞춥니다.', '.p-feq', async () => go('forms')),
   S_('조기 경보 · 학과별 비율', '진단 재실시, 향상도 하락, 낮은 수준 반복, 계획·비교과 미참여 신호를 점수로 더해 학과별 위험·경고·주의 비율을 봅니다.', '.p-rkdept', async () => go('risk')),
@@ -8926,7 +9132,7 @@ function renderItemQA() {
     rd.readAsText(f, 'utf-8');
   };
   const dm = document.getElementById('qademo'); if (dm) dm.onclick = () => { state.qaData = null; renderItemQA(); };
-  $view.querySelectorAll('[data-qafix]').forEach(b => b.onclick = () => { const k = b.dataset.qafix; state.ibDiag = { ncs: '직업기초', core: '핵심역량', basic: '기초학습' }[k.split(':')[0]]; state.ibSel = k; go('itembank'); });
+  $view.querySelectorAll('[data-qafix]').forEach(b => b.onclick = () => { const k = b.dataset.qafix; state.ibDiag = { ncs: '직업기초', core: '핵심역량', basic: '기초학습' }[k.split(':')[0]]; state.ibSel = k; state.ibStep = 3; state.ibGen = 'par'; go('itembank'); });
 }
 
 /* ======================================================================
@@ -9914,7 +10120,7 @@ const PAGE_JOB = {
   career: 'NCS 기반 목표 직무를 정합니다(미정이면 진단 기반으로).', roadmap: '융합과정별 나노·마이크로디그리 이수 진도를 봅니다.', counsel: '진단 결과와 계획을 근거로 AI와 진로 상담을 합니다.',
   fhome: '상담 알림과 이번 학기 할 일을 봅니다.', sections: '담당 교양 분반 수업 안에서 진단 점수로 수준별 조를 편성합니다.', advisor: '상담 알림 학생의 준비 카드를 보고 상담을 기록합니다.',
   ahome: '이번 학기 운영 할 일과 프로세스 현황을 봅니다.', axkpi: '도입 전후 업무 시간을 비교해 AX 성과를 계산합니다.', diagops: '진단 일정과 응답 신뢰성 기준을 운영합니다.',
-  itembank: '운영 문항을 AI로 고도화해 B형 평행 문항을 만듭니다.', itemqa: '난이도·변별도·신뢰도로 고칠 문항을 고릅니다.', forms: 'A형·B형 검사지를 구성하고 점수를 같은 척도로 맞춥니다.',
+  itembank: '기존 문항 검토부터 AI 후보 생성·검토, 검사지 확정까지 5단계로 진행합니다.', itemqa: '난이도·변별도·신뢰도로 고칠 문항을 고릅니다.', forms: 'A형·B형 검사지를 구성하고 점수를 같은 척도로 맞춥니다.',
   integration: '학사정보시스템과 수강편람 자료를 연결합니다.', majortt: '학과·학기·반별 전공 교과목 시간표를 등록·수정·삭제합니다.', electt: '교양·융합과정 분반을 공통 또는 학과·학년·반 대상으로 배치합니다.', ncopen: '비교과 개설 정보를 등록하고 대상 학생에게 수강을 알립니다.', grades: '이수 결과를 학점과 기록에 반영합니다.', notify: '일정에 맞춰 학생에게 안내 메일을 보냅니다.',
   gain: '재진단으로 역량 향상도를 평가합니다.', impact: '교양·융합·비교과별 효과를 비교해 개편 판단을 붙입니다.', ask: '질문을 집계로 바꿔 데이터를 바로 확인합니다.',
   specmap: '교과목 명세서로 과목–역량 매핑을 만들고 승인합니다.', coverage: '교과과정이 21개 능력을 고르게 다루는지 점검합니다.', studio: '부족한 능력을 채울 교과목 개선안을 설계합니다.',
