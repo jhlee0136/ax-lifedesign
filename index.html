@@ -12265,7 +12265,7 @@ const navTops = g => g.steps.filter(s => !s[2]);
 const navSingle = g => navTops(g).length === 1 && !g.steps.some(s => s[2]);
 /* 펼침 메뉴 안의 업무 분류: 같은 일끼리 한 줄로 묶음(분류가 없는 메뉴는 그대로 한 묶음) */
 const NAV_CAT = {
-  dgn: [['진단 운영', ['diagops', 'partic']], ['문항', ['itembank']]],
+  dgn: [['문항', ['itembank']], ['진단 운영', ['diagops', 'partic']]],
   sup: [['학생 단위', ['stulookup', 'followup']], ['위험·상담', ['risk', 'counselstat']]],
   edu: [['교과 시간표', ['majortt', 'electt']], ['비교과', ['ncopen', 'ncprepost']]],
   out: [['역량 성과', ['gain']], ['수업·운영 성과', ['evals', 'axkpi']]],
