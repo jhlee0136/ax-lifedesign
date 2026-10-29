@@ -944,7 +944,9 @@ body.no-demo .phase, body.no-demo .badge.amber, body.no-demo .resfoot, body.no-d
 .ibgrid .ibtbl .ibc1 { width: 10%; } .ibgrid .ibtbl .ibc2 { width: 18%; } .ibgrid .ibtbl .ibc3 { width: 22%; } .ibgrid .ibtbl .ibc6 { width: 17%; } .ibgrid .ibtbl .ibc4 { width: 13%; } .ibgrid .ibtbl .ibc5 { width: 20%; }
 .ibgrid .ibtbl .st, .ibgrid .ibtbl .badge { font-size: 12px; padding: 1px 6px; } .ibgrid .ibtbl .meta { font-size: 12px; }
 .ibgrid .ibbar .chip { font-size: 12.5px; padding: 2px 9px; } .ibgrid .ibbar { gap: 5px; margin: 8px 0 6px; }
-.ibgrid .p-ibed .itm-pair { grid-template-columns: 1fr; } .panel.ibgridp .ibtbl td:last-child, .ibgrid .panel .ibtbl td:last-child, .ibgrid .panel .ibtbl th:last-child { text-align: left; }
+.ibgrid .p-ibed .itm-pair { grid-template-columns: 1fr; }
+/* 목록 패널은 옆 상세 패널 높이에 맞춰 늘어나고, 표는 그 안을 끝까지 채워 스크롤(중간에서 끊겨 빈칸이 남지 않게). 상세가 짧으면 최소 높이 */
+.ibgrid .p-iblist .pbody { display: flex; flex-direction: column; } .ibgrid .p-iblist .iblist { flex: 1 1 0; min-height: 420px; max-height: none; } .panel.ibgridp .ibtbl td:last-child, .ibgrid .panel .ibtbl td:last-child, .ibgrid .panel .ibtbl th:last-child { text-align: left; }
 @media (max-width: 1100px) { .ibgrid .p-iblist, .ibgrid .p-ibed { grid-column: 1 / -1; } .ibgrid .ibtbl { min-width: 520px; } }
 .ibtbl th { padding: 0; } .ibsort { all: unset; cursor: pointer; display: flex; gap: 4px; align-items: center; padding: 7px 10px 7px 0; font-weight: 700; }
 .ibsort span { color: var(--muted); font-size: 11px; } .ibsort:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
