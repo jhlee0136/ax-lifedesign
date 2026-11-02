@@ -1523,7 +1523,18 @@ body.no-demo .demostrip .phase { display: none !important; }
 .p-hck { grid-column: span 5; } .dash-grid:has(.p-hck) > .p-hgr { grid-column: span 12; }
 .p-hacad { grid-column: span 5; } .dash-grid:has(.p-hacad) > .p-hgr { grid-column: span 7; }
 @media (max-width: 1000px) { .p-hacad, .dash-grid:has(.p-hacad) > .p-hgr { grid-column: 1 / -1; } }
-.ckl { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 4px; }
+.ckl { list-style: none; padding: 0; margin: 0 0 6px; display: grid; gap: 4px; }
+.ckl li { border-left: 3px solid transparent; padding-left: 8px; border-radius: 2px; } .ckl li.is-today { border-left-color: var(--signal); background: var(--signal-soft); } .ckl li.is-late { border-left-color: var(--amber); } .ckl li.is-done .chk { color: var(--muted); } .ckl li.is-done b { text-decoration: line-through; text-decoration-color: var(--muted); }
+.ck-steps { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; counter-reset: none; }
+.ck-steps li { display: grid; gap: 1px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); border-top: 3px solid var(--line); font-size: 13px; }
+.ck-steps li b { font-size: 13.5px; } .ck-steps li span { color: var(--muted); font-size: 12px; } .ck-steps li.on { border-top-color: var(--signal); background: var(--signal-soft); } .ck-steps li.done { border-top-color: var(--ok-ink, #2f7a4f); } .ck-steps li.done b::after { content: ' ✓'; color: var(--ok-ink, #2f7a4f); }
+.ck-ed { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.ck-ed li { display: grid; grid-template-columns: 4em 5.6em 5em minmax(8em, 1fr) 7em auto; gap: 6px; align-items: center; }
+.ck-ed select, .ck-ed input { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; min-width: 0; }
+.ck-mini { margin: 0 0 4px; } .ck-refl { display: grid; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--paper); margin: 4px 0 8px; font-size: 14px; } .ck-refl .meta { margin: 0; } .ck-rs { display: flex; gap: 6px; flex-wrap: wrap; }
+.ck-refl.ck-done { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.ck-refl input { font: inherit; font-size: 13.5px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--panel); color: var(--ink); } .ck-refl .btn { justify-self: start; }
+@media (max-width: 700px) { .ck-ed li { grid-template-columns: 1fr 1fr 1fr; } .ck-ed li input { grid-column: 1 / -1; } }
 .ckl .chk { font-size: 14px; }
 .ckw { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; height: 74px; align-items: end; margin: 6px 0 6px; }
 .ckw div { height: 100%; display: grid; grid-template-rows: 1fr auto; align-items: end; text-align: center; }
@@ -2189,7 +2200,18 @@ h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: bal
 @media (prefers-reduced-motion: reduce) { .shs, .shs.on { transition: none; } .shs.on * { animation: none !important; } .shprog { display: none; } }
 /* v38: 준비도·입사지원서 꾸러미·진단 나눠 받기·진단 전 시간표 */
 .p-ready0 { grid-column: 1 / -1; } .p-ready0 .summary { font-size: 20px; }
-.p-ready { grid-column: 1 / -1; padding: 22px 24px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px 32px; }
+.p-ready { grid-column: 1 / -1; padding: 20px 24px 16px; display: block; }
+.rd-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 20px; }
+.rd-head .rd-num { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 16px; align-items: end; } .rd-head .rd-num .eyebrow { grid-column: 1 / -1; }
+.rd-job { display: grid; gap: 1px; padding-bottom: 6px; } .rd-num .rd-job b { font-size: 17px; line-height: 1.3; letter-spacing: -0.01em; font-weight: 700; } .rd-job span { font-size: 13px; }
+.rd-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.p-ready .jw-stage { height: 56px; margin: 4px 0 0; }
+.p-ready .rd-bar { margin: 0 0 10px; }
+.p-ready .rd-parts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 12px; margin-bottom: 10px; }
+.p-ready .rd-parts button { padding: 6px 8px; }
+.p-ready .rd-next { border-top: 1px solid var(--line); padding-top: 12px; }
+.p-ready .rd-next ol { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; margin: 0; }
+@media (max-width: 900px) { .p-ready .rd-parts, .p-ready .rd-next ol { grid-template-columns: 1fr; } .p-ready .jw-stage { margin-top: 30px; } }
 .rd-num { display: grid; gap: 2px; } .rd-num b { font-size: 52px; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; } .rd-num b small { font-size: 22px; color: var(--muted); margin-left: 2px; }
 .rd-num .up { color: var(--ok-ink); font-weight: 600; } .rd-num .down { color: var(--bad-ink); font-weight: 600; }
 .rd-bar { display: flex; gap: 3px; height: 14px; margin: 14px 0 12px; }
@@ -2205,7 +2227,6 @@ i.rdk { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
 .rd-next ol { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 4px; }
 .rd-next ol button > span:last-child { display: grid; gap: 1px; } .rd-next .meta { font-size: 13px; }
 .rd-gain { font-weight: 700; color: var(--ok-ink); background: var(--ok-soft, #E3F1E7); border-radius: 999px; padding: 2px 8px; font-size: 13px; font-variant-numeric: tabular-nums; min-width: 46px; text-align: center; }
-@media (max-width: 900px) { .p-ready { grid-template-columns: 1fr; } }
 .p-kit { grid-column: 1 / -1; }
 .kit-tbl td, .kit-tbl th { vertical-align: top; text-align: left !important; } .kit-tbl tr.plan td { color: var(--muted); } .kit-tbl tr.plan b { color: var(--ink); font-weight: 560; }
 .kit-tbl td:last-child { min-width: 16em; text-wrap: pretty; }
@@ -10618,35 +10639,81 @@ function isoWeek(dt) {
 }
 const weekBack = n => isoWeek(new Date(Date.now() - n * 7 * 864e5));
 const studyKey = b => `${b.d}-${b.s}-${b.n}`;
+/* 주간 3단계: ① 계획 세우기(요일·시간·활동·연결 역량, 추천으로 채우거나 직접) → ② 실천 체크 → ③ 돌아보기(평가·한 줄 메모).
+   저장: tt.plans[주] = { items: [{ id, d, s, len, n, area, done, doneAt }], at, refl: { s: 'good'|'ok'|'bad', memo, at } }. 예전 기록(tt.checks)도 실천률에 셈 */
+const weekOf = (tt, w) => { const P = (tt.plans || {})[w]; if (P) return { done: P.items.filter(x => x.done).length, total: P.items.length }; const C = (tt.checks || {})[w]; return C ? { done: (C.done || []).length, total: C.total || 0 } : { done: 0, total: 0 }; };
 function ttStat(tt) {
-  const W = [3, 2, 1, 0].map(weekBack), C = tt.checks || {};
-  const weeks = W.map(w => ({ w, done: (C[w] && C[w].done || []).length, total: C[w] ? C[w].total : 0 }));
+  const W = [3, 2, 1, 0].map(weekBack);
+  const weeks = W.map(w => ({ w, ...weekOf(tt, w) }));
   const has = weeks.filter(x => x.total);
   const rate = has.length ? Math.round(has.reduce((a, x) => a + x.done, 0) / has.reduce((a, x) => a + x.total, 0) * 100) : null;
   let low = 0; for (let i = has.length - 1; i >= 0 && has[i].done / has[i].total < .5; i--) low++;
   return { rate, weeks, lowStreak: low, at: new Date().toISOString().slice(0, 10) };
 }
+const todayIdx = () => (new Date().getDay() + 6) % 7; /* 0=월 */
+/* 추천 계획: 시간표 추천이 있으면 그 빈 시간 제안, 없으면 약한 영역 3개를 화·수·목 저녁 시간대로 */
+function suggestPlan(tt) {
+  if (tt.ran && tt.blocks.length) { const res = tt.res || (tt.res = ttRecommend(tt, tt.ai && tt.ai.picks)); if (res.study.length) return res.study.map((b, k) => ({ id: 'p' + k, d: b.d, s: b.s, len: b.len, n: b.n, area: (b.why[0] || '').split(' ')[0], done: false })); }
+  const dd = diagData(), weak = AREAS.map((a, k) => ({ a, v: dd.vals[k] })).sort((x, y) => x.v - y.v).slice(0, 3);
+  return weak.map((x, k) => ({ id: 'p' + k, d: [1, 2, 3][k], s: 9, len: 1, n: STUDY_TIP[x.a.key][0], area: x.a.short, done: false }));
+}
 function checkinHtml() {
-  const tt = state.tt || (state.tt = ttLoad());
-  if (!tt.blocks.length || !tt.ran) return `<p class="meta">'이번 학기 시간표'에서 추천을 받으면 수업 사이 빈 시간에 할 자기주도 학습이 정해지고, 여기서 주마다 실천했는지 표시합니다.</p><div class="actions"><button class="btn ghost sm" data-go="timetable">이번 학기 시간표</button></div>`;
-  const res = tt.res || (tt.res = ttRecommend(tt, tt.ai && tt.ai.picks)), wk = weekBack(0), cur = (tt.checks || {})[wk] || { done: [], total: res.study.length };
-  const st = ttStat(tt);
-  return `<ul class="ckl">${res.study.map(b => `<li><label class="chk"><input type="checkbox" data-ck="${esc(studyKey(b))}" ${cur.done.includes(studyKey(b)) ? 'checked' : ''}> <b>${DAYS[b.d]} ${pStart(b.s)}</b> ${esc(b.n)} <span class="meta">${esc(b.why[0])}</span></label></li>`).join('')}</ul>
-    <div class="ckw" aria-label="최근 4주 실천률">${st.weeks.map((x, i) => `<div><i style="height:${x.total ? Math.max(6, x.done / x.total * 100) : 0}%" class="${x.total && x.done / x.total < .5 ? 'low' : ''}"></i><span>${i === 3 ? '이번 주' : `${3 - i}주 전`}</span></div>`).join('')}</div>
-    <p class="meta">${st.rate === null ? '이번 주부터 표시해 보세요.' : `최근 4주 실천률 ${st.rate}%`}${st.lowStreak >= 2 ? ' · 2주 연속 50% 미만이라 지도교수 상담 화면에 표시됩니다.' : ''}</p>
+  const tt = state.tt || (state.tt = ttLoad()), wk = weekBack(0), P = (tt.plans || {})[wk], st = ttStat(tt), T = todayIdx();
+  const ed = state.ckEdit, n = P ? P.items.filter(x => x.done).length : 0, N = P ? P.items.length : 0;
+  const step = !P || ed ? 1 : P.refl ? 4 : n === N || T >= 4 ? 3 : 2;
+  const steps = [['계획 세우기', P ? `${N}개 확정` : '이번 주 할 일 정하기'], ['실천 체크', P ? `${n} / ${N} 했어요` : '계획 후'], ['돌아보기', P && P.refl ? '완료' : '금요일이나 다 하면']];
+  const head = `<ol class="ck-steps">${steps.map(([t, d], i) => `<li class="${step > i + 1 ? 'done' : step === i + 1 ? 'on' : ''}"><b>${i + 1}. ${t}</b><span>${d}</span></li>`).join('')}</ol>`;
+  const areaOpt = v => AREAS.map(a => `<option ${a.short === v ? 'selected' : ''}>${a.short}</option>`).join('');
+  const slotTxt = x => `${DAYS[x.d]} ${pStart(x.s)}${x.len > 1 ? ` · ${x.len}시간` : ''}`;
+  let body;
+  if (step === 1) {
+    const L = ed || (P ? P.items.map(x => ({ ...x })) : suggestPlan(tt));
+    state.ckEdit = L;
+    body = `<p class="meta">이번 주 수업 사이 빈 시간에 할 학습을 정합니다. 낮은 역량을 채우는 활동을 추천해 두었으니 바꾸거나 직접 추가하세요(2~5개 권장).</p>
+      <ul class="ck-ed">${L.map((x, i) => `<li>
+        <select data-ce="${i}" data-f="d" aria-label="요일">${DAYS.map((d, k) => `<option value="${k}" ${k === x.d ? 'selected' : ''}>${d}</option>`).join('')}</select>
+        <select data-ce="${i}" data-f="s" aria-label="시작">${Array.from({ length: EVE_P }, (_, k) => `<option value="${k + 1}" ${k + 1 === x.s ? 'selected' : ''}>${pStart(k + 1)}</option>`).join('')}</select>
+        <select data-ce="${i}" data-f="len" aria-label="시간">${[1, 2, 3].map(h => `<option value="${h}" ${h === x.len ? 'selected' : ''}>${h}시간</option>`).join('')}</select>
+        <input data-ce="${i}" data-f="n" value="${esc(x.n)}" maxlength="30" aria-label="활동">
+        <select data-ce="${i}" data-f="area" aria-label="연결 역량">${areaOpt(x.area)}</select>
+        <button type="button" class="linkbtn" data-cdel="${i}" aria-label="${esc(x.n)} 빼기">빼기</button></li>`).join('')}</ul>
+      <div class="actions"><button class="btn ghost sm" id="ckadd" type="button">직접 추가</button><button class="btn ghost sm" id="cksug" type="button">추천으로 다시 채우기</button><button class="btn sm" id="cksave" type="button" ${L.length ? '' : 'disabled'}>이번 주 계획 확정 (${L.length}개)</button>${P ? '<button class="linkbtn" id="ckcancel" type="button">취소</button>' : ''}</div>`;
+  } else {
+    body = `<ul class="ckl">${P.items.map(x => `<li class="${x.done ? 'is-done' : x.d === T ? 'is-today' : x.d < T ? 'is-late' : ''}"><label class="chk"><input type="checkbox" data-ck="${esc(x.id)}" ${x.done ? 'checked' : ''}> <b>${slotTxt(x)}</b> ${esc(x.n)} <span class="meta">${esc(x.area)}${x.d === T && !x.done ? ' · 오늘' : x.d < T && !x.done ? ' · 지남' : ''}</span></label></li>`).join('')}</ul>
+      <div class="actions ck-mini"><button class="linkbtn" id="ckedit" type="button">계획 고치기</button></div>
+      ${step >= 3 ? (P.refl ? `<div class="ck-refl ck-done"><b>돌아보기</b><span>${{ good: '잘했어요', ok: '보통이에요', bad: '아쉬워요' }[P.refl.s]}${P.refl.memo ? ` · ${esc(P.refl.memo)}` : ''}</span><button class="linkbtn" id="ckreopen" type="button">고치기</button></div>`
+        : `<div class="ck-refl"><b>한 주 돌아보기</b> <span class="meta">${n}/${N}개를 했습니다. 이번 주는 어땠나요?</span>
+          <div class="ck-rs">${[['good', '잘했어요'], ['ok', '보통이에요'], ['bad', '아쉬워요']].map(([k, t]) => `<button type="button" class="chip ${state.ckRefl === k ? 'on' : ''}" data-crs="${k}" aria-pressed="${state.ckRefl === k}">${t}</button>`).join('')}</div>
+          <input id="ckmemo" maxlength="60" placeholder="다음 주에 바꿀 점 한 줄(예: 목요일은 팀 과제로 시간 부족)">
+          <button class="btn sm" id="ckrefl" type="button" ${state.ckRefl ? '' : 'disabled'}>돌아보기 저장</button></div>`) : ''}`;
+  }
+  return `${head}${body}
+    ${st.rate === null ? '' : `<div class="ckw" aria-label="최근 4주 실천률">`}${st.rate === null ? '' : st.weeks.map((x, i) => `<div><i style="height:${x.total ? Math.max(6, x.done / x.total * 100) : 0}%" class="${x.total && x.done / x.total < .5 ? 'low' : ''}"></i><span>${i === 3 ? '이번 주' : `${3 - i}주 전`}</span></div>`).join('') + '</div>'}
+    <p class="meta">${st.rate === null ? '계획을 확정하고 실천을 체크하면 주마다 실천률이 쌓입니다.' : `최근 4주 실천률 ${st.rate}%`}${st.lowStreak >= 2 ? ' · 2주 연속 50% 미만이라 지도교수 상담 화면에 표시됩니다.' : ''}</p>
     ${demoOn() ? '<button class="linkbtn demo-note" id="ckdemo" type="button">시연: 지난 3주 기록 채우기</button>' : ''}`;
 }
 function bindCheckin() {
   const tt = state.tt; if (!tt) return;
-  const wk = weekBack(0);
-  $view.querySelectorAll('[data-ck]').forEach(c => c.onchange = () => {
-    const res = tt.res; tt.checks = tt.checks || {};
-    const cur = tt.checks[wk] = tt.checks[wk] || { done: [], total: res.study.length };
-    cur.total = res.study.length; cur.done = cur.done.filter(k => k !== c.dataset.ck); if (c.checked) cur.done.push(c.dataset.ck);
-    ttSave(tt); render();
-  });
-  const d = document.getElementById('ckdemo');
-  if (d) d.onclick = () => { const n = tt.res.study.length; tt.checks = tt.checks || {}; [3, 2, 1].forEach((k, i) => { tt.checks[weekBack(k)] = { done: tt.res.study.slice(0, [n, Math.min(1, n), 0][i]).map(studyKey), total: n }; }); ttSave(tt); render(); };
+  const wk = weekBack(0), q = id => document.getElementById(id), save = () => { ttSave(tt); render(); };
+  tt.plans = tt.plans || {};
+  const L = state.ckEdit;
+  $view.querySelectorAll('[data-ce]').forEach(c => c.onchange = () => { const x = L[+c.dataset.ce], f = c.dataset.f; x[f] = ['d', 's', 'len'].includes(f) ? +c.value : c.value.trim(); });
+  $view.querySelectorAll('[data-cdel]').forEach(b => b.onclick = () => { L.splice(+b.dataset.cdel, 1); render(); });
+  if (q('ckadd')) q('ckadd').onclick = () => { L.push({ id: 'p' + Date.now().toString(36), d: Math.min(4, todayIdx()), s: 9, len: 1, n: '', area: AREAS[0].short, done: false }); render(); setTimeout(() => { const ins = $view.querySelectorAll('.ck-ed input'); if (ins.length) ins[ins.length - 1].focus(); }, 0); };
+  if (q('cksug')) q('cksug').onclick = () => { state.ckEdit = suggestPlan(tt); render(); };
+  if (q('cksave')) q('cksave').onclick = () => {
+    const items = L.filter(x => x.n).map((x, k) => ({ ...x, id: x.id || 'p' + k })).sort((a, b) => a.d - b.d || a.s - b.s);
+    if (!items.length) { toast('활동 이름을 한 개 이상 적어 주세요.'); return; }
+    const old = tt.plans[wk]; tt.plans[wk] = { items, at: localTime(), refl: old && old.refl || null }; state.ckEdit = null; save(); toast(`이번 주 계획 ${items.length}개를 확정했습니다.`);
+  };
+  if (q('ckcancel')) q('ckcancel').onclick = () => { state.ckEdit = null; render(); };
+  if (q('ckedit')) q('ckedit').onclick = () => { state.ckEdit = tt.plans[wk].items.map(x => ({ ...x })); render(); };
+  $view.querySelectorAll('[data-ck]').forEach(c => c.onchange = () => { const x = tt.plans[wk].items.find(y => y.id === c.dataset.ck); if (x) { x.done = c.checked; x.doneAt = c.checked ? localTime() : null; } save(); });
+  $view.querySelectorAll('[data-crs]').forEach(b => b.onclick = () => { state.ckRefl = b.dataset.crs; render(); });
+  if (q('ckrefl')) q('ckrefl').onclick = () => { tt.plans[wk].refl = { s: state.ckRefl, memo: (q('ckmemo').value || '').trim(), at: localTime() }; state.ckRefl = null; save(); toast('이번 주 돌아보기를 저장했습니다.'); };
+  if (q('ckreopen')) q('ckreopen').onclick = () => { state.ckRefl = tt.plans[wk].refl.s; tt.plans[wk].refl = null; render(); };
+  const d = q('ckdemo');
+  if (d) d.onclick = () => { const base = suggestPlan(tt); [3, 2, 1].forEach((k, i) => { const items = base.map((x, j) => ({ ...x, done: j < [base.length, Math.min(1, base.length), 0][i] })); tt.plans[weekBack(k)] = { items, at: localTime(), refl: { s: ['good', 'ok', 'bad'][i], memo: '' } }; }); save(); };
 }
 
 /* ======================================================================
@@ -10669,7 +10736,10 @@ function studentTodos() {
   if (state.phase === 'end' && H.length && !H.some(h => h.end)) out.push({ t: '학기말 재진단', d: '같은 3종 진단을 다시 받아 이번 학기 성장을 확인합니다.', due: dday(settingsNow().schedule.retestEnd) || '재진단 기간', go: 'intro', lv: 'high' });
   if (H.length >= 2 && mean(H[H.length - 1].vals) - mean(H[0].vals) < ((state.alertStd && state.alertStd.drop) || 0)) out.push({ t: '지도교수 상담', d: '향상도가 기준에 못 미쳐 상담이 안내되었습니다.', due: '상담 안내', go: 'counsel', lv: 'high' });
   if (H.length && (!tt.blocks.length || !tt.ran)) out.push({ t: '이번 학기 시간표에 맞춰 교양 고르기', d: '전공 시간표를 불러오면 빈 시간에 들을 교양을 추천합니다(비교과는 원할 때만).', due: '이번 학기', go: 'timetable', lv: 'mid' });
-  if (tt.ran && tt.res && tt.res.study.length) { const cur = (tt.checks || {})[weekBack(0)]; const n = cur ? cur.done.length : 0; if (n < tt.res.study.length) out.push({ t: '이번 주 자기주도 학습 표시', d: `제안된 ${tt.res.study.length}개 중 ${n}개를 했습니다. 아래 '이번 주 자기주도 학습'에서 표시하세요.`, due: '이번 주', go: 'home', lv: 'mid' }); }
+  if (H.length) { const P = (tt.plans || {})[weekBack(0)], n = P ? P.items.filter(x => x.done).length : 0;
+    if (!P) out.push({ t: '이번 주 자기주도 학습 계획 세우기', d: "수업 사이 빈 시간에 할 학습을 정합니다. 홈의 '이번 주 자기주도 학습'에서 추천을 고쳐 확정하세요.", due: '이번 주', go: 'home', lv: 'mid' });
+    else if (n < P.items.length) out.push({ t: '이번 주 자기주도 학습 실천 체크', d: `계획한 ${P.items.length}개 중 ${n}개를 했습니다. 한 것을 체크하세요.`, due: '이번 주', go: 'home', lv: 'mid' });
+    else if (!P.refl) out.push({ t: '이번 주 자기주도 학습 돌아보기', d: '계획을 모두 했습니다. 한 주를 돌아보고 한 줄 메모를 남기세요.', due: '이번 주', go: 'home', lv: 'low' }); }
   { const cq = sGet('user', 'creq'); if (cq && cq.status === '요청') out.push({ t: '지도교수 상담 요청에 응답하기', d: `${cq.by}님이 상담 일시 후보를 보냈습니다. 홈에서 가능한 일시를 골라 응답하세요.`, due: '응답 필요', go: 'home', lv: 'high' }); }
   ncAlerts(plan || designPlan()).filter(x => !x.seen).slice(0, 3).forEach(x => out.push({ t: `비교과 신청: ${x.o.n}`, d: `${x.wish ? '관심 등록한 프로그램이 개설됐습니다.' : `${x.fit.slice(0, 2).map(shortSub).join('·')} 보완에 연계된 프로그램입니다.`} 신청 ${x.o.applyFrom || '-'} ~ ${x.o.applyTo || '-'}, 정원 ${x.o.cap || '-'}명`, due: x.st.k === 'open' ? (x.o.applyTo ? dday(x.o.applyTo) + ' 마감' : '신청 중') : '신청 전', go: 'planmap', lv: x.wish ? 'high' : 'mid' }));
   if (supDue()) out.push({ t: '6대 핵심역량 보완 문항 답하기', d: `전문성·자기주도성을 보완하는 ${supItems().length}문항입니다(2~3분). 첫 진단 결과에 반영됩니다.`, due: '첫 진단', go: 'supsurvey', lv: 'high' });
@@ -12805,7 +12875,7 @@ function jobReady() {
   const next = [];
   if (relDone.length < 4) next.push(relPlan.length ? { t: `계획한 '${relPlan[0]}' 이수하기`, d: '목표 직무 능력과 연결된 과목입니다.', gain: 7.5, go: 'planmap' } : { t: '직무 관련 교양을 이수 계획에 넣기', d: '추천 교육과정에서 직무 능력과 연결된 과목을 고릅니다.', gain: 7.5, go: 'recs' });
   if (ncDone < 2) { const o = ncAlerts(plan).find(x => x.st.k === 'open' && seen[x.o.id] !== 'applied' && ncRel(x.o)); next.push(o ? { t: `'${o.o.n}' 비교과 신청·참여`, d: `신청 ${o.o.applyFrom || '-'} ~ ${o.o.applyTo || '-'}`, gain: 5, go: 'planmap' } : { t: '관련 비교과에 관심 등록하고 참여하기', d: '개설되면 알림함으로 알려 드립니다.', gain: 5, go: 'recs' }); }
-  if (!selfOk) next.push({ t: '자기주도 학습 주 50% 이상 실천', d: '시간표 추천이 제안한 학습을 홈에서 표시합니다.', gain: 5, go: tt.ran ? 'home' : 'timetable' });
+  if (!selfOk) next.push({ t: '자기주도 학습 주 50% 이상 실천', d: '홈의 이번 주 자기주도 학습에서 계획을 세우고 실천을 체크합니다.', gain: 5, go: tt.ran ? 'home' : 'timetable' });
   if (!retest) next.push({ t: '학기말 재진단 받기', d: state.phase === 'end' ? '지금 재진단 기간입니다.' : '학기말에 열립니다.', gain: 5, go: 'intro', later: state.phase !== 'end' });
   const g0 = T.gaps.find(g => g.gap > 0);
   if (g0) { const n2 = { ...T.now, [g0.sn]: Math.min(100, (T.now[g0.sn] || 0) + 10) }; const gain = (jobFit(job, n2) - fit) / 2; if (gain > 0) next.push({ t: `${shortSub(g0.sn)} 보완(재진단에서 +10점 오르면)`, d: `지금 ${g0.v}점 · 직무 요구 ${g0.t}점`, gain, go: 'recs' }); }
@@ -12820,13 +12890,15 @@ function readyHtml() {
   if (!R) return panelH('p-ready0', '목표 직무 준비도', '', `<div class="jw-intro"><span class="jw-b">${jwSvg('grad', 0)}</span><span class="jw-say on">목표 직무를 골라 보세요. 고른 직무에 맞는 모습으로 바뀌어요!</span></div><p class="summary">목표 직무를 정하면 준비도를 계산해 드립니다.</p><p class="meta">진단 점수, 직무 관련 과목 이수, 비교과·재진단·자기주도 실천이 쌓일 때마다 준비도가 오르고, 다음에 무엇을 하면 몇 점 오르는지 알려 드립니다.</p><div class="actions"><button class="btn sm" data-go="career" type="button">목표 직무 정하기</button></div>`);
   const prev = sGet('user', 'ready'), delta = prev && prev.job === R.job.id ? R.total - prev.v : null;
   if (!prev || prev.job !== R.job.id || prev.v !== R.total) setTimeout(() => sSet('user', 'ready', { job: R.job.id, v: R.total, at: localTime().slice(0, 10) }), 0);
-  return `<section class="panel p-ready"><div class="rd-top"><div class="rd-num"><span class="eyebrow">목표 직무 준비도</span><b>${R.total}<small>%</small></b>
-      <span class="meta">${esc(R.job.name)}${delta ? ` · <span class="${delta > 0 ? 'up' : 'down'}">지난 확인(${esc(prev.at)})보다 ${delta > 0 ? '+' : ''}${delta}</span>` : ''}</span></div>
-      ${(runJobWalkers(), jobStage(jobKind(R.job), R.total, delta > 0 ? `+${delta}% 올랐어요` : R.total >= 80 ? '거의 다 왔어요!' : `지금 ${R.total}%`))}
-      <div class="rd-bar" role="img" aria-label="준비도 ${R.total}%: ${R.parts.map(p => `${p.k} ${Math.round(p.v)}/${p.max}`).join(', ')}">${R.parts.map((p, i) => `<span class="rdp rdp${i}" style="--w:${p.max}%"><i style="--f:${p.v / p.max * 100}%"></i></span>`).join('')}</div>
-      <ul class="rd-parts">${R.parts.map((p, i) => `<li><button type="button" data-go="${p.go}"><i class="rdk rdp${i}"></i><b>${p.k} ${Math.round(p.v)}<small>/${p.max}</small></b><span class="meta">${esc(p.d)}</span></button></li>`).join('')}</ul></div>
-    <div class="rd-next"><h3>다음에 하면 오르는 것</h3><ol>${R.next.map(x => `<li><button type="button" data-go="${x.go}"><span class="rd-gain">${fmtGain(x.gain)}</span><span><b>${esc(x.t)}</b><span class="meta">${esc(x.d)}</span></span></button></li>`).join('')}</ol>
-      <div class="actions"><button class="btn sm" data-go="jobkit" type="button">입사지원서 꾸러미 보기</button></div></div></section>`;
+  /* 한 패널 안에서 위→아래로: 준비도 숫자·직무 | 캐릭터와 막대(전체 폭) | 세 구성 요소(가로 3칸) | 다음에 하면 오르는 것(가로 3칸) */
+  return `<section class="panel p-ready">
+    <div class="rd-head"><div class="rd-num"><span class="eyebrow">목표 직무 준비도</span><b>${R.total}<small>%</small></b>
+        <span class="rd-job"><b>${esc(R.job.name)}</b>${delta ? `<span class="${delta > 0 ? 'up' : 'down'}">지난 확인(${esc(prev.at)})보다 ${delta > 0 ? '+' : ''}${delta}</span>` : ''}</span></div>
+      <div class="rd-acts"><button class="btn ghost sm" data-go="career" type="button">목표 직무 바꾸기</button><button class="btn sm" data-go="jobkit" type="button">입사지원서 꾸러미 보기</button></div></div>
+    ${(runJobWalkers(), jobStage(jobKind(R.job), R.total, delta > 0 ? `+${delta}% 올랐어요` : R.total >= 80 ? '거의 다 왔어요!' : `지금 ${R.total}%`))}
+    <div class="rd-bar" role="img" aria-label="준비도 ${R.total}%: ${R.parts.map(p => `${p.k} ${Math.round(p.v)}/${p.max}`).join(', ')}">${R.parts.map((p, i) => `<span class="rdp rdp${i}" style="--w:${p.max}%"><i style="--f:${p.v / p.max * 100}%"></i></span>`).join('')}</div>
+    <ul class="rd-parts">${R.parts.map((p, i) => `<li><button type="button" data-go="${p.go}"><i class="rdk rdp${i}"></i><b>${p.k} ${Math.round(p.v)}<small>/${p.max}</small></b><span class="meta">${esc(p.d)}</span></button></li>`).join('')}</ul>
+    <div class="rd-next"><h3>다음에 하면 오르는 것</h3><ol>${R.next.map(x => `<li><button type="button" data-go="${x.go}"><span class="rd-gain">${fmtGain(x.gain)}</span><span><b>${esc(x.t)}</b><span class="meta">${esc(x.d)}</span></span></button></li>`).join('')}</ol></div></section>`;
 }
 
 /* ---------- 입사지원서 꾸러미: NCS 기반 입사지원서 '교육사항'에 옮겨 적을 표 ---------- */
