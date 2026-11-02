@@ -6919,7 +6919,8 @@ function parseCSV(text) {
 function sampleGrades() {
   const co = cohort().filter(st => st.dept === state.dept).slice(0, 14);
   const rows = [GRADE_COLS];
-  co.forEach(st => st.taken[0].concat(st.taken[1]).forEach((n, i) => rows.push([st.no, st.alias, st.dept, 2026, i < st.taken[0].length ? '1' : '2', `GE${(1000 + n.length * 7) % 9000}`, n, '교양', 2, ['A+', 'A0', 'B+', 'B0', 'C+'][(n.length + i) % 5]])));
+  /* 조기 경보 시연용: 몇 명은 낮은 학점·F가 섞이게(학점 신호 확인) */
+  co.forEach((st, k) => st.taken[0].concat(st.taken[1]).forEach((n, i) => rows.push([st.no, st.alias, st.dept, 2026, i < st.taken[0].length ? '1' : '2', `GE${(1000 + n.length * 7) % 9000}`, n, '교양', 2, (k % 4 === 1 ? ['D0', 'F', 'C0', 'D+'] : ['A+', 'A0', 'B+', 'B0', 'C+'])[(n.length + i) % (k % 4 === 1 ? 4 : 5)]])));
   rows.push(['2026AB01', '학생 999', state.dept, 2026, '1', 'GE0000', 'AI와빅데이터리터러시', '교양', 1, 'A0']);
   rows.push([co[0].no, co[0].alias, state.dept, 2026, '1', 'GE9999', '미등록교과목예시', '교양', 2, 'B+']);
   rows.push([co[1].no, co[1].alias, state.dept, 2026, '3', 'GE1234', co[1].taken[0][0] || 'AI와빅데이터리터러시', '교양', 'A', 'B0']);
@@ -6981,6 +6982,83 @@ function renderGrades() {
     state.gradeApplied = { rows: ok.length, students: new Set(ok.map(x => x.no)).size, courses: new Set(ok.map(x => x.course)).size };
     toast(`${ok.length}행을 반영해 저장했습니다.`); renderGrades();
   };
+}
+
+/* ---------- 출결 연계: 학생 개인별·과목별 출결을 올려 조기 경보에 반영 ----------
+   저장: org 'attend' = { rows: { 학번: [[연도, 학기, 교과목명, 수업시수, 결석, 지각, 조퇴]] }, at, file } */
+const ATT_COLS = ['학번', '성명', '학과', '연도', '학기', '교과목명', '수업시수', '결석', '지각', '조퇴'];
+function sampleAttend() {
+  const co = cohort().filter(st => st.dept === state.dept).slice(0, 14), rows = [ATT_COLS];
+  co.forEach((st, k) => st.taken[0].forEach((n, i) => { const h = hashStr(st.no + n), heavy = k % 5 === 0 && i === 0; rows.push([st.no, st.alias, st.dept, 2026, '1', n, 30, heavy ? 9 : h % 4, (h >>> 3) % 4, (h >>> 6) % 2]); }));
+  rows.push(['2026AB01', '학생 999', state.dept, 2026, '1', 'AI와빅데이터리터러시', 30, 1, 0, 0]);
+  rows.push([co[0].no, co[0].alias, state.dept, 2026, '1', co[0].taken[0][0] || '글쓰기와토론', 30, 40, 0, 0]);
+  return rows;
+}
+function validateAttend(rows) {
+  const head = rows[0].map(h => h.trim()), miss = ATT_COLS.filter(c => !head.includes(c));
+  if (miss.length) return { fatal: `필수 열이 없습니다: ${miss.join(', ')}. 양식을 내려받아 열 이름을 맞춰 주세요.` };
+  const ix = Object.fromEntries(ATT_COLS.map(c => [c, head.indexOf(c)])), seen = new Set(), out = [];
+  rows.slice(1).forEach((r, i) => {
+    const g = c => (r[ix[c]] || '').trim(), num = c => (g(c) === '' ? 0 : Number(g(c))), err = [], warn = [];
+    if (!/^\d{8}$/.test(g('학번'))) err.push('학번은 숫자 8자리');
+    if (!/^\d{4}$/.test(g('연도'))) err.push('연도는 4자리');
+    if (!['1', '2', '1학기', '2학기', '여름', '겨울'].includes(g('학기'))) err.push('학기 값(1·2·여름·겨울)');
+    if (!g('교과목명')) err.push('교과목명 없음');
+    const T = num('수업시수'), ab = num('결석'), la = num('지각'), ea = num('조퇴');
+    if (!(T > 0 && T <= 200)) err.push('수업시수는 1~200');
+    if ([ab, la, ea].some(v => isNaN(v) || v < 0)) err.push('결석·지각·조퇴는 0 이상 숫자');
+    else if (ab > T) err.push('결석이 수업시수보다 많음');
+    else if (T && (ab + Math.floor((la + ea) / 3)) / T >= ACAD_STD.absent) warn.push('결석 1/4 이상(출석 미달 위험)');
+    const key = [g('학번'), g('교과목명'), g('연도'), g('학기')].join('|');
+    if (seen.has(key)) err.push('같은 학번·교과목·학기 중복'); seen.add(key);
+    out.push({ line: i + 2, err, warn, no: g('학번'), course: g('교과목명'), year: g('연도'), term: g('학기').replace('학기', ''), T, ab, la, ea });
+  });
+  return { rows: out };
+}
+function renderAttend() {
+  const v = state.attCheck, A0 = sGet('org', 'attend');
+  let body = '<p class="meta">파일을 올리거나 예시 파일을 불러오면 검증 결과가 여기에 나옵니다.</p>';
+  if (v && v.fatal) body = `<p class="gap">${esc(v.fatal)}</p>`;
+  else if (v) {
+    const ok = v.rows.filter(x => !x.err.length), bad = v.rows.filter(x => x.err.length), wn = ok.filter(x => x.warn.length);
+    body = `<div class="stats"><div class="stat"><b>${v.rows.length}</b><span>전체 행</span></div><div class="stat"><b>${ok.length}</b><span>반영 가능</span></div><div class="stat"><b>${wn.length}</b><span>출석 미달 위험</span></div><div class="stat"><b>${bad.length}</b><span>오류(제외)</span></div></div>
+      ${bad.length || wn.length ? `<div class="scrollx"><table class="tbl" style="margin-top:10px"><thead><tr><th>행</th><th>학번</th><th>교과목명</th><th>결석·지각·조퇴/시수</th><th>내용</th></tr></thead><tbody>${bad.concat(wn).map(x => `<tr><td>${x.line}</td><td>${esc(x.no)}</td><td>${esc(x.course)}</td><td>${x.ab}·${x.la}·${x.ea} / ${x.T}</td><td class="${x.err.length ? 'low' : ''}">${esc(x.err.concat(x.warn).join(', '))}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      <div class="actions no-print" style="margin-top:12px"><button class="btn" id="aapply" ${ok.length ? '' : 'disabled'}>오류 없는 ${ok.length}행 반영</button><span class="meta">${state.attApplied ? `반영 완료: ${state.attApplied.rows}행, 학생 ${state.attApplied.students}명` : '같은 학번·과목·학기는 새 값으로 바뀝니다.'}</span></div>`;
+  }
+  const saved = A0 && A0.rows ? (() => {
+    const R = A0.rows, nos = Object.keys(R), all = nos.flatMap(n => R[n]);
+    const flagged = nos.map(n => ({ n, s: acadSignals(n).filter(([, t]) => /출석|결석률/.test(t)) })).filter(x => x.s.length);
+    return `<div class="stats stats-sm"><div class="stat"><b>${nos.length}명</b><span>학생</span></div><div class="stat"><b>${new Set(all.map(e => e[2])).size}과목</b><span>교과목</span></div><div class="stat"><b>${flagged.length}명</b><span>출결 경보 신호</span></div></div>
+      ${flagged.length ? `<div class="scrollx"><table class="tbl"><thead><tr><th>학번</th><th>출결 신호</th></tr></thead><tbody>${flagged.slice(0, 20).map(x => `<tr><td>${x.n.slice(0, 4)}****</td><td>${esc(x.s.map(([w, t]) => `${t} +${w}`).join(' · '))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="meta">출결 경보 신호가 있는 학생이 없습니다.</p>'}
+      <div class="actions no-print"><button class="btn ghost sm" data-go="risk" type="button">조기 경보에서 보기</button><button class="linkbtn" id="aclear" type="button">저장된 출결 지우기</button></div>`;
+  })() : '';
+  $view.innerHTML = `
+  <div class="dash-grid">
+    <section class="panel p-sum"><p class="summary">출결 연계</p>
+      <p class="meta">학생 개인별·과목별 출결을 올려 이탈·부진 조기 경보에 반영합니다. 학사정보시스템 연계가 가능하면 자동으로 가져오고(1안), 어려우면 관리자가 양식을 올립니다(2안). 학기 중에도 수시로 다시 올려 최신 출결로 바꿀 수 있습니다.</p>
+      <ol class="steps"><li><b>양식 내려받기</b> ${ATT_COLS.length}개 열(학번~조퇴)</li><li><b>파일 올리기</b> CSV(엑셀에서 'CSV UTF-8'로 저장)</li><li><b>검증</b> 학번·학기·시수·중복 확인</li><li><b>반영</b> 오류 행은 빼고 반영 → 조기 경보 점수에 바로 반영</li></ol>
+      <p class="meta">경보 기준: 한 과목 결석이 수업시수의 1/4 이상이면 출석 미달 위험(+25점), 이번 학기 전체 결석률 10% 이상이면 +15점. 지각·조퇴 3회는 결석 1회로 셉니다.</p>
+      <div class="actions no-print"><button class="btn ghost" id="atpl">빈 양식 내려받기</button><button class="btn ghost" id="asample">예시 파일 내려받기</button><button class="btn" id="aload">예시 파일 바로 불러오기</button>
+        <label class="btn ghost filebtn">파일 선택<input type="file" id="afile" accept=".csv,text/csv" hidden></label></div>
+      <p class="meta"><span class="badge amber">가상 예시 데이터</span> 예시 파일에는 오류 확인용으로 잘못된 행 2개(학번 형식, 결석이 시수보다 많음)가 들어 있습니다.</p>
+    </section>
+    ${saved ? panelH('p-asaved', '저장된 출결', `${esc(A0.at || '')} 반영`, saved) : ''}
+    <section class="panel p-board"><header class="phead"><h2>검증 결과</h2><span class="meta">${state.attFile ? esc(state.attFile) : ''}</span></header><div class="pbody">${body}</div></section>
+  </div>`;
+  const q = id => document.getElementById(id);
+  q('atpl').onclick = () => download('출결연계_양식.csv', [ATT_COLS]);
+  q('asample').onclick = () => download('출결연계_예시.csv', sampleAttend());
+  q('aload').onclick = () => { state.attFile = '출결연계_예시.csv(예시)'; state.attApplied = null; state.attCheck = validateAttend(sampleAttend().map(r => r.map(String))); renderAttend(); };
+  q('afile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { state.attFile = f.name; state.attApplied = null; const rows = parseCSV(String(rd.result)); state.attCheck = rows.length ? validateAttend(rows) : { fatal: '읽을 수 있는 행이 없습니다.' }; renderAttend(); }; rd.readAsText(f, 'utf-8'); };
+  if (q('aapply')) q('aapply').onclick = () => {
+    const ok = state.attCheck.rows.filter(x => !x.err.length), A = { ...(sGet('org', 'attend') || {}) }, R = { ...(A.rows || {}) };
+    ok.forEach(x => { const L = (R[x.no] || []).filter(e => !(String(e[0]) === x.year && String(e[1]) === x.term && e[2] === x.course)); L.push([+x.year, x.term, x.course, x.T, x.ab, x.la, x.ea]); R[x.no] = L; });
+    A.rows = R; A.at = todayISO(); A.file = state.attFile || '';
+    sSet('org', 'attend', A, `출결 반영: ${ok.length}행 · ${new Set(ok.map(x => x.no)).size}명 (${state.attFile || ''})`); logLocal('출결 연계', state.attFile || '', `${ok.length}행`);
+    state.attApplied = { rows: ok.length, students: new Set(ok.map(x => x.no)).size };
+    toast(`${ok.length}행을 반영했습니다. 조기 경보에 바로 반영됩니다.`); renderAttend();
+  };
+  if (q('aclear')) q('aclear').onclick = () => { if (!confirm('저장된 출결을 모두 지웁니다. 조기 경보에서 출결 신호가 빠집니다.')) return; sSet('org', 'attend', null, '출결 전체 삭제'); state.attCheck = null; renderAttend(); };
 }
 
 /* ======================================================================
@@ -8333,7 +8411,7 @@ async function aiFetch(op, body) {
    로그인할 때 한 번 불러오고, 바꿀 때마다 저장합니다.
    ====================================================================== */
 const STORE = { user: {}, org: {}, pending: 0, failed: false };
-const USER_KEYS = ['hist', 'seen', 'plan', 'progress', 'chat', 'tt', 'creq', 'ready', 'ncpp', 'sup'], ORG_KEYS = ['ncperf', 'bank', 'settings', 'counsel', 'grades', 'notify_tpl', 'audit', 'outbox', 'catalog', 'specs', 'mapping', 'evals', 'ncsmap', 'mapdraft'];
+const USER_KEYS = ['hist', 'seen', 'plan', 'progress', 'chat', 'tt', 'creq', 'ready', 'ncpp', 'sup'], ORG_KEYS = ['ncperf', 'bank', 'settings', 'counsel', 'grades', 'notify_tpl', 'audit', 'outbox', 'catalog', 'specs', 'mapping', 'evals', 'ncsmap', 'mapdraft', 'attend'];
 const localKey = (scope, key) => (scope === 'org' ? `store:org:${key}` : `store:u:${state.user ? state.user.no || state.user.role : 'guest'}:${key}`);
 async function storeLoad() {
   STORE.user = {}; STORE.org = {}; STORE.failed = false; state.myGrades = null;
@@ -10425,7 +10503,7 @@ const PAGE_JOB = {
   fhome: '상담 알림과 이번 학기 할 일을 봅니다.', sections: '담당 교양 분반 수업 안에서 진단 점수로 수준별 조를 편성합니다.', advisor: '상담 알림 학생의 준비 카드를 보고 상담을 기록합니다.',
   ahome: '이번 학기 운영 할 일과 프로세스 현황을 봅니다.', axkpi: '도입 전후 업무 시간을 비교해 AX 성과를 계산합니다.', diagops: '진단 일정과 응답 신뢰성 기준을 운영합니다.',
   itembank: '기존 문항 검토부터 AI 후보 생성·검토, 검사지 확정까지 5단계로 진행합니다.', itemqa: '난이도·변별도·신뢰도로 고칠 문항을 고릅니다.', forms: 'A형·B형 검사지를 구성하고 점수를 같은 척도로 맞춥니다.',
-  integration: '학사정보시스템과 수강편람 자료를 연결합니다.', majortt: '학과·학기·반별 전공 교과목 시간표를 등록·수정·삭제합니다.', electt: '교양·융합과정 분반을 공통 또는 학과·학년·반 대상으로 배치합니다.', ncopen: '비교과 개설 정보를 등록하고 대상 학생에게 수강을 알립니다.', grades: '이수 결과를 학점과 기록에 반영합니다.', notify: '일정에 맞춰 학생에게 안내 메일을 보냅니다.',
+  integration: '학사정보시스템과 수강편람 자료를 연결합니다.', attend: '학생 개인별·과목별 출결을 등록해 조기 경보에 반영합니다.', majortt: '학과·학기·반별 전공 교과목 시간표를 등록·수정·삭제합니다.', electt: '교양·융합과정 분반을 공통 또는 학과·학년·반 대상으로 배치합니다.', ncopen: '비교과 개설 정보를 등록하고 대상 학생에게 수강을 알립니다.', grades: '이수 결과를 학점과 기록에 반영합니다.', notify: '일정에 맞춰 학생에게 안내 메일을 보냅니다.',
   gain: '재진단으로 역량 향상도를 평가합니다.', impact: '교양·융합·비교과별 효과를 비교해 개편 판단을 붙입니다.', ask: '질문을 집계로 바꿔 데이터를 바로 확인합니다.',
   specmap: '교과목 명세서로 과목–역량 매핑을 만들고 승인합니다.', coverage: '교과과정이 21개 능력을 고르게 다루는지 점검합니다.', studio: '부족한 능력을 채울 교과목 개선안을 설계합니다.',
   committee: '효과성 결과로 위원회 안건을 정리합니다.', report: '위원회 보고서를 PDF·Word로 만듭니다.', settings: '판정·알림·졸업 요건 기준과 학기 일정을 관리합니다.', auditlog: '설정 변경·발송·열람 기록을 확인합니다.'
@@ -11285,7 +11363,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.g
 /* A4. 관리자 담당(duty): 총괄은 모든 메뉴, 담당은 맡은 업무 메뉴만. 서버도 같은 기준으로 쓰기를 막음 */
 const DUTY_NAME = { all: '총괄', diag: '진단·성과 담당', tt: '시간표·학사 담당', nc: '비교과 담당', cur: '교육과정 담당' };
 const DUTY_STEPS = {
-  diag: ['ahome', 'axkpi', 'diagops', 'partic', 'stulookup', 'followup', 'ncprepost', 'itembank', 'itemqa', 'forms', 'grades', 'notify', 'gain', 'impact', 'ask', 'risk', 'counselstat', 'evals', 'deptdash', 'auditlog'],
+  diag: ['ahome', 'axkpi', 'diagops', 'partic', 'stulookup', 'followup', 'ncprepost', 'itembank', 'itemqa', 'forms', 'grades', 'attend', 'notify', 'gain', 'impact', 'ask', 'risk', 'counselstat', 'evals', 'deptdash', 'auditlog'],
   tt: ['ahome', 'majortt', 'electt', 'integration', 'auditlog'],
   nc: ['ahome', 'ncopen', 'ncprepost', 'notify', 'impact', 'auditlog'],
   cur: ['ahome', 'specmap', 'deptdash', 'evals', 'coverage', 'studio', 'committee', 'report', 'impact', 'gain', 'auditlog']
@@ -11395,6 +11473,29 @@ function creqFormHtml(x) {
    ====================================================================== */
 const RISK_LV = [[50, '위험', 'bad'], [30, '경고', 'warn'], [15, '주의', 'mild']];
 const riskLv = s => (RISK_LV.find(([c]) => s >= c) || [0, '안정', 'ok']);
+/* 학업 신호(이수 결과·출결): 관리자가 올린 학점 연계(org grades)와 출결 연계(org attend)를 학번으로 찾음.
+   학점: 가장 최근 학기 평점 2.0 미만 20점, F 학점 과목 15점. 출결: 결석이 수업시수의 1/4 이상인 과목(지각·조퇴 3회 = 결석 1회) 25점, 전체 결석률 10% 이상 15점 */
+const ACAD_STD = { gpa: 2.0, absent: 0.25, rate: 0.1 };
+const termKey = (y, t) => `${y}-${String(t).replace('학기', '')}`;
+function acadSignals(no) {
+  const out = [], G = (sGet('org', 'grades') || {}).rows, A = (sGet('org', 'attend') || {}).rows;
+  const gr = G && G[no];
+  if (gr && gr.length) {
+    const last = gr.map(e => termKey(e[0], e[1])).sort().pop(), L = gr.filter(e => termKey(e[0], e[1]) === last && GRADE_PT[e[5]] != null);
+    const crs = L.reduce((a, e) => a + (+e[4] || 0), 0), gpa = crs ? L.reduce((a, e) => a + GRADE_PT[e[5]] * (+e[4] || 0), 0) / crs : null, f = L.filter(e => e[5] === 'F').length;
+    if (gpa != null && gpa < ACAD_STD.gpa) out.push([20, `직전 학기 평점 ${gpa.toFixed(2)}(${ACAD_STD.gpa.toFixed(1)} 미만)`]);
+    if (f) out.push([15, `F 학점 ${f}과목`]);
+  }
+  const at = A && A[no];
+  if (at && at.length) {
+    const last = at.map(e => termKey(e[0], e[1])).sort().pop(), L = at.filter(e => termKey(e[0], e[1]) === last);
+    const abs = e => (+e[4] || 0) + Math.floor(((+e[5] || 0) + (+e[6] || 0)) / 3);
+    const over = L.filter(e => +e[3] && abs(e) / +e[3] >= ACAD_STD.absent), tot = L.reduce((a, e) => a + (+e[3] || 0), 0), rate = tot ? L.reduce((a, e) => a + abs(e), 0) / tot : 0;
+    if (over.length) out.push([25, `출석 미달 위험 ${over.length}과목(결석 1/4 이상: ${over.slice(0, 2).map(e => e[2]).join('·')}${over.length > 2 ? ' 등' : ''})`]);
+    if (rate >= ACAD_STD.rate) out.push([15, `결석률 ${Math.round(rate * 100)}%`]);
+  }
+  return out;
+}
 /* 이탈·부진 조기 경보: 신호별 가중치를 더해 0~100점. 사유를 함께 돌려 교원이 근거를 보고 판단 */
 function riskOfCohort(st) {
   const A = state.alertStd || { drop: 0, lowCount: 3 }, why = [];
@@ -11407,6 +11508,7 @@ function riskOfCohort(st) {
   if (st.basicLow && !st.suppDone) add(15, '기초학습 낮음·보충 미이수');
   if (!st.picks.length) add(10, '이수 계획 없음');
   if (!st.nc.length) add(5, '비교과 참여 없음');
+  acadSignals(st.no).forEach(([w, t]) => add(w, t));
   return { score: Math.min(100, s), why };
 }
 function riskOfReal(x) {
@@ -11419,6 +11521,7 @@ function riskOfReal(x) {
   if (x.tt && x.tt.lowStreak >= 2) add(15, '자기주도 실천 2주 연속 저조');
   if (x.n && !x.plan) add(10, '이수 계획 없음');
   if (x.creq && x.creq.status === '요청' && (Date.now() - new Date(String(x.creq.at).replace(' ', 'T')).getTime()) > 3 * 864e5) add(15, '상담 요청 3일 넘게 무응답');
+  acadSignals(x.no).forEach(([w, t]) => add(w, t));
   return { score: Math.min(100, s), why };
 }
 const riskChip = s => { const [, t, c] = riskLv(s); return `<span class="rk rk-${c}">${t} ${s}</span>`; };
@@ -11435,7 +11538,8 @@ function renderRisk() {
       <div class="rk-top"><div class="stats"><div class="stat"><b>${cnt(shown, '위험')}명</b><span>위험(50점 이상)</span></div><div class="stat"><b>${cnt(shown, '경고')}명</b><span>경고(30~49점)</span></div><div class="stat"><b>${cnt(shown, '주의')}명</b><span>주의(15~29점)</span></div></div>
       <div class="pick no-print"><label>학과<select id="rkdept">${['전체', ...depts].map(d => `<option ${d === state.rkDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label></div></div>
       <p class="meta"><span class="badge amber">가상 예시 데이터</span> 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표의 위험도 열에 나옵니다.</p>
-      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">진단 재실시 15~30점, 향상도 기준 미만 20점(크게 하락 30점), '하' 수준 2회 연속 15점, 기초학습 낮음·보충 미이수 15점, 이수 계획 없음 10점, 비교과 참여 없음 5점을 더합니다(최대 100점). 실제 이용 학생은 진단 미응시 25점, 상담 요청 3일 넘게 무응답 15점, 자기주도 실천 2주 연속 저조 15점이 더해집니다. 가중치는 시범 운영 결과로 조정합니다.</p></details></section>
+      <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '이수 결과 미반영')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결 미반영')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
+      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">진단 재실시 15~30점, 향상도 기준 미만 20점(크게 하락 30점), '하' 수준 2회 연속 15점, 기초학습 낮음·보충 미이수 15점, 이수 계획 없음 10점, 비교과 참여 없음 5점, 직전 학기 평점 2.0 미만 20점, F 학점 15점, 출석 미달 위험 과목(결석이 수업시수의 1/4 이상, 지각·조퇴 3회는 결석 1회) 25점, 전체 결석률 10% 이상 15점을 더합니다(최대 100점). 학점·출결은 운영 관리의 이수 결과·출결 연계에 올린 자료를 학번으로 찾아 반영합니다. 실제 이용 학생은 진단 미응시 25점, 상담 요청 3일 넘게 무응답 15점, 자기주도 실천 2주 연속 저조 15점이 더해집니다. 가중치는 시범 운영 결과로 조정합니다.</p></details></section>
     ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, `<div class="rkbars">${byDept.slice(0, 12).map(x => `<div class="rkbar"><span>${esc(x.d)}</span><div class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></div><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></div>`).join('')}</div>
       <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span></div>`)}
     ${panelH('p-rklist', '경보 학생', `${state.rkDept} · 점수 높은 순 30명`, `<div class="scrollx"><table class="tbl"><thead><tr><th>학생</th><th>학과</th><th>위험도</th><th>사유</th></tr></thead><tbody>${shown.filter(r => r.score >= 15).slice(0, 30).map(r => `<tr><td><b>${r.st.alias}</b> <span class="meta">${r.st.no.slice(0, 4)}****</span></td><td>${esc(r.st.dept)}</td><td>${riskChip(r.score)}</td><td class="wrap">${r.why.join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="meta">경보 대상이 없습니다.</td></tr>'}</tbody></table></div>`)}
@@ -12527,7 +12631,7 @@ const NAV = {
     { id: 'edu', t: '교과·비교과 운영', steps: [['majortt', '전공 시간표'], ['electt', '교양·융합 시간표'], ['ncopen', '비교과 개설'], ['ncprepost', '비교과 사전·사후']] },
     { id: 'out', t: '성과 분석', steps: [['gain', '역량 향상도', null, '역량 향상도'], ['impact', '교육과정 효과성', 'gain'], ['ask', 'AI 데이터 비서', 'gain'], ['evals', '강의평가 연계'], ['axkpi', 'AX 성과']] },
     { id: 'imp', t: '교육과정 개선', steps: [['specmap', '역량 매핑'], ['deptdash', '학과별 개선'], ['coverage', '개선 설계', null, '교과과정 점검'], ['studio', '개선안 설계', 'coverage'], ['committee', '위원회', null, '위원회 안건'], ['report', '위원회 보고서', 'committee']] },
-    { id: 'cfg', t: '운영 관리', steps: [['settings', '기준값·일정'], ['integration', '학사·수강편람 연동'], ['grades', '이수 결과(학점 연계)'], ['notify', '알림 발송'], ['auditlog', '변경 이력']] }]
+    { id: 'cfg', t: '운영 관리', steps: [['settings', '기준값·일정'], ['integration', '학사·수강편람 연동'], ['grades', '이수 결과(학점 연계)'], ['attend', '출결 연계'], ['notify', '알림 발송'], ['auditlog', '변경 이력']] }]
 };
 const ROLE_NAME = { student: '학생', faculty: '교원', admin: '관리자' };
 const STEP_ALIAS = { quiz: 'intro', dbreak: 'intro', retake: 'result', needdiag: 'home' };
@@ -12554,7 +12658,7 @@ const NAV_CAT = {
   edu: [['교과 시간표', ['majortt', 'electt']], ['비교과', ['ncopen', 'ncprepost']]],
   out: [['역량 성과', ['gain']], ['수업·운영 성과', ['evals', 'axkpi']]],
   imp: [['진단·분석', ['specmap', 'deptdash']], ['개선 설계', ['coverage']], ['위원회', ['committee']]],
-  cfg: [['기준', ['settings']], ['자료 연동', ['integration', 'grades']], ['알림·기록', ['notify', 'auditlog']]]
+  cfg: [['기준', ['settings']], ['자료 연동', ['integration', 'grades', 'attend']], ['알림·기록', ['notify', 'auditlog']]]
 };
 function megaHtml(role, gid) {
   const groups = navOf(role), g = groups.find(x => x.id === gid);
@@ -12830,7 +12934,7 @@ function render() {
   renderNav();
   const R = { followup: renderFollowup, ffollowup: renderFollowup, ncprepost: renderNcPrePost, ncsurvey: renderNcSurvey, supsurvey: renderSupSurvey, stulookup: renderStuLookup, fstulookup: renderStuLookup, partic: renderPartic, classprof: renderClassProf, dbreak: renderDBreak, jobkit: renderJobKit, counselstat: renderCounselStat, portfolio: renderPortfolio, risk: renderRisk, evals: renderEvals, deptdash: renderDeptDash, fdept: renderDeptDash, login: renderLogin, home: renderHome, fhome: renderFHome, ahome: renderAHome, needdiag: renderNeedDiag, intro: renderIntro, quiz: renderQuiz, coverage: renderCoverage, roadmap: renderRoadmap,
     committee: renderCommittee, growth: renderGrowth, impact: renderImpact, plan: renderPlan, studio: renderStudio, counsel: renderCounsel, career: renderCareer, sections: renderSections,
-    advisor: renderAdvisor, diagops: renderDiagOps, grades: renderGrades, analysis: renderAnalysis, timetable: renderTimetable, gap: renderGap, recs: renderRecs, planmap: renderPlanMap, gain: renderGain, itembank: renderItemBank, forms: renderForms, settings: renderSettings, integration: renderIntegration, majortt: renderMajorTT, electt: renderElectTT, ncopen: renderNcOpen, notify: renderNotify, auditlog: renderAudit, axkpi: renderAxKpi, specmap: renderSpecMap, report: renderReport, ask: renderAsk, itemqa: renderItemQA, result: renderResult };
+    advisor: renderAdvisor, diagops: renderDiagOps, grades: renderGrades, attend: renderAttend, analysis: renderAnalysis, timetable: renderTimetable, gap: renderGap, recs: renderRecs, planmap: renderPlanMap, gain: renderGain, itembank: renderItemBank, forms: renderForms, settings: renderSettings, integration: renderIntegration, majortt: renderMajorTT, electt: renderElectTT, ncopen: renderNcOpen, notify: renderNotify, auditlog: renderAudit, axkpi: renderAxKpi, specmap: renderSpecMap, report: renderReport, ask: renderAsk, itemqa: renderItemQA, result: renderResult };
   const ph = document.getElementById('pagehead'); if (ph) ph.innerHTML = u ? crumbHtml() + viewSwitchHtml() : '';
   (R[state.step] || renderResult)();
   if (state.step === 'home') { bindCheckin(); bindCreq(); }
