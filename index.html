@@ -1844,7 +1844,34 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 /* v27: 고도화 */
 .rk { display: inline-block; font-size: 12px; font-weight: 650; padding: 1px 8px; border-radius: 8px; white-space: nowrap; }
 .rk-bad { background: var(--bad-soft); color: var(--bad-ink); } .rk-warn { background: var(--amber-soft); color: var(--warn-ink); } .rk-mild { background: var(--signal-soft); color: var(--signal-deep); } .rk-ok { background: var(--ok-soft); color: var(--ok-ink); }
-.p-rklist, .p-rkdept { grid-column: span 12; }
+.p-rklist { grid-column: span 12; } .p-rkwhy { grid-column: span 5; } .p-rkdept { grid-column: span 7; }
+@media (max-width: 1100px) { .p-rkwhy, .p-rkdept { grid-column: span 12; } }
+.rkhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; } .rkhead .summary { margin-bottom: 4px; } .rkhead .summary b { color: var(--bad-ink); }
+.rkpick { display: grid; gap: 4px; font-size: 13px; color: var(--muted); } .rkpick select { font: inherit; font-size: 15px; color: var(--ink); background: var(--panel); border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 15em; }
+.rkband { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 16px 0 10px; gap: 2px; background: var(--panel); }
+.rkband i { display: block; height: 100%; } .rkband .b-bad { background: var(--bad-ink); } .rkband .b-warn { background: var(--amber); } .rkband .b-mild { background: var(--signal); opacity: .55; } .rkband .b-ok { background: var(--track); }
+.rkstages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rkst { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.rkst b { font-size: 26px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; } .rkst b small { font-size: 14px; font-weight: 600; margin-left: 2px; } .rkst em { font-style: normal; font-size: 12.5px; color: var(--muted); }
+.rkst:hover { border-color: var(--signal); } .rkst.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); } .rkst:focus-visible { outline: 3px solid var(--signal); }
+.rkst.s-bad { border-top: 4px solid var(--bad-ink); } .rkst.s-warn { border-top: 4px solid var(--amber); } .rkst.s-mild { border-top: 4px solid var(--signal); } .rkst.s-ok { border-top: 4px solid var(--track); }
+.rk-src { margin-top: 12px; }
+.c-diag { --c: #3f5a8a; } .c-plan { --c: #4f8a7e; } .c-grade { --c: #8a63a6; } .c-att { --c: #b0603f; }
+.rkcats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.rkcat { border-left: 4px solid var(--c); padding: 4px 0 4px 10px; display: grid; } .rkcat span { font-size: 13px; color: var(--muted); } .rkcat b { font-size: 20px; } .rkcat em { font-style: normal; font-size: 12px; color: var(--muted); }
+.rksig { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.rksig li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) 3.5em; gap: 10px; align-items: center; font-size: 13px; } .rksig b { text-align: right; font-variant-numeric: tabular-nums; }
+.rksig-t { height: 8px; background: var(--track); border-radius: 4px; overflow: hidden; } .rksig-t i { display: block; height: 100%; background: var(--c); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 6px; vertical-align: 0; }
+.p-rkdept .rkbars { grid-template-columns: 1fr; }
+.rkbar { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 10em 1fr 3em; gap: 8px; align-items: center; font-size: 13px; padding: 2px 4px; border-radius: 6px; }
+.rkbar:hover { background: var(--paper); } .rkbar.on { background: var(--signal-soft); font-weight: 700; } .rkbar:focus-visible { outline: 3px solid var(--signal); }
+.rklegend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 6px; }
+.rktbl td { vertical-align: top; } .rktbl .rk-who { white-space: nowrap; min-width: 6.5em; } .rktbl .rk-who .meta { display: block; font-size: 12px; white-space: nowrap; overflow-wrap: normal; word-break: keep-all; }
+.rkst .rk { justify-self: start; }
+.rkmix { display: flex; gap: 1px; width: 96px; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; } .rkmix i { display: block; background: var(--c); }
+.rkchips { display: flex; flex-wrap: wrap; gap: 4px 6px; } .rkchip { font-size: 12.5px; line-height: 1.4; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--c) 10%, var(--panel)); border-left: 3px solid var(--c); } .rkchip b { color: var(--c); font-weight: 700; }
+@media (max-width: 700px) { .rkstages, .rkcats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rksig li { grid-template-columns: 1fr 3.5em; } .rksig-t { display: none; } }
 .p-rkdept .rkbars { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
 .tbl td.wrap:last-child { text-align: left; white-space: normal; }
 .p-rklist th:last-child, .p-evup th:last-child, .p-smncs th:last-child { text-align: left; }
@@ -11730,26 +11757,72 @@ function riskOfReal(x) {
   return { score: Math.min(100, s), why };
 }
 const riskChip = s => { const [, t, c] = riskLv(s); return `<span class="rk rk-${c}">${t} ${s}</span>`; };
+/* 학과 선택 목록: 참여율 화면과 같은 학칙 순서(학부별 묶음). 학칙 목록에 없는 학과는 끝에 */
+function deptOptions(depts, sel, allLabel) {
+  const has = new Set(depts), used = new Set();
+  const groups = HAKBU.map(([h, ds]) => [h, ds.map(x => x[1]).filter(d => has.has(d) && !used.has(d) && used.add(d))]).filter(([, L]) => L.length);
+  const rest = depts.filter(d => !used.has(d));
+  const o = d => `<option value="${esc(d)}" ${d === sel ? 'selected' : ''}>${esc(d)}</option>`;
+  return `<option value="전체" ${sel === '전체' ? 'selected' : ''}>${allLabel || '전체 학과'}</option>${groups.map(([h, L]) => `<optgroup label="${esc(h)}">${L.map(o).join('')}</optgroup>`).join('')}${rest.length ? `<optgroup label="기타">${rest.map(o).join('')}</optgroup>` : ''}`;
+}
+/* 조기 경보 신호 영역(점수 구성 막대·사유 칩 색) */
+const RISK_CAT = { 진단: 'c-diag', '이수·참여': 'c-plan', 학점: 'c-grade', 출결: 'c-att' };
+const riskCatOf = k => (RISK_SIGS.find(x => x[2] === k) || ['진단'])[0];
 function renderRisk() {
-  const co = cohort(), depts = [...new Set(co.map(st => st.dept))].sort();
-  state.rkDept = state.rkDept || '전체';
-  const rows = co.map(st => ({ st, ...riskOfCohort(st) })), shown = rows.filter(r => state.rkDept === '전체' || r.st.dept === state.rkDept).sort((a, b) => b.score - a.score);
-  const cnt = (L, t) => L.filter(r => riskLv(r.score)[1] === t).length;
-  const byDept = depts.map(d => { const L = rows.filter(r => r.st.dept === d); return { d, n: L.length, bad: cnt(L, '위험'), warn: cnt(L, '경고'), mild: cnt(L, '주의') }; }).filter(x => x.n >= MIN_GROUP).sort((a, b) => (b.bad + b.warn) / b.n - (a.bad + a.warn) / a.n);
+  const co = cohort(), depts = [...new Set(co.map(st => st.dept))];
+  state.rkDept = state.rkDept || '전체'; state.rkLv = state.rkLv || '경보';
+  const A = RISK_ACAD, rows = co.map(st => ({ st, ...riskOfCohort(st) })).map(r => ({ ...r, lv: riskLv(r.score)[1] }));
+  const inDept = rows.filter(r => state.rkDept === '전체' || r.st.dept === state.rkDept);
+  const N = inDept.length, cnt = t => inDept.filter(r => r.lv === t).length, alerted = inDept.filter(r => r.lv !== '안정');
+  const ST = [['위험', 'bad', A.lvBad, 100], ['경고', 'warn', A.lvWarn, A.lvBad - 1], ['주의', 'mild', A.lvMild, A.lvWarn - 1], ['안정', 'ok', 0, A.lvMild - 1]];
+  const pct = n => (N ? Math.round(n / N * 100) : 0);
+  /* ① 단계 띠: 이 학과(또는 전체)의 단계별 인원 비율 */
+  const band = `<div class="rkband" role="img" aria-label="${ST.map(([t]) => `${t} ${cnt(t)}명`).join(', ')}">${ST.map(([t, c]) => cnt(t) ? `<i class="b-${c}" style="flex:${cnt(t)}"></i>` : '').join('')}</div>
+    <div class="rkstages">${ST.map(([t, c, a, b]) => `<button type="button" class="rkst s-${c}${state.rkLv === t ? ' on' : ''}" data-rklv="${t}" aria-pressed="${state.rkLv === t}"><span class="rk rk-${c}">${t}</span><b>${cnt(t)}<small>명</small></b><em>${a}~${b}점 · ${pct(cnt(t))}%</em></button>`).join('')}</div>`;
+  /* ② 경보 사유 분포: 경보 대상 학생 중 각 신호가 있는 인원 */
+  const hit = {}; alerted.forEach(r => (r.keys || []).forEach(k => { hit[k] = (hit[k] || 0) + 1; }));
+  const sigRows = RISK_SIGS.filter(([, , k, who]) => who !== '실제' && hit[k]).map(([g, l, k]) => ({ g, k, l: l.replace(/\{(\w+)\}/g, (_, x) => A[x]).replace(/\(위 점수 대신 적용\)/, ''), n: hit[k] })).sort((a, b) => b.n - a.n);
+  const maxH = Math.max(1, ...sigRows.map(x => x.n));
+  const catSum = Object.keys(RISK_CAT).map(g => [g, alerted.filter(r => (r.keys || []).some(k => riskCatOf(k) === g)).length]);
+  const why = `<div class="rkcats">${catSum.map(([g, n]) => `<div class="rkcat ${RISK_CAT[g]}"><span>${g}</span><b>${n}명</b><em>경보 대상의 ${alerted.length ? Math.round(n / alerted.length * 100) : 0}%</em></div>`).join('')}</div>
+    <ul class="rksig">${sigRows.map(x => `<li><span class="rksig-l"><i class="dot ${RISK_CAT[x.g]}"></i>${esc(x.l)}</span><span class="rksig-t"><i class="${RISK_CAT[x.g]}" style="width:${x.n / maxH * 100}%"></i></span><b>${x.n}명</b></li>`).join('')}</ul>`;
+  /* ③ 학과별 비율(전체일 때). 학과를 고르면 그 학과를 강조 */
+  const byDept = depts.map(d => { const L = rows.filter(r => r.st.dept === d); return { d, n: L.length, bad: L.filter(r => r.lv === '위험').length, warn: L.filter(r => r.lv === '경고').length, mild: L.filter(r => r.lv === '주의').length }; })
+    .filter(x => x.n >= MIN_GROUP).sort((a, b) => (b.bad + b.warn) / b.n - (a.bad + a.warn) / a.n);
+  const deptBars = `<div class="rkbars">${byDept.slice(0, 14).map(x => `<button type="button" class="rkbar${x.d === state.rkDept ? ' on' : ''}" data-rkd="${esc(x.d)}"><span>${esc(x.d)}</span><span class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></span><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></button>`).join('')}</div>
+    <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span><span>막대를 누르면 그 학과만 봅니다</span></div>`;
+  /* ④ 경보 학생: 점수 구성 막대 + 사유 칩(사유마다 더한 점수) */
+  const list = inDept.filter(r => (state.rkLv === '경보' ? r.lv !== '안정' : r.lv === state.rkLv)).sort((a, b) => b.score - a.score);
+  const lim = state.rkLim || 30, shownL = list.slice(0, lim);
+  const parts = r => (r.keys || []).map((k, i) => ({ k, w: A[k], t: r.why[i], g: riskCatOf(k) }));
+  const row = r => { const P = parts(r), sum = P.reduce((a, x) => a + x.w, 0) || 1;
+    return `<tr><td class="rk-who"><b>${esc(r.st.alias)}</b><span class="meta">${r.st.no.slice(0, 4)}****</span></td><td>${esc(r.st.dept)}</td>
+      <td><span class="rk rk-${riskLv(r.score)[2]}">${r.lv} ${r.score}</span><span class="rkmix" aria-hidden="true">${P.map(x => `<i class="${RISK_CAT[x.g]}" style="flex:${x.w / sum}"></i>`).join('')}</span></td>
+      <td class="wrap"><span class="rkchips">${P.map(x => `<span class="rkchip ${RISK_CAT[x.g]}">${esc(x.t)} <b>+${x.w}</b></span>`).join('')}</span></td></tr>`; };
   $view.innerHTML = `
   <div class="dash-grid">
-    <section class="panel p-sum"><p class="eyebrow">학생 지원 · 이탈·부진 조기 경보</p>
-      <p class="summary">${cnt(shown, '위험')}명이 위험, ${cnt(shown, '경고')}명이 경고 단계입니다.</p>
-      <div class="rk-top"><div class="stats"><div class="stat"><b>${cnt(shown, '위험')}명</b><span>위험(${RISK_ACAD.lvBad}점 이상)</span></div><div class="stat"><b>${cnt(shown, '경고')}명</b><span>경고(${RISK_ACAD.lvWarn}~${RISK_ACAD.lvBad - 1}점)</span></div><div class="stat"><b>${cnt(shown, '주의')}명</b><span>주의(${RISK_ACAD.lvMild}~${RISK_ACAD.lvWarn - 1}점)</span></div></div>
-      <div class="pick no-print"><label>학과<select id="rkdept">${['전체', ...depts].map(d => `<option ${d === state.rkDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label></div></div>
-      <p class="meta"><span class="badge amber">가상 예시 데이터</span> 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표의 위험도 열에 나옵니다.</p>
-      <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '학점은 가상 예시(이수 결과를 올리면 그 자료로 바뀜)')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결은 가상 예시(출결을 올리면 그 자료로 바뀜)')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
-      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">${RISK_SIGS.filter(([, , k]) => RISK_ACAD[k]).map(([, l, k, who]) => `${l.replace(/\{(\w+)\}/g, (_, x) => RISK_ACAD[x])} ${RISK_ACAD[k]}점${who === '실제' ? '(실제 이용 학생)' : who === '가상' ? '(가상 코호트)' : ''}`).join(', ')}을 더합니다(최대 100점). 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. 단계는 주의 ${RISK_ACAD.lvMild}점, 경고 ${RISK_ACAD.lvWarn}점, 위험 ${RISK_ACAD.lvBad}점부터입니다. <button class="linkbtn" type="button" onclick="state.setTab='risk';go('settings')">기준 바꾸기</button></p></details></section>
-    ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, `<div class="rkbars">${byDept.slice(0, 12).map(x => `<div class="rkbar"><span>${esc(x.d)}</span><div class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></div><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></div>`).join('')}</div>
-      <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span></div>`)}
-    ${panelH('p-rklist', '경보 학생', `${state.rkDept} · 점수 높은 순 30명`, `<div class="scrollx"><table class="tbl"><thead><tr><th>학생</th><th>학과</th><th>위험도</th><th>사유</th></tr></thead><tbody>${shown.filter(r => r.score >= 15).slice(0, 30).map(r => `<tr><td><b>${r.st.alias}</b> <span class="meta">${r.st.no.slice(0, 4)}****</span></td><td>${esc(r.st.dept)}</td><td>${riskChip(r.score)}</td><td class="wrap">${r.why.join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="meta">경보 대상이 없습니다.</td></tr>'}</tbody></table></div>`)}
+    <section class="panel p-sum p-rkhead"><p class="eyebrow">학생 지원 · 이탈·부진 조기 경보</p>
+      <div class="rkhead">
+        <div><p class="summary">${state.rkDept === '전체' ? '전체' : esc(state.rkDept)} ${N}명 중 <b>${alerted.length}명</b>이 경보 대상입니다.</p>
+          <p class="meta">진단·이수·학점·출결 신호 점수를 더해 ${A.lvMild}점 이상이면 경보 대상입니다. 단계를 누르면 아래 명단이 그 단계로 바뀝니다.</p></div>
+        <label class="rkpick no-print">학과<select id="rkdept">${deptOptions(depts, state.rkDept)}</select></label>
+      </div>
+      ${band}
+      <p class="meta rk-src"><span class="badge amber">가상 예시 데이터</span> ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '학점은 가상 예시')(sGet('org', 'grades'))} · ${(X => X ? `출결 ${Object.keys(X.rows || {}).length}명(${esc(X.at || '')})` : '출결은 가상 예시')(sGet('org', 'attend'))} · 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표에 나옵니다.
+        <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button> <button class="linkbtn" type="button" onclick="state.setTab='risk';go('settings')">기준 바꾸기</button></p>
+    </section>
+    ${panelH('p-rkwhy', '경보 사유', `경보 대상 ${alerted.length}명 · 한 학생에게 여러 사유가 겹칠 수 있음`, why)}
+    ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, deptBars)}
+    ${panelH('p-rklist', state.rkLv === '경보' ? '경보 학생' : `${state.rkLv} 단계 학생`, `${state.rkDept === '전체' ? '전체 학과' : esc(state.rkDept)} · ${list.length}명 · 점수 높은 순`, `
+      <p class="rklegend meta">점수 구성 ${Object.entries(RISK_CAT).map(([g, c]) => `<span><i class="dot ${c}"></i>${g}</span>`).join('')}</p>
+      <div class="scrollx"><table class="tbl rktbl"><thead><tr><th>학생</th><th>학과</th><th>점수와 구성</th><th>사유(더한 점수)</th></tr></thead><tbody>${shownL.map(row).join('') || '<tr><td colspan="4" class="meta">해당 학생이 없습니다.</td></tr>'}</tbody></table></div>
+      ${list.length > lim ? `<div class="actions no-print"><button class="btn ghost sm" id="rkmore" type="button">${Math.min(30, list.length - lim)}명 더 보기 (${lim}/${list.length})</button></div>` : ''}`)}
   </div>`;
-  document.getElementById('rkdept').onchange = e => { state.rkDept = e.target.value; renderRisk(); };
+  const re = () => renderRisk();
+  document.getElementById('rkdept').onchange = e => { state.rkDept = e.target.value; state.rkLim = 30; re(); };
+  $view.querySelectorAll('[data-rklv]').forEach(b => b.onclick = () => { state.rkLv = state.rkLv === b.dataset.rklv ? '경보' : b.dataset.rklv; state.rkLim = 30; re(); });
+  $view.querySelectorAll('[data-rkd]').forEach(b => b.onclick = () => { state.rkDept = state.rkDept === b.dataset.rkd ? '전체' : b.dataset.rkd; state.rkLim = 30; re(); });
+  const more = document.getElementById('rkmore'); if (more) more.onclick = () => { state.rkLim = lim + 30; re(); };
 }
 
 function printNode(html) {
