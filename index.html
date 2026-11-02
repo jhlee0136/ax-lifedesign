@@ -1607,6 +1607,9 @@ body.no-demo .demostrip .phase { display: none !important; }
 .ncform legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
 .ncsubs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 8px; }
 .ncsub { font-size: 13px; margin: 0; }
+.ncgrp { border-top: 1px dashed var(--line); padding: 6px 0 2px; } .ncgrp:first-of-type { border-top: 0; } .ncgk { margin: 0 0 2px; font-size: 13px; }
+.ncform label.ncsub:has(input:disabled) { opacity: .45; cursor: not-allowed; } .ncform label.ncfac .meta { font-size: 11px; }
+.ncsixline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; } .ncsix { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: var(--signal-soft); color: var(--ink); } .ncsix.none { background: var(--paper); color: var(--muted); }
 .nctbl td.wrap { white-space: normal; min-width: 9em; font-size: 13px; }
 .ncst { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 6px; white-space: nowrap; }
 .ncst-open { background: var(--signal); color: #fff; } .ncst-soon { background: var(--signal-soft); color: var(--signal-deep); } .ncst-run { background: var(--paper); color: var(--muted); border: 1px solid var(--line); } .ncst-done { color: var(--muted); }
@@ -10688,7 +10691,7 @@ function ncAlerts(plan) {
   const dd = diagData(), sub = Object.fromEntries(dd.subs.map(x => [x.s, x.v])), wish = ncWish(plan), seen = (plan && plan.ncSeen) || {};
   return ncOpenList().filter(o => ['soon', 'open'].includes(ncStatus(o).k))
     .filter(o => (!o.grade || o.grade === '전체' || o.grade === '1') && (!o.dept || o.dept === '전체' || o.dept === state.dept))
-    .map(o => ({ o, st: ncStatus(o), wish: wish.includes(o.n), fit: (o.subs || []).filter(s => sub[s] != null && sub[s] < HIGH), seen: seen[o.id] }))
+    .map(o => ({ o, st: ncStatus(o), wish: wish.includes(o.n), fit: [...(o.subs || []).filter(s => sub[s] != null && sub[s] < HIGH), ...(o.facs || []).filter(f => (v => v != null && v < HIGH)(coreScores().fac[CORE_FNAMES.indexOf(f)]))], seen: seen[o.id] }))
     .filter(x => (x.wish || x.fit.length) && x.seen !== 'skip')
     .sort((a, b) => (b.wish - a.wish) || (a.st.k === 'open' ? -1 : 1));
 }
@@ -10697,7 +10700,7 @@ function ncAlertHtml(plan) {
   if (!A.length) return `<p class="meta">지금 신청할 수 있는 관련 비교과가 없습니다. 관심 등록한 비교과가 개설되면 여기와 홈 '지금 할 일'에 알려 드립니다.</p>`;
   return `<ul class="ncal">${A.map(x => `<li class="${x.seen === 'applied' ? 'applied' : ''}"><div><b>${esc(x.o.n)}</b> <span class="ncst ncst-${x.st.k}">${x.st.t}</span>${x.wish ? ' <span class="badge">관심 등록</span>' : ''}
       <span class="meta">${x.o.in ? `${x.o.in}-IN ${IN_AXIS[x.o.in]} · ` : ''}신청 ${esc(x.o.applyFrom || '-')} ~ ${esc(x.o.applyTo || '-')} · 운영 ${esc(x.o.runFrom || '-')}${x.o.runTo && x.o.runTo !== x.o.runFrom ? ` ~ ${esc(x.o.runTo)}` : ''} · ${esc(x.o.mode || '')} · 정원 ${x.o.cap || '-'}명</span>
-      <span class="meta">${x.fit.length ? `${x.fit.slice(0, 3).map(shortSub).join('·')} 보완에 연계` : '관심 등록한 프로그램'}</span></div>
+      <span class="meta">${x.fit.length ? `${x.fit.slice(0, 3).map(shortSub).join('·')} 보완에 연계${(L => (L.length ? ` · 대학 6대 핵심역량 ${L.join('·')}` : ''))(ncSix(x.o.subs, x.o.facs).filter(y => y.k !== '연결 없음').map(y => y.k))}` : '관심 등록한 프로그램'}</span></div>
       <div class="ncal-act">${x.seen === 'applied' ? '<span class="okc">신청함</span>' : `${x.st.k === 'open' ? `<button class="btn sm" data-ncapply="${x.o.id}">신청하기</button>` : ''}<button class="linkbtn" data-ncskip="${x.o.id}">이번엔 넘기기</button>`}</div></li>`).join('')}</ul>`;
 }
 function bindNcAlerts(plan, after) {
@@ -10709,10 +10712,29 @@ function bindNcAlerts(plan, after) {
   $view.querySelectorAll('[data-ncskip]').forEach(b => b.onclick = () => { plan.ncSeen = { ...(plan.ncSeen || {}), [b.dataset.ncskip]: 'skip' }; savePlan(); after(); });
 }
 /* 관리자: 비교과 개설 등록·수정·복사·삭제 */
-function ncReach(subs) {
-  /* 진단 기준 알림 대상 추정(가상 코호트): 연계 역량이 속한 영역 점수가 '높음' 미만인 학생 수 */
+function ncReach(subs, facs) {
+  /* 진단 기준 알림 대상 추정(가상 코호트): 연계 하위능력이 속한 영역 또는 연계 핵심역량 요인 점수가 '높음' 미만인 학생 수 */
   const areas = [...new Set((subs || []).map(s => AREAS.findIndex(a => a.key === CURRICULUM.areaOf[s])).filter(k => k >= 0))];
-  return areas.length ? cohort().filter(st => areas.some(k => st.traceArea[0][k] < HIGH)).length : 0;
+  const fi = (facs || []).map(f => CORE_FNAMES.indexOf(f)).filter(k => k >= 0);
+  if (!areas.length && !fi.length) return 0;
+  return cohort().filter(st => areas.some(k => st.traceArea[0][k] < HIGH) || (fi.length && (cf => fi.some(k => cf[k] < HIGH))(cohortSnap(st, 0).cf))).length;
+}
+/* 연계 역량: NCS 하위능력(subs)과 핵심역량진단 요인(facs)을 대학 6대 핵심역량별로 묶어 고름(문항 관리에서 바꾼 연결 그대로 사용).
+   자기주도성은 NCS 연결이 없어 핵심역량진단 요인으로 고름. 담당자가 모든 역량에 체크하지 않도록 최대 2개 */
+const NC_MAX = 2;
+function ncGroups() {
+  const C = sixCoreNow(), subOk = CURRICULUM.subs.filter(n => SUBNAMES.includes(n));
+  const g = C.map(x => ({ k: x.k, subs: subOk.filter(n => x.sub[n]), facs: x.fac.filter(f => CORE_FNAMES.includes(f)) }));
+  const none = { k: '연결 없음', subs: subOk.filter(n => !C.some(x => x.sub[n])), facs: CORE_FNAMES.filter(f => !C.some(x => x.fac.includes(f))) };
+  return [...g, none].filter(x => x.subs.length || x.facs.length);
+}
+/* 고른 연계 역량이 영향을 주는 6대 핵심역량: [{ k, items:[이름] }] (연결 없는 항목은 k '연결 없음') */
+function ncSix(subs, facs) {
+  const C = sixCoreNow(), out = [];
+  C.forEach(x => { const it = [...(subs || []).filter(n => x.sub[n]).map(shortSub), ...(facs || []).filter(f => x.fac.includes(f))]; if (it.length) out.push({ k: x.k, items: it }); });
+  const none = [...(subs || []).filter(n => !C.some(x => x.sub[n])).map(shortSub), ...(facs || []).filter(f => !C.some(x => x.fac.includes(f)))];
+  if (none.length) out.push({ k: '연결 없음', items: none });
+  return out;
 }
 function ncSaveOne(id, o, note) { catalogPatch(['ncOpen', id], o, note); logLocal('비교과 개설', o ? o.n : id, note); }
 function ncSaveAll(list, note) { const c = { ...(catalogNow() || {}) }; c.ncOpen = list; c.at = localTime().slice(0, 16); sSet('org', 'catalog', c, note); logLocal('비교과 개설', '비교과', note); }
@@ -10720,8 +10742,12 @@ function renderNcOpen() {
   const list = ncOpenList(), E = state.ncEdit, edit = E != null && E >= 0 ? list[E] : null;
   const F = state.ncForm = state.ncForm || (edit ? { ...edit } : { n: NONCURR[0].n, subs: [...NONCURR[0].subs], in: NONCURR[0].in, host: NONCURR[0].host, mode: '대면', applyFrom: todayISO(), applyTo: '', runFrom: '', runTo: '', cap: 30, grade: '전체', dept: '전체', link: '' });
   const yr = todayISO().slice(0, 4), thisYear = list.filter(o => (o.applyFrom || '').startsWith(yr) || (o.runFrom || '').startsWith(yr));
-  const subsBox = CURRICULUM.subs.map(s => `<label class="chk ncsub"><input type="checkbox" data-ncsub="${s}" ${F.subs.includes(s) ? 'checked' : ''}> ${shortSub(s)}</label>`).join('');
-  const rows = list.map((o, i) => { const st = ncStatus(o); return `<tr><td><b>${esc(o.n)}</b><br><span class="meta">${esc(o.host || '')} · ${esc(o.mode || '')}</span>${o.summary ? `<br><span class="meta ncsumt">${esc(o.summary.length > 60 ? o.summary.slice(0, 60) + '…' : o.summary)}</span>` : ''}</td><td>${o.in ? o.in + '-IN' : '-'}</td><td class="wrap">${(o.subs || []).map(shortSub).join('·')}</td><td>${esc(o.applyFrom || '-')} ~ ${esc(o.applyTo || '-')}</td><td>${esc(o.runFrom || '-')}${o.runTo && o.runTo !== o.runFrom ? ` ~ ${esc(o.runTo)}` : ''}</td><td>${o.cap || '-'}명</td><td><span class="ncst ncst-${st.k}">${st.t}</span></td><td>${ncReach(o.subs)}명</td><td><button class="linkbtn" data-ncmail="${i}">관심 학생에게 메일</button> <button class="linkbtn" data-ncedit="${i}">수정</button> <button class="linkbtn" data-nccopy="${i}">다음 해로 복사</button> <button class="linkbtn" data-ncdel="${i}">삭제</button></td></tr>`; }).join('');
+  F.facs = F.facs || [];
+  const full = F.subs.length + F.facs.length >= NC_MAX;
+  const box = (kind, name, on) => `<label class="chk ncsub ${kind === 'fac' ? 'ncfac' : ''}"><input type="checkbox" data-nc${kind}="${esc(name)}" ${on ? 'checked' : full ? 'disabled' : ''}> ${esc(kind === 'sub' ? shortSub(name) : name)}${kind === 'fac' ? ' <span class="meta">핵심역량</span>' : ''}</label>`;
+  const subsBox = ncGroups().map(g => `<div class="ncgrp"><p class="ncgk"><b>${g.k}</b>${g.k === '연결 없음' ? ' <span class="meta">6대 핵심역량 점수에 반영되지 않음</span>' : ''}</p><div class="ncsubs">${g.subs.map(n => box('sub', n, F.subs.includes(n))).join('')}${g.facs.map(f => box('fac', f, F.facs.includes(f))).join('')}</div></div>`).join('');
+  const sixLine = (subs, facs) => (subs.length + facs.length ? ncSix(subs, facs).map(x => `<span class="ncsix ${x.k === '연결 없음' ? 'none' : ''}"><b>${x.k}</b> ${x.items.join('·')}</span>`).join(' ') : '<span class="meta">아직 고르지 않았습니다.</span>');
+  const rows = list.map((o, i) => { const st = ncStatus(o); return `<tr><td><b>${esc(o.n)}</b><br><span class="meta">${esc(o.host || '')} · ${esc(o.mode || '')}</span>${o.summary ? `<br><span class="meta ncsumt">${esc(o.summary.length > 60 ? o.summary.slice(0, 60) + '…' : o.summary)}</span>` : ''}</td><td>${o.in ? o.in + '-IN' : '-'}</td><td class="wrap">${[...(o.subs || []).map(shortSub), ...(o.facs || [])].join('·')}${ncSix(o.subs, o.facs).length ? `<br><span class="meta">${esc(ncSix(o.subs, o.facs).map(x => x.k).join('·'))}</span>` : ''}</td><td>${esc(o.applyFrom || '-')} ~ ${esc(o.applyTo || '-')}</td><td>${esc(o.runFrom || '-')}${o.runTo && o.runTo !== o.runFrom ? ` ~ ${esc(o.runTo)}` : ''}</td><td>${o.cap || '-'}명</td><td><span class="ncst ncst-${st.k}">${st.t}</span></td><td>${ncReach(o.subs, o.facs)}명</td><td><button class="linkbtn" data-ncmail="${i}">관심 학생에게 메일</button> <button class="linkbtn" data-ncedit="${i}">수정</button> <button class="linkbtn" data-nccopy="${i}">다음 해로 복사</button> <button class="linkbtn" data-ncdel="${i}">삭제</button></td></tr>`; }).join('');
   $view.innerHTML = `
   <div class="dash-grid">
     <section class="panel p-sum"><p class="eyebrow">교과·비교과 운영 · 비교과 개설</p>
@@ -10743,18 +10769,30 @@ function renderNcOpen() {
       <label>대상 학년<select id="ncgr">${['전체', '1', '2', '3'].map(g => `<option value="${g}" ${g === F.grade ? 'selected' : ''}>${g === '전체' ? '전체' : g + '학년'}</option>`).join('')}</select></label>
       <label>대상 학과<select id="ncdp"><option ${F.dept === '전체' ? 'selected' : ''}>전체</option>${CURRICULUM.depts.filter(d => CURRICULUM.deptGroup[d]).map(d => `<option ${d === F.dept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
       <label class="full">신청 링크(선택)<input id="nclink" type="url" placeholder="https://비교과 시스템 신청 주소" value="${esc(F.link || '')}"></label>
-      <fieldset class="full"><legend>연계 역량(하위능력)</legend><div class="ncsubs">${subsBox}</div></fieldset>
-      <p class="meta full">진단 기준 알림 대상 약 <b id="ncreach">${ncReach(F.subs)}</b>명(가상 코호트 900명 중, 연계 영역이 '높음' 미만)과 관심 등록 학생에게 알립니다.</p>
+      <fieldset class="full"><legend>연계 역량 · 최대 ${NC_MAX}개</legend><p class="meta">대학 6대 핵심역량별로 묶은 직업기초 하위능력과 핵심역량진단 요인입니다. 이 비교과가 가장 직접 기르는 역량을 ${NC_MAX}개까지 고릅니다(두 역량에 걸치는 항목은 양쪽에 함께 보임).</p>${subsBox}</fieldset>
+      <p class="full ncsixline" id="ncsix"><span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixLine(F.subs, F.facs)}</p>
+      <p class="meta full">진단 기준 알림 대상 약 <b id="ncreach">${ncReach(F.subs, F.facs)}</b>명(가상 코호트 900명 중, 연계 영역이 '높음' 미만)과 관심 등록 학생에게 알립니다.</p>
       <div class="actions full"><button class="btn" type="submit">${edit ? '수정 저장' : '개설 등록하고 알리기'}</button>${edit ? '<button class="linkbtn" id="nccancel" type="button">취소</button>' : ''}<span class="meta" id="ncmsg" aria-live="polite">${esc(state.ncMsg || '')}</span></div></form>`)}
     ${panelH('p-nclist', '개설 목록', `${list.length}개`, list.length ? `<div class="scrollx"><table class="tbl nctbl"><thead><tr><th>프로그램</th><th>단계</th><th>연계 역량</th><th>신청 기간</th><th>운영</th><th>정원</th><th>상태</th><th>알림 대상</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="meta">등록된 개설 정보가 없습니다. 왼쪽에서 개설을 등록하세요.</p><button class="btn ghost sm" id="ncdemo" type="button">시연용 개설 예시 채우기</button>`)}
   </div>`;
   const q = id => document.getElementById(id);
-  const read = () => ({ ...F, summary: q('ncsum').value.trim(), n: q('ncn').value.trim(), in: +q('ncin').value, mode: q('ncmode').value, host: q('nchost').value.trim(), cap: +q('nccap').value || null, applyFrom: q('ncaf').value, applyTo: q('ncat').value, runFrom: q('ncrf').value, runTo: q('ncrt').value, grade: q('ncgr').value, dept: q('ncdp').value, link: q('nclink').value.trim(), subs: [...$view.querySelectorAll('[data-ncsub]:checked')].map(c => c.dataset.ncsub) });
-  q('ncpick').onchange = e => { const p = NONCURR.find(x => x.n === e.target.value); state.ncForm = p ? { ...read(), n: p.n, subs: [...p.subs], in: p.in, host: p.host, summary: p.d || '' } : { ...read(), n: '', subs: [], summary: '' }; renderNcOpen(); };
-  $view.querySelectorAll('[data-ncsub]').forEach(c => c.onchange = () => { q('ncreach').textContent = ncReach(read().subs); });
+  const read = () => ({ ...F, summary: q('ncsum').value.trim(), n: q('ncn').value.trim(), in: +q('ncin').value, mode: q('ncmode').value, host: q('nchost').value.trim(), cap: +q('nccap').value || null, applyFrom: q('ncaf').value, applyTo: q('ncat').value, runFrom: q('ncrf').value, runTo: q('ncrt').value, grade: q('ncgr').value, dept: q('ncdp').value, link: q('nclink').value.trim(), subs: [...new Set([...$view.querySelectorAll('[data-ncsub]:checked')].map(c => c.dataset.ncsub))], facs: [...new Set([...$view.querySelectorAll('[data-ncfac]:checked')].map(c => c.dataset.ncfac))] });
+  q('ncpick').onchange = e => { const p = NONCURR.find(x => x.n === e.target.value); state.ncForm = p ? { ...read(), n: p.n, subs: p.subs.slice(0, NC_MAX), facs: [], in: p.in, host: p.host, summary: p.d || '' } : { ...read(), n: '', subs: [], facs: [], summary: '' }; renderNcOpen(); };
+  /* 같은 항목은 여러 묶음에 있어 함께 체크·해제하고, 최대 개수에 닿으면 나머지를 잠금 */
+  $view.querySelectorAll('[data-ncsub], [data-ncfac]').forEach(c => c.onchange = () => {
+    const attr = c.dataset.ncsub != null ? 'data-ncsub' : 'data-ncfac', val = c.getAttribute(attr), same = () => [...$view.querySelectorAll(`[${attr}]`)].filter(x => x.getAttribute(attr) === val);
+    same().forEach(x => { x.checked = c.checked; });
+    const o = read(), n = o.subs.length + o.facs.length;
+    if (n > NC_MAX) { same().forEach(x => { x.checked = false; }); q('ncmsg').textContent = `연계 역량은 최대 ${NC_MAX}개까지 고를 수 있습니다.`; return; }
+    q('ncmsg').textContent = '';
+    $view.querySelectorAll('[data-ncsub], [data-ncfac]').forEach(x => { if (!x.checked) x.disabled = n >= NC_MAX; });
+    q('ncsix').innerHTML = `<span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixLine(o.subs, o.facs)}`;
+    q('ncreach').textContent = ncReach(o.subs, o.facs);
+  });
   q('ncf').onsubmit = e => {
     e.preventDefault(); const o = read();
-    if (!o.subs.length) { q('ncmsg').textContent = '연계 역량을 하나 이상 고르세요.'; return; }
+    if (!o.subs.length && !o.facs.length) { q('ncmsg').textContent = '연계 역량을 하나 이상 고르세요.'; return; }
+    if (o.subs.length + o.facs.length > NC_MAX) { q('ncmsg').textContent = `연계 역량은 최대 ${NC_MAX}개입니다. 가장 직접 기르는 역량만 남기세요.`; return; }
     if (o.applyTo && o.applyFrom && o.applyTo < o.applyFrom) { q('ncmsg').textContent = '신청 마감이 시작보다 빠릅니다.'; return; }
     if (o.runFrom && o.applyTo && o.runFrom < o.applyTo) { q('ncmsg').textContent = '운영 시작이 신청 마감보다 빠릅니다. 날짜를 확인하세요.'; return; }
     const id = edit ? edit.id : 'nc' + Date.now().toString(36);
