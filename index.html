@@ -951,7 +951,18 @@ body.no-demo .phase, body.no-demo .badge.amber, body.no-demo .resfoot, body.no-d
 .axbars .b1.neg { background: var(--amber); }
 .p-qabad { grid-column: span 12; } .p-qa-ncs { grid-column: span 12; } .p-qa-core, .p-qa-basic { grid-column: span 6; }
 @media print { body.printing #report .rdoc { border: 0; padding: 0; max-width: none; } }
-.p-set5, .p-set7 { grid-column: span 6; } .p-set6 { grid-column: span 12; } .p-set8 { grid-column: span 12; order: 9; } .p-aiuse { grid-column: span 12; }
+.p-set5, .p-set7 { grid-column: span 6; } .p-set6 { grid-column: span 12; } .p-set8 { grid-column: span 12; order: 9; }
+.rs-lv { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: 4px 0 12px; font-size: 14px; } .rs-lv > span:first-child { font-weight: 700; } .rs-lv label { display: inline-flex; align-items: center; gap: 6px; } .rs-lv .rs-track { flex: 1 1 220px; min-width: 180px; }
+.rs-in { font: inherit; font-size: 14px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); text-align: right; margin: 0 3px; } .rs-in.chg { border-color: var(--signal); background: var(--signal-soft); }
+.rs-tbl td, .rs-tbl th { vertical-align: middle; } .rs-tbl .rs-l { min-width: 18em; } .rs-tbl .rs-s { width: 38%; min-width: 180px; }
+.rs-tbl tr.rs-g th { font-size: 13px; color: var(--ink); padding-top: 16px; border-bottom: 1px solid var(--line); text-align: left !important; }
+.rs-tbl td.rs-l { text-align: left !important; } .rs-tbl td:last-child, .rs-tbl th:last-child { text-align: center; width: 6em; }
+.rs-who { font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
+.rs-track { position: relative; height: 12px; border-radius: 6px; background: var(--paper); border: 1px solid var(--line); overflow: hidden; }
+.rs-zone { position: absolute; top: 0; bottom: 0; opacity: .32; } .rs-zone.z-mild { background: var(--rk-mild, #8a9bbd); } .rs-zone.z-warn { background: var(--rk-warn, #c8922e); } .rs-zone.z-bad { background: var(--rk-bad, #a33a3a); }
+.rs-bar { position: absolute; left: 0; top: 3px; bottom: 3px; background: var(--ink); border-radius: 0 3px 3px 0; }
+.rk.rk-off { background: var(--paper); color: var(--muted); }
+.rs-prev { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--signal-soft); font-size: 14.5px; } .p-aiuse { grid-column: span 12; }
 @media (max-width: 1000px) { .p-set5, .p-set6, .p-set7 { grid-column: 1 / -1; } }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 300; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: min(560px, calc(100vw - 32px)); transition: opacity .2s, transform .2s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -8494,8 +8505,13 @@ function acadSchedule(today) {
   const diagEnd = isoAdd(t.start, 11);
   return { term: t.term, schedule: { diagStart: t.start, diagEnd, remind: isoAdd(diagEnd, -3), retestStart: isoAdd(t.final, -7), retestEnd: t.end } };
 }
-/* 조기 경보 학업 신호 기준(운영 설정 acad). 비율은 %로 저장 */
-let RISK_ACAD = { gpa: 2.0, wGpa: 20, wF: 15, absent: 25, wAbs: 25, rate: 10, wRate: 15, late: 3 };
+/* 이탈·부진 조기 경보 기준(운영 설정 acad): 신호별 점수(w…)·조건값·단계 경계(lv…). 비율은 %로 저장 */
+let RISK_ACAD = {
+  lvMild: 15, lvWarn: 30, lvBad: 50,
+  wRel1: 15, wRel2: 30, drop: 0, wDrop: 20, dropBig: 5, wDropBig: 30, lowCount: 3, wLow: 15, wBasic: 15, wNoPlan: 10, wNoNc: 5,
+  gpa: 2.0, wGpa: 20, wF: 15, absent: 25, wAbs: 25, rate: 10, wRate: 15, late: 3,
+  wNoDiag: 25, wRealRel: 25, selfWeeks: 2, wSelf: 15, creqDays: 3, wCreq: 15
+};
 const SETTINGS_DEFAULT = {
   grade: { high: 70, mid: 40 },
   rel: { ...REL_DEFAULT },
@@ -8533,9 +8549,38 @@ const SET_FIELDS = [
   ['개인정보', '집계 화면에서 이 인원 미만 집단은 공개하지 않습니다.', [['privacy.minGroup', '집계 공개 최소 인원']]],
   ['6대 핵심역량 점수 비중', '3종 진단을 6대 핵심역량 점수로 합칠 때의 비중(%)입니다. 측정 근거가 없는 진단은 빼고 나머지 비중으로 다시 맞춥니다. 가산점은 학기말 재검사 점수에 더하는 최대 점수입니다(0이면 쓰지 않음).', [['six.ncs', '직업기초역량진단'], ['six.core', '핵심역량진단'], ['six.basic', '기초학습역량진단'], ['six.bonusPro', '재검사 가산점 최대: 전문성(전공 평점·직무 능력단위 이수율)'], ['six.bonusSelf', '재검사 가산점 최대: 자기주도성(자기주도 학습 실천률)']]],
   ['졸업 요건(학칙)', '학칙 제24조의3(졸업학점)과 제24조④(학기당 이수 학점) 값입니다. 수업연한 3년 학과는 학칙 제5조②로 정합니다. 직업기초 영역 학점과 3-IN 비교과 횟수는 규정에 없는 대학 자체 기준이라 0(선택)으로 둡니다.', [['grad.tot2', '졸업 최저 학점(2년제)'], ['grad.tot3', '졸업 최저 학점(3년제)'], ['grad.lib2', '교양 최저 학점(2년제)'], ['grad.lib3', '교양 최저 학점(3년제)'], ['grad.major2', '전공 최저 학점(2년제)'], ['grad.major3', '전공 최저 학점(3년제)'], ['grad.semMin', '학기당 최소 이수 학점'], ['grad.semMax', '학기당 최대 이수 학점'], ['grad.basicMin', '직업기초 영역 최소 학점(0이면 점검 안 함)'], ['grad.ncPerIn', '3-IN 단계별 비교과 최소 횟수(0이면 선택)']]],
-  ['AI 사용 한도', '넘으면 AI를 호출하지 않고 규칙 기반으로 동작합니다. 충전한 크레딧보다 월 예산을 낮게 두세요.', [['ai.budget', '월 예산(US$)'], ['ai.perUserDaily', '1인 하루 호출 수'], ['ai.dailyTotal', '하루 전체 호출 수']]],
-  ['조기 경보 · 학점·출결', '이수 결과(학점 연계)와 출결 연계 자료로 이탈·부진 조기 경보 점수를 더하는 기준입니다. 점수는 그 신호가 있을 때 더하는 값이고, 0이면 그 신호를 쓰지 않습니다.', [['acad.gpa', '직전 학기 평점 기준(4.5 만점, 미만이면)'], ['acad.wGpa', '평점 미달 점수'], ['acad.wF', 'F 학점 과목 있음 점수'], ['acad.absent', '과목 결석 기준(학기 총 수업시간의 %, 이상이면)'], ['acad.wAbs', '출석 미달 위험 과목 점수'], ['acad.rate', '전체 결석률 기준(%, 이상이면)'], ['acad.wRate', '결석률 초과 점수'], ['acad.late', '지각·조퇴 몇 회를 결석 1시간으로']]]
+  ['AI 사용 한도', '넘으면 AI를 호출하지 않고 규칙 기반으로 동작합니다. 충전한 크레딧보다 월 예산을 낮게 두세요.', [['ai.budget', '월 예산(US$)'], ['ai.perUserDaily', '1인 하루 호출 수'], ['ai.dailyTotal', '하루 전체 호출 수']]]
 ];
+/* 조기 경보 기준 패널: 신호마다 [묶음, 설명(조건값은 {키}로 입력칸), 점수 키, 적용 대상]. 점수 막대는 100점 척도 위에 주의·경고·위험 경계를 함께 그려 그 신호 하나의 무게를 보여 줌 */
+const RISK_SIGS = [
+  ['진단', '진단 재실시 판정 1회', 'wRel1', '가상'], ['진단', '진단 재실시 판정 2회 이상', 'wRel2', '가상'],
+  ['진단', '향상도가 기준 {drop}점 미만', 'wDrop', '공통'], ['진단', '향상도가 기준보다 {dropBig}점 넘게 하락(위 점수 대신)', 'wDropBig', '가상'],
+  ['진단', "'하' 수준이 2회 연속인 능력 {lowCount}개 이상", 'wLow', '가상'], ['진단', '기초학습 낮음·보충 미이수', 'wBasic', '가상'],
+  ['진단', '진단 미응시', 'wNoDiag', '실제'], ['진단', '최근 진단이 재실시 판정', 'wRealRel', '실제'],
+  ['이수·참여', '이수 계획 없음', 'wNoPlan', '공통'], ['이수·참여', '비교과 참여 없음', 'wNoNc', '가상'],
+  ['이수·참여', '자기주도 실천 {selfWeeks}주 연속 저조', 'wSelf', '실제'], ['이수·참여', '상담 요청 {creqDays}일 넘게 무응답', 'wCreq', '실제'],
+  ['학점', '직전 학기 평점 {gpa} 미만(4.5 만점)', 'wGpa', '공통'], ['학점', 'F 학점 과목 있음', 'wF', '공통'],
+  ['출결', '한 과목 결석시간이 학기 총 수업시간의 {absent}% 이상', 'wAbs', '공통'], ['출결', '이번 학기 전체 결석률 {rate}% 이상', 'wRate', '공통']
+];
+function riskSetHtml(S, saved) {
+  const A = S.acad, B = saved.acad, inp = (k, w) => `<input type="number" step="any" class="rs-in${A[k] !== B[k] ? ' chg' : ''}" style="width:${w || 4.2}em" data-sp="acad.${k}" value="${A[k]}" aria-label="${k}">`;
+  const lvOf = v => (v >= A.lvBad ? ['위험', 'bad'] : v >= A.lvWarn ? ['경고', 'warn'] : v >= A.lvMild ? ['주의', 'mild'] : v > 0 ? ['안정', 'ok'] : ['쓰지 않음', 'off']);
+  const scale = (v) => `<div class="rs-track" aria-hidden="true"><i class="rs-zone z-mild" style="left:${A.lvMild}%;width:${A.lvWarn - A.lvMild}%"></i><i class="rs-zone z-warn" style="left:${A.lvWarn}%;width:${A.lvBad - A.lvWarn}%"></i><i class="rs-zone z-bad" style="left:${A.lvBad}%;width:${100 - A.lvBad}%"></i>${v != null ? `<b class="rs-bar" style="width:${Math.min(100, Math.max(0, v))}%"></b>` : ''}</div>`;
+  /* 지금 입력값으로 가상 코호트 단계 인원(저장값과 비교) */
+  const count = acad => { const keep = RISK_ACAD; RISK_ACAD = acad; const L = cohort().map(st => riskLv(riskOfCohort(st).score)[1]); RISK_ACAD = keep; return ['위험', '경고', '주의'].map(t => L.filter(x => x === t).length); };
+  const now = count(A), was = count(B), N = cohort().length;
+  let g0 = '';
+  const rows = RISK_SIGS.map(([g, label, k, who]) => {
+    const head = g !== g0 ? `<tr class="rs-g"><th colspan="4">${g}</th></tr>` : ''; g0 = g;
+    const [t, c] = lvOf(A[k]);
+    return `${head}<tr><td class="rs-l">${label.replace(/\{(\w+)\}/g, (_, x) => inp(x, 3.6))}${who !== '공통' ? ` <span class="rs-who">${who === '가상' ? '가상 코호트' : '실제 이용 학생'}</span>` : ''}</td><td>${inp(k)}<span class="meta">점</span></td><td class="rs-s">${scale(A[k])}</td><td><span class="rk rk-${c}">${t}</span></td></tr>`;
+  }).join('');
+  return `<p class="meta">신호가 있으면 점수를 더해 0~100점(넘으면 100)으로 셉니다. 막대는 그 신호 하나의 점수가 100점 척도에서 어디까지 오는지, 오른쪽은 그 신호 하나만으로 받는 단계입니다. 0점이면 그 신호를 쓰지 않습니다.</p>
+    <div class="rs-lv"><span>단계 경계</span><label><span class="rk rk-mild">주의</span> ${inp('lvMild')}점 이상</label><label><span class="rk rk-warn">경고</span> ${inp('lvWarn')}점 이상</label><label><span class="rk rk-bad">위험</span> ${inp('lvBad')}점 이상</label>${scale(null)}</div>
+    <div class="scrollx"><table class="tbl rs-tbl"><thead><tr><th>신호와 조건</th><th>점수</th><th>100점 척도에서의 무게</th><th>단독 단계</th></tr></thead><tbody>${rows}
+      <tr class="rs-g"><th colspan="4">환산</th></tr><tr><td class="rs-l" colspan="4">지각·조퇴 ${inp('late', 3.6)}회를 결석 1시간으로 셉니다.</td></tr></tbody></table></div>
+    <p class="rs-prev">지금 입력값이면 가상 코호트 ${N}명 중 <b><span class="rk rk-bad">위험</span> ${now[0]}명 · <span class="rk rk-warn">경고</span> ${now[1]}명 · <span class="rk rk-mild">주의</span> ${now[2]}명</b>${now.join() !== was.join() ? ` <span class="meta">(저장된 값: 위험 ${was[0]} · 경고 ${was[1]} · 주의 ${was[2]})</span>` : ''}</p>`;
+}
 const SCHED_FIELDS = [['diagStart', '진단 시작일'], ['diagEnd', '진단 종료일'], ['remind', '미응시 독려 발송일'], ['retestStart', '재진단 시작일'], ['retestEnd', '재진단 종료일']];
 const getPath = (o, p) => p.split('.').reduce((a, k) => a[k], o);
 const setPath = (o, p, v) => { const ks = p.split('.'); ks.slice(0, -1).reduce((a, k) => a[k], o)[ks[ks.length - 1]] = v; };
@@ -8547,9 +8592,11 @@ function settingsCheck(S) {
   if (S.privacy.minGroup < 5) err.push('집계 공개 최소 인원은 5명 이상이어야 합니다.');
   const A = S.acad;
   if (!(A.gpa > 0 && A.gpa <= 4.5)) err.push('조기 경보 평점 기준은 0보다 크고 4.5 이하여야 합니다.');
+  if (!(A.lvMild > 0 && A.lvMild < A.lvWarn && A.lvWarn < A.lvBad && A.lvBad <= 100)) err.push('조기 경보 단계 경계는 주의 < 경고 < 위험 ≤ 100이어야 합니다.');
+  if (!(A.dropBig >= 0 && A.lowCount >= 1 && A.selfWeeks >= 1 && A.creqDays >= 1)) err.push('조기 경보 조건값(하락 폭·능력 수·주·일)을 확인하세요.');
   if (!(A.absent > 0 && A.absent <= 100 && A.rate > 0 && A.rate <= 100)) err.push('조기 경보 결석 기준(%)은 1~100이어야 합니다.');
   if (!(A.late >= 1)) err.push('지각·조퇴 환산 횟수는 1 이상이어야 합니다.');
-  if ([A.wGpa, A.wF, A.wAbs, A.wRate].some(w => !(w >= 0 && w <= 100))) err.push('조기 경보 점수는 0~100이어야 합니다.');
+  if (RISK_SIGS.some(([, , k]) => !(A[k] >= 0 && A[k] <= 100))) err.push('조기 경보 점수는 0~100이어야 합니다.');
   if (!(S.ai.budget >= 0 && S.ai.perUserDaily >= 0 && S.ai.dailyTotal >= 0)) err.push('AI 사용 한도는 0 이상이어야 합니다.');
   const sc = S.schedule;
   if (sc.diagStart > sc.diagEnd || sc.retestStart > sc.retestEnd) err.push('시작일이 종료일보다 늦습니다.');
@@ -8597,6 +8644,7 @@ function renderSettings() {
       <div class="actions no-print"><button class="btn" id="sset" ${dirty && !err.length ? '' : 'disabled'}>저장</button><button class="btn ghost" id="sreset">기본값 불러오기</button>${dirty ? '<button class="linkbtn" id="scancel">변경 취소</button>' : ''}<span class="meta" id="smsg" aria-live="polite">${state.setMsg || ''}</span></div>
       ${err.length ? `<ul class="errs">${err.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}</section>
     ${SET_FIELDS.map(([t, d, fs], i) => panelH('p-set' + i, t, '', `<p class="meta">${d}</p><div class="setgrid">${fs.map(([p, l]) => num(p, l)).join('')}</div>`)).join('')}
+    ${panelH('p-set8', '이탈·부진 조기 경보 기준', '', riskSetHtml(S, saved))}
     ${panelH('p-sched', '학기 일정과 예약 알림', '', `<div class="setgrid">${SCHED_FIELDS.map(([k, l]) => `<label>${l}<input type="date" data-sd="${k}" value="${S.schedule[k]}" class="${S.schedule[k] !== saved.schedule[k] ? 'chg' : ''}"></label>`).join('')}</div>
       <label class="chk"><input type="checkbox" id="sops" ${S.ops ? 'checked' : ''}> <b>운영 모드</b>: 시연 시점·시연 표시 전환·시연용 응답 채우기를 모두 숨기고, 학기 시점을 위 일정으로 자동 판단합니다. 실제 학생이 쓰기 시작할 때 켭니다. 가상 예시 데이터로 만든 분석에는 계속 '가상 예시 데이터' 표시가 붙습니다.</label>
       <label class="chk"><input type="checkbox" id="sauto" ${S.autoNotify ? 'checked' : ''}> 일정에 맞춰 알림 메일 자동 발송(진단 시작일 안내, 독려일 미응시 안내, 재진단 시작일 안내)</label>
@@ -11484,8 +11532,7 @@ function creqFormHtml(x) {
 /* ======================================================================
    고도화: 조기 경보 · AI 성장 포트폴리오 · NCS 능력단위 매칭 · 학과별 개선 대시보드 · 강의평가 연계
    ====================================================================== */
-const RISK_LV = [[50, '위험', 'bad'], [30, '경고', 'warn'], [15, '주의', 'mild']];
-const riskLv = s => (RISK_LV.find(([c]) => s >= c) || [0, '안정', 'ok']);
+const riskLv = s => { const R = RISK_ACAD; return (s >= R.lvBad ? [R.lvBad, '위험', 'bad'] : s >= R.lvWarn ? [R.lvWarn, '경고', 'warn'] : s >= R.lvMild ? [R.lvMild, '주의', 'mild'] : [0, '안정', 'ok']); };
 /* 학업 신호(이수 결과·출결): 관리자가 올린 학점 연계(org grades)와 출결 연계(org attend)를 학번으로 찾음.
    학점: 가장 최근 학기 평점 2.0 미만 20점, F 학점 과목 15점. 출결: 결석시간이 학기 총 수업시간(주당시수×수업주수)의 1/4 이상인 과목(지각·조퇴 3회 = 결석 1시간) 25점, 전체 결석률 10% 이상 15점 */
 const termKey = (y, t) => `${y}-${String(t).replace('학기', '')}`;
@@ -11511,29 +11558,29 @@ function acadSignals(no, gr, at) {
 }
 /* 이탈·부진 조기 경보: 신호별 가중치를 더해 0~100점. 사유를 함께 돌려 교원이 근거를 보고 판단 */
 function riskOfCohort(st) {
-  const A = state.alertStd || { drop: 0, lowCount: 3 }, why = [];
-  let s = 0; const add = (w, t) => { s += w; why.push(t); };
+  const A = RISK_ACAD, why = [];
+  let s = 0; const add = (w, t) => { if (w) { s += w; why.push(t); } };
   const m = a => a.reduce((x, y) => x + y, 0) / a.length, d = m(st.traceArea[1]) - m(st.traceArea[0]);
-  if (st.relCount >= 2) add(30, '진단 재실시 2회'); else if (st.relCount === 1) add(15, '진단 재실시');
-  if (d < A.drop - 5) add(30, `향상도 ${d.toFixed(1)}점(크게 하락)`); else if (d < A.drop) add(20, `향상도 ${d.toFixed(1)}점(기준 미만)`);
+  if (st.relCount >= 2) add(A.wRel2, '진단 재실시 2회'); else if (st.relCount === 1) add(A.wRel1, '진단 재실시');
+  if (d < A.drop - A.dropBig) add(A.wDropBig, `향상도 ${d.toFixed(1)}점(크게 하락)`); else if (d < A.drop) add(A.wDrop, `향상도 ${d.toFixed(1)}점(기준 미만)`);
   const lowBoth = SUBNAMES.filter((_, k) => st.traceSub[0][k] < MID && st.traceSub[1][k] < MID).length;
-  if (lowBoth >= A.lowCount) add(15, `'하' 수준 2회 연속 ${lowBoth}개 능력`);
-  if (st.basicLow && !st.suppDone) add(15, '기초학습 낮음·보충 미이수');
-  if (!st.picks.length) add(10, '이수 계획 없음');
-  if (!st.nc.length) add(5, '비교과 참여 없음');
+  if (lowBoth >= A.lowCount) add(A.wLow, `'하' 수준 2회 연속 ${lowBoth}개 능력`);
+  if (st.basicLow && !st.suppDone) add(A.wBasic, '기초학습 낮음·보충 미이수');
+  if (!st.picks.length) add(A.wNoPlan, '이수 계획 없음');
+  if (!st.nc.length) add(A.wNoNc, '비교과 참여 없음');
   acadSignals(st.no).forEach(([w, t]) => add(w, t));
   return { score: Math.min(100, s), why };
 }
 function riskOfReal(x) {
-  const A = state.alertStd || { drop: 0 }, why = [];
-  let s = 0; const add = (w, t) => { s += w; why.push(t); };
+  const A = RISK_ACAD, why = [];
+  let s = 0; const add = (w, t) => { if (w) { s += w; why.push(t); } };
   const m = a => a.reduce((p, q) => p + q, 0) / a.length;
-  if (!x.n) add(25, '진단 미응시');
-  if (x.last && x.last.verdict === '재실시') add(25, '진단 재실시 판정');
-  if (x.n >= 2 && x.first && x.last) { const g = m(x.last.vals) - m(x.first.vals); if (g < A.drop) add(20, `향상도 ${g.toFixed(1)}점`); }
-  if (x.tt && x.tt.lowStreak >= 2) add(15, '자기주도 실천 2주 연속 저조');
-  if (x.n && !x.plan) add(10, '이수 계획 없음');
-  if (x.creq && x.creq.status === '요청' && (Date.now() - new Date(String(x.creq.at).replace(' ', 'T')).getTime()) > 3 * 864e5) add(15, '상담 요청 3일 넘게 무응답');
+  if (!x.n) add(A.wNoDiag, '진단 미응시');
+  if (x.last && x.last.verdict === '재실시') add(A.wRealRel, '진단 재실시 판정');
+  if (x.n >= 2 && x.first && x.last) { const g = m(x.last.vals) - m(x.first.vals); if (g < A.drop) add(A.wDrop, `향상도 ${g.toFixed(1)}점`); }
+  if (x.tt && x.tt.lowStreak >= A.selfWeeks) add(A.wSelf, `자기주도 실천 ${A.selfWeeks}주 연속 저조`);
+  if (x.n && !x.plan) add(A.wNoPlan, '이수 계획 없음');
+  if (x.creq && x.creq.status === '요청' && (Date.now() - new Date(String(x.creq.at).replace(' ', 'T')).getTime()) > A.creqDays * 864e5) add(A.wCreq, `상담 요청 ${A.creqDays}일 넘게 무응답`);
   acadSignals(x.no, 'grades' in x ? x.grades : undefined, 'attend' in x ? x.attend : undefined).forEach(([w, t]) => add(w, t));
   return { score: Math.min(100, s), why };
 }
@@ -11548,11 +11595,11 @@ function renderRisk() {
   <div class="dash-grid">
     <section class="panel p-sum"><p class="eyebrow">학생 지원 · 이탈·부진 조기 경보</p>
       <p class="summary">${cnt(shown, '위험')}명이 위험, ${cnt(shown, '경고')}명이 경고 단계입니다.</p>
-      <div class="rk-top"><div class="stats"><div class="stat"><b>${cnt(shown, '위험')}명</b><span>위험(50점 이상)</span></div><div class="stat"><b>${cnt(shown, '경고')}명</b><span>경고(30~49점)</span></div><div class="stat"><b>${cnt(shown, '주의')}명</b><span>주의(15~29점)</span></div></div>
+      <div class="rk-top"><div class="stats"><div class="stat"><b>${cnt(shown, '위험')}명</b><span>위험(${RISK_ACAD.lvBad}점 이상)</span></div><div class="stat"><b>${cnt(shown, '경고')}명</b><span>경고(${RISK_ACAD.lvWarn}~${RISK_ACAD.lvBad - 1}점)</span></div><div class="stat"><b>${cnt(shown, '주의')}명</b><span>주의(${RISK_ACAD.lvMild}~${RISK_ACAD.lvWarn - 1}점)</span></div></div>
       <div class="pick no-print"><label>학과<select id="rkdept">${['전체', ...depts].map(d => `<option ${d === state.rkDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label></div></div>
       <p class="meta"><span class="badge amber">가상 예시 데이터</span> 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표의 위험도 열에 나옵니다.</p>
       <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '이수 결과 미반영')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결 미반영')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
-      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">진단 재실시 15~30점, 향상도 기준 미만 20점(크게 하락 30점), '하' 수준 2회 연속 15점, 기초학습 낮음·보충 미이수 15점, 이수 계획 없음 10점, 비교과 참여 없음 5점, 직전 학기 평점 ${(+RISK_ACAD.gpa).toFixed(1)} 미만 ${RISK_ACAD.wGpa}점, F 학점 ${RISK_ACAD.wF}점, 출석 미달 위험 과목(결석시간이 학기 총 수업시간(주당시수×수업주수)의 ${RISK_ACAD.absent}% 이상, 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간) ${RISK_ACAD.wAbs}점, 전체 결석률 ${RISK_ACAD.rate}% 이상 ${RISK_ACAD.wRate}점을 더합니다(최대 100점). 학점·출결 기준은 운영 관리 '기준값·일정'에서 바꿉니다. 학점·출결은 운영 관리의 이수 결과·출결 연계에 올린 자료를 학번으로 찾아 반영합니다. 실제 이용 학생은 진단 미응시 25점, 상담 요청 3일 넘게 무응답 15점, 자기주도 실천 2주 연속 저조 15점이 더해집니다. 가중치는 시범 운영 결과로 조정합니다.</p></details></section>
+      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">${RISK_SIGS.filter(([, , k]) => RISK_ACAD[k]).map(([, l, k, who]) => `${l.replace(/\{(\w+)\}/g, (_, x) => RISK_ACAD[x])} ${RISK_ACAD[k]}점${who === '실제' ? '(실제 이용 학생)' : who === '가상' ? '(가상 코호트)' : ''}`).join(', ')}을 더합니다(최대 100점). 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. 단계는 주의 ${RISK_ACAD.lvMild}점, 경고 ${RISK_ACAD.lvWarn}점, 위험 ${RISK_ACAD.lvBad}점부터입니다. <button class="linkbtn" data-go="settings" type="button">기준 바꾸기</button></p></details></section>
     ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, `<div class="rkbars">${byDept.slice(0, 12).map(x => `<div class="rkbar"><span>${esc(x.d)}</span><div class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></div><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></div>`).join('')}</div>
       <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span></div>`)}
     ${panelH('p-rklist', '경보 학생', `${state.rkDept} · 점수 높은 순 30명`, `<div class="scrollx"><table class="tbl"><thead><tr><th>학생</th><th>학과</th><th>위험도</th><th>사유</th></tr></thead><tbody>${shown.filter(r => r.score >= 15).slice(0, 30).map(r => `<tr><td><b>${r.st.alias}</b> <span class="meta">${r.st.no.slice(0, 4)}****</span></td><td>${esc(r.st.dept)}</td><td>${riskChip(r.score)}</td><td class="wrap">${r.why.join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="meta">경보 대상이 없습니다.</td></tr>'}</tbody></table></div>`)}

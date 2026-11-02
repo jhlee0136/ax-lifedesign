@@ -1,13 +1,15 @@
 /* 대학 생활 설계 플랫폼 서비스 워커: 화면 파일은 항상 새로 받아 오고(네트워크 우선), 연결이 끊기면 마지막으로 받은 화면을 보여 줍니다.
    클라우드 API·글꼴 등 다른 주소의 요청은 건드리지 않습니다. */
-const CACHE = 'lifedesign-v1';
+const CACHE = 'lifedesign-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== self.location.origin) return;
-  e.respondWith(fetch(e.request).then(r => { if (r.ok) { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); } return r; })
+  /* 화면(HTML)은 브라우저 캐시를 거치지 않고 서버에 새 버전이 있는지 확인(배포 직후 옛 화면이 남지 않게) */
+  const req = e.request.mode === 'navigate' || /\.html$|\/$/.test(u.pathname) ? fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }) : fetch(e.request);
+  e.respondWith(req.then(r => { if (r.ok) { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); } return r; })
     .catch(() => caches.match(e.request).then(m => m || caches.match('./index.html'))));
 });
 self.addEventListener('notificationclick', e => {
