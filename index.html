@@ -6985,17 +6985,18 @@ function renderGrades() {
 }
 
 /* ---------- 출결 연계: 학생 개인별·과목별 출결을 올려 조기 경보에 반영 ----------
-   저장: org 'attend' = { rows: { 학번: [[연도, 학기, 교과목명, 수업시수, 결석, 지각, 조퇴]] }, at, file } */
-const ATT_COLS = ['학번', '성명', '학과', '연도', '학기', '교과목명', '수업시수', '결석', '지각', '조퇴'];
+   입력: 주당시수(과목 1주 수업 시간, 보통 2~3)와 수업주수(비우면 15주) → 학기 총 수업시간 = 주당시수 × 수업주수. 결석은 시간 단위, 지각·조퇴는 횟수
+   저장: org 'attend' = { rows: { 학번: [[연도, 학기, 교과목명, 총 수업시간, 결석시간, 지각, 조퇴, 주당시수]] }, at, file } */
+const ATT_COLS = ['학번', '성명', '학과', '연도', '학기', '교과목명', '주당시수', '수업주수', '결석시간', '지각횟수', '조퇴횟수'], ATT_WEEKS = 15;
 function sampleAttend() {
   const co = cohort().filter(st => st.dept === state.dept).slice(0, 14), rows = [ATT_COLS];
-  co.forEach((st, k) => st.taken[0].forEach((n, i) => { const h = hashStr(st.no + n), heavy = k % 5 === 0 && i === 0; rows.push([st.no, st.alias, st.dept, 2026, '1', n, 30, heavy ? 9 : h % 4, (h >>> 3) % 4, (h >>> 6) % 2]); }));
-  rows.push(['2026AB01', '학생 999', state.dept, 2026, '1', 'AI와빅데이터리터러시', 30, 1, 0, 0]);
-  rows.push([co[0].no, co[0].alias, state.dept, 2026, '1', co[0].taken[0][0] || '글쓰기와토론', 30, 40, 0, 0]);
+  co.forEach((st, k) => st.taken[0].forEach((n, i) => { const h = hashStr(st.no + n), heavy = k % 5 === 0 && i === 0; const w = 2 + (h % 3 === 0 ? 1 : 0); rows.push([st.no, st.alias, st.dept, 2026, '1', n, w, ATT_WEEKS, heavy ? w * 4 : (h % 3 === 2 ? w : 0), (h >>> 3) % 4, (h >>> 6) % 2]); }));
+  rows.push(['2026AB01', '학생 999', state.dept, 2026, '1', 'AI와빅데이터리터러시', 2, ATT_WEEKS, 2, 0, 0]);
+  rows.push([co[0].no, co[0].alias, state.dept, 2026, '1', co[0].taken[0][0] || '글쓰기와토론', 2, ATT_WEEKS, 40, 0, 0]);
   return rows;
 }
 function validateAttend(rows) {
-  const head = rows[0].map(h => h.trim()), miss = ATT_COLS.filter(c => !head.includes(c));
+  const head = rows[0].map(h => h.trim()), miss = ATT_COLS.filter(c => c !== '수업주수' && !head.includes(c));
   if (miss.length) return { fatal: `필수 열이 없습니다: ${miss.join(', ')}. 양식을 내려받아 열 이름을 맞춰 주세요.` };
   const ix = Object.fromEntries(ATT_COLS.map(c => [c, head.indexOf(c)])), seen = new Set(), out = [];
   rows.slice(1).forEach((r, i) => {
@@ -7004,14 +7005,15 @@ function validateAttend(rows) {
     if (!/^\d{4}$/.test(g('연도'))) err.push('연도는 4자리');
     if (!['1', '2', '1학기', '2학기', '여름', '겨울'].includes(g('학기'))) err.push('학기 값(1·2·여름·겨울)');
     if (!g('교과목명')) err.push('교과목명 없음');
-    const T = num('수업시수'), ab = num('결석'), la = num('지각'), ea = num('조퇴');
-    if (!(T > 0 && T <= 200)) err.push('수업시수는 1~200');
-    if ([ab, la, ea].some(v => isNaN(v) || v < 0)) err.push('결석·지각·조퇴는 0 이상 숫자');
-    else if (ab > T) err.push('결석이 수업시수보다 많음');
+    const wk = num('주당시수'), weeks = ix['수업주수'] >= 0 && g('수업주수') !== '' ? num('수업주수') : ATT_WEEKS, T = wk * weeks, ab = num('결석시간'), la = num('지각횟수'), ea = num('조퇴횟수');
+    if (!(wk >= 1 && wk <= 10)) err.push('주당시수는 1~10(과목의 1주 수업 시간)');
+    if (!(weeks >= 1 && weeks <= 20)) err.push('수업주수는 1~20');
+    if ([ab, la, ea].some(v => isNaN(v) || v < 0)) err.push('결석시간·지각·조퇴는 0 이상 숫자');
+    else if (T && ab > T) err.push(`결석시간이 학기 총 수업시간(${T}시간)보다 많음`);
     else if (T && (ab + Math.floor((la + ea) / 3)) / T >= ACAD_STD.absent) warn.push('결석 1/4 이상(출석 미달 위험)');
     const key = [g('학번'), g('교과목명'), g('연도'), g('학기')].join('|');
     if (seen.has(key)) err.push('같은 학번·교과목·학기 중복'); seen.add(key);
-    out.push({ line: i + 2, err, warn, no: g('학번'), course: g('교과목명'), year: g('연도'), term: g('학기').replace('학기', ''), T, ab, la, ea });
+    out.push({ line: i + 2, err, warn, no: g('학번'), course: g('교과목명'), year: g('연도'), term: g('학기').replace('학기', ''), wk, weeks, T, ab, la, ea });
   });
   return { rows: out };
 }
@@ -7022,7 +7024,7 @@ function renderAttend() {
   else if (v) {
     const ok = v.rows.filter(x => !x.err.length), bad = v.rows.filter(x => x.err.length), wn = ok.filter(x => x.warn.length);
     body = `<div class="stats"><div class="stat"><b>${v.rows.length}</b><span>전체 행</span></div><div class="stat"><b>${ok.length}</b><span>반영 가능</span></div><div class="stat"><b>${wn.length}</b><span>출석 미달 위험</span></div><div class="stat"><b>${bad.length}</b><span>오류(제외)</span></div></div>
-      ${bad.length || wn.length ? `<div class="scrollx"><table class="tbl" style="margin-top:10px"><thead><tr><th>행</th><th>학번</th><th>교과목명</th><th>결석·지각·조퇴/시수</th><th>내용</th></tr></thead><tbody>${bad.concat(wn).map(x => `<tr><td>${x.line}</td><td>${esc(x.no)}</td><td>${esc(x.course)}</td><td>${x.ab}·${x.la}·${x.ea} / ${x.T}</td><td class="${x.err.length ? 'low' : ''}">${esc(x.err.concat(x.warn).join(', '))}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${bad.length || wn.length ? `<div class="scrollx"><table class="tbl" style="margin-top:10px"><thead><tr><th>행</th><th>학번</th><th>교과목명</th><th>결석시간 / 학기 총 수업시간</th><th>지각·조퇴</th><th>내용</th></tr></thead><tbody>${bad.concat(wn).map(x => `<tr><td>${x.line}</td><td>${esc(x.no)}</td><td>${esc(x.course)}</td><td>${x.ab}시간 / ${x.T}시간 <span class="meta">(주 ${x.wk}시간 × ${x.weeks}주)</span></td><td>${x.la}회·${x.ea}회</td><td class="${x.err.length ? 'low' : ''}">${esc(x.err.concat(x.warn).join(', '))}</td></tr>`).join('')}</tbody></table></div>` : ''}
       <div class="actions no-print" style="margin-top:12px"><button class="btn" id="aapply" ${ok.length ? '' : 'disabled'}>오류 없는 ${ok.length}행 반영</button><span class="meta">${state.attApplied ? `반영 완료: ${state.attApplied.rows}행, 학생 ${state.attApplied.students}명` : '같은 학번·과목·학기는 새 값으로 바뀝니다.'}</span></div>`;
   }
   const saved = A0 && A0.rows ? (() => {
@@ -7036,11 +7038,12 @@ function renderAttend() {
   <div class="dash-grid">
     <section class="panel p-sum"><p class="summary">출결 연계</p>
       <p class="meta">학생 개인별·과목별 출결을 올려 이탈·부진 조기 경보에 반영합니다. 학사정보시스템 연계가 가능하면 자동으로 가져오고(1안), 어려우면 관리자가 양식을 올립니다(2안). 학기 중에도 수시로 다시 올려 최신 출결로 바꿀 수 있습니다.</p>
-      <ol class="steps"><li><b>양식 내려받기</b> ${ATT_COLS.length}개 열(학번~조퇴)</li><li><b>파일 올리기</b> CSV(엑셀에서 'CSV UTF-8'로 저장)</li><li><b>검증</b> 학번·학기·시수·중복 확인</li><li><b>반영</b> 오류 행은 빼고 반영 → 조기 경보 점수에 바로 반영</li></ol>
-      <p class="meta">경보 기준: 한 과목 결석이 수업시수의 1/4 이상이면 출석 미달 위험(+25점), 이번 학기 전체 결석률 10% 이상이면 +15점. 지각·조퇴 3회는 결석 1회로 셉니다.</p>
+      <ol class="steps"><li><b>양식 내려받기</b> ${ATT_COLS.length}개 열(학번~조퇴횟수)</li><li><b>파일 올리기</b> CSV(엑셀에서 'CSV UTF-8'로 저장)</li><li><b>검증</b> 학번·학기·주당시수·중복 확인</li><li><b>반영</b> 오류 행은 빼고 반영 → 조기 경보 점수에 바로 반영</li></ol>
+      <p class="meta">입력: 주당시수는 과목의 1주 수업 시간(보통 2~3시간), 수업주수는 비우면 ${ATT_WEEKS}주, 결석은 빠진 시간 수, 지각·조퇴는 횟수입니다. 학기 총 수업시간 = 주당시수 × 수업주수(예: 주 2시간 × ${ATT_WEEKS}주 = ${2 * ATT_WEEKS}시간).</p>
+      <p class="meta">경보 기준: 한 과목 결석시간이 학기 총 수업시간의 1/4 이상이면 출석 미달 위험(+25점, 주 2시간 과목이면 8시간), 이번 학기 전체 결석률 10% 이상이면 +15점. 지각·조퇴 3회는 결석 1시간으로 셉니다.</p>
       <div class="actions no-print"><button class="btn ghost" id="atpl">빈 양식 내려받기</button><button class="btn ghost" id="asample">예시 파일 내려받기</button><button class="btn" id="aload">예시 파일 바로 불러오기</button>
         <label class="btn ghost filebtn">파일 선택<input type="file" id="afile" accept=".csv,text/csv" hidden></label></div>
-      <p class="meta"><span class="badge amber">가상 예시 데이터</span> 예시 파일에는 오류 확인용으로 잘못된 행 2개(학번 형식, 결석이 시수보다 많음)가 들어 있습니다.</p>
+      <p class="meta"><span class="badge amber">가상 예시 데이터</span> 예시 파일에는 오류 확인용으로 잘못된 행 2개(학번 형식, 결석시간이 학기 총 수업시간보다 많음)가 들어 있습니다.</p>
     </section>
     ${saved ? panelH('p-asaved', '저장된 출결', `${esc(A0.at || '')} 반영`, saved) : ''}
     <section class="panel p-board"><header class="phead"><h2>검증 결과</h2><span class="meta">${state.attFile ? esc(state.attFile) : ''}</span></header><div class="pbody">${body}</div></section>
@@ -7052,7 +7055,7 @@ function renderAttend() {
   q('afile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { state.attFile = f.name; state.attApplied = null; const rows = parseCSV(String(rd.result)); state.attCheck = rows.length ? validateAttend(rows) : { fatal: '읽을 수 있는 행이 없습니다.' }; renderAttend(); }; rd.readAsText(f, 'utf-8'); };
   if (q('aapply')) q('aapply').onclick = () => {
     const ok = state.attCheck.rows.filter(x => !x.err.length), A = { ...(sGet('org', 'attend') || {}) }, R = { ...(A.rows || {}) };
-    ok.forEach(x => { const L = (R[x.no] || []).filter(e => !(String(e[0]) === x.year && String(e[1]) === x.term && e[2] === x.course)); L.push([+x.year, x.term, x.course, x.T, x.ab, x.la, x.ea]); R[x.no] = L; });
+    ok.forEach(x => { const L = (R[x.no] || []).filter(e => !(String(e[0]) === x.year && String(e[1]) === x.term && e[2] === x.course)); L.push([+x.year, x.term, x.course, x.T, x.ab, x.la, x.ea, x.wk]); R[x.no] = L; });
     A.rows = R; A.at = todayISO(); A.file = state.attFile || '';
     sSet('org', 'attend', A, `출결 반영: ${ok.length}행 · ${new Set(ok.map(x => x.no)).size}명 (${state.attFile || ''})`); logLocal('출결 연계', state.attFile || '', `${ok.length}행`);
     state.attApplied = { rows: ok.length, students: new Set(ok.map(x => x.no)).size };
@@ -11474,7 +11477,7 @@ function creqFormHtml(x) {
 const RISK_LV = [[50, '위험', 'bad'], [30, '경고', 'warn'], [15, '주의', 'mild']];
 const riskLv = s => (RISK_LV.find(([c]) => s >= c) || [0, '안정', 'ok']);
 /* 학업 신호(이수 결과·출결): 관리자가 올린 학점 연계(org grades)와 출결 연계(org attend)를 학번으로 찾음.
-   학점: 가장 최근 학기 평점 2.0 미만 20점, F 학점 과목 15점. 출결: 결석이 수업시수의 1/4 이상인 과목(지각·조퇴 3회 = 결석 1회) 25점, 전체 결석률 10% 이상 15점 */
+   학점: 가장 최근 학기 평점 2.0 미만 20점, F 학점 과목 15점. 출결: 결석시간이 학기 총 수업시간(주당시수×수업주수)의 1/4 이상인 과목(지각·조퇴 3회 = 결석 1시간) 25점, 전체 결석률 10% 이상 15점 */
 const ACAD_STD = { gpa: 2.0, absent: 0.25, rate: 0.1 };
 const termKey = (y, t) => `${y}-${String(t).replace('학기', '')}`;
 function acadSignals(no) {
@@ -11539,7 +11542,7 @@ function renderRisk() {
       <div class="pick no-print"><label>학과<select id="rkdept">${['전체', ...depts].map(d => `<option ${d === state.rkDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label></div></div>
       <p class="meta"><span class="badge amber">가상 예시 데이터</span> 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표의 위험도 열에 나옵니다.</p>
       <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '이수 결과 미반영')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결 미반영')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
-      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">진단 재실시 15~30점, 향상도 기준 미만 20점(크게 하락 30점), '하' 수준 2회 연속 15점, 기초학습 낮음·보충 미이수 15점, 이수 계획 없음 10점, 비교과 참여 없음 5점, 직전 학기 평점 2.0 미만 20점, F 학점 15점, 출석 미달 위험 과목(결석이 수업시수의 1/4 이상, 지각·조퇴 3회는 결석 1회) 25점, 전체 결석률 10% 이상 15점을 더합니다(최대 100점). 학점·출결은 운영 관리의 이수 결과·출결 연계에 올린 자료를 학번으로 찾아 반영합니다. 실제 이용 학생은 진단 미응시 25점, 상담 요청 3일 넘게 무응답 15점, 자기주도 실천 2주 연속 저조 15점이 더해집니다. 가중치는 시범 운영 결과로 조정합니다.</p></details></section>
+      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">진단 재실시 15~30점, 향상도 기준 미만 20점(크게 하락 30점), '하' 수준 2회 연속 15점, 기초학습 낮음·보충 미이수 15점, 이수 계획 없음 10점, 비교과 참여 없음 5점, 직전 학기 평점 2.0 미만 20점, F 학점 15점, 출석 미달 위험 과목(결석시간이 학기 총 수업시간(주당시수×수업주수)의 1/4 이상, 지각·조퇴 3회는 결석 1시간) 25점, 전체 결석률 10% 이상 15점을 더합니다(최대 100점). 학점·출결은 운영 관리의 이수 결과·출결 연계에 올린 자료를 학번으로 찾아 반영합니다. 실제 이용 학생은 진단 미응시 25점, 상담 요청 3일 넘게 무응답 15점, 자기주도 실천 2주 연속 저조 15점이 더해집니다. 가중치는 시범 운영 결과로 조정합니다.</p></details></section>
     ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, `<div class="rkbars">${byDept.slice(0, 12).map(x => `<div class="rkbar"><span>${esc(x.d)}</span><div class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></div><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></div>`).join('')}</div>
       <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span></div>`)}
     ${panelH('p-rklist', '경보 학생', `${state.rkDept} · 점수 높은 순 30명`, `<div class="scrollx"><table class="tbl"><thead><tr><th>학생</th><th>학과</th><th>위험도</th><th>사유</th></tr></thead><tbody>${shown.filter(r => r.score >= 15).slice(0, 30).map(r => `<tr><td><b>${r.st.alias}</b> <span class="meta">${r.st.no.slice(0, 4)}****</span></td><td>${esc(r.st.dept)}</td><td>${riskChip(r.score)}</td><td class="wrap">${r.why.join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="meta">경보 대상이 없습니다.</td></tr>'}</tbody></table></div>`)}
