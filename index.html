@@ -1630,6 +1630,12 @@ body.no-demo .demostrip .phase { display: none !important; }
 .panel .mt-tbl td[colspan] { text-align: left; } .mt-crnote { flex-basis: 100%; margin: 4px 0 0; }
 .ncgrp { border-top: 1px dashed var(--line); padding: 6px 0 2px; } .ncgrp:first-of-type { border-top: 0; } .ncgk { margin: 0 0 2px; font-size: 13px; }
 .ncform label.ncsub:has(input:disabled) { opacity: .45; cursor: not-allowed; } .ncform label.ncfac .meta { font-size: 11px; }
+.lpick { border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; margin: 6px 0; } .lpick .ncsubs { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.lpick label.ncsub:has(input:disabled) { opacity: .45; cursor: not-allowed; } .lpick label.ncfac .meta { font-size: 11px; }
+.etlink { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+.smup { display: flex; flex-wrap: wrap; gap: 6px; align-items: end; margin: 0 0 8px; } .smup label { font-size: 12.5px; display: flex; gap: 4px; align-items: center; }
+.smfilt { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; margin: 6px 0; } .smfilt select, .smfilt input { font-size: 13px; min-width: 0; }
+.smplanf { display: grid; gap: 6px; margin: 0 0 8px; } .smplanf textarea { width: 100%; font: inherit; font-size: 13.5px; }
 .ncsixline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; } .ncsix { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: var(--signal-soft); color: var(--ink); } .ncsix.none { background: var(--paper); color: var(--muted); }
 .nctbl td.wrap { white-space: normal; min-width: 9em; font-size: 13px; }
 .ncst { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 6px; white-space: nowrap; }
@@ -8278,7 +8284,7 @@ async function aiFetch(op, body) {
    로그인할 때 한 번 불러오고, 바꿀 때마다 저장합니다.
    ====================================================================== */
 const STORE = { user: {}, org: {}, pending: 0, failed: false };
-const USER_KEYS = ['hist', 'seen', 'plan', 'progress', 'chat', 'tt', 'creq', 'ready', 'ncpp', 'sup'], ORG_KEYS = ['ncperf', 'bank', 'settings', 'counsel', 'grades', 'notify_tpl', 'audit', 'outbox', 'catalog', 'specs', 'mapping', 'evals', 'ncsmap'];
+const USER_KEYS = ['hist', 'seen', 'plan', 'progress', 'chat', 'tt', 'creq', 'ready', 'ncpp', 'sup'], ORG_KEYS = ['ncperf', 'bank', 'settings', 'counsel', 'grades', 'notify_tpl', 'audit', 'outbox', 'catalog', 'specs', 'mapping', 'evals', 'ncsmap', 'mapdraft'];
 const localKey = (scope, key) => (scope === 'org' ? `store:org:${key}` : `store:u:${state.user ? state.user.no || state.user.role : 'guest'}:${key}`);
 async function storeLoad() {
   STORE.user = {}; STORE.org = {}; STORE.failed = false; state.myGrades = null;
@@ -8937,6 +8943,7 @@ function applyMapping() {
   Object.entries(CURRICULUM.byDept).forEach(([d, cs]) => cs.forEach(c => {
     if (!c._subs0) c._subs0 = c.subs.slice();
     const next = M[c.n] ? M[c.n].subs.slice() : c._subs0.slice();
+    c.facs = M[c.n] ? (M[c.n].facs || []).slice() : [];
     if (next.join() !== c.subs.join()) { c.subs = next; changed++; }
   }));
   if (!changed && !applyMapping.done) { applyMapping.done = true; return; }
@@ -8956,72 +8963,173 @@ function applyMapping() {
 async function aiMap(name, spec) {
   if (!(await checkAI())) return null;
   try {
-    const r = await aiFetch('map', { course: name, spec, subs: SUBNAMES.map(sn => ({ sub: sn, area: AREAS[SUB_AREA[SUBNAMES.indexOf(sn)]].short, definition: SUB_DEF[sn] })) });
+    const list = [...SUBNAMES.map(sn => ({ sub: sn, area: AREAS[SUB_AREA[SUBNAMES.indexOf(sn)]].short, definition: SUB_DEF[sn] })), ...CORE_FAC.map(x => ({ sub: x.f, area: '핵심역량진단 요인', definition: x.def }))];
+    const r = await aiFetch('map', { course: name, spec, subs: list });
     if (!r.ok) return null;
     const j = await r.json();
     return j.result ? { rows: j.result.mappings, level: j.result.ai_level, note: j.result.note, src: `AI 매핑(${j.model || 'AI'})` } : null;
   } catch (e) { return null; }
 }
+/* ---------- 교과 연계 역량: 비교과와 같은 틀(대학 6대 핵심역량별 직업기초 하위능력 + 핵심역량진단 요인) ----------
+   승인한 연결은 org 'mapping'(과목명 → subs·facs·근거·학기), AI 초안은 'mapdraft'에 남겨 다른 관리자도 이어서 검토 */
+const CRS_MAX = 4;
+const mapNow = () => sGet('org', 'mapping') || {};
+const mapDraftNow = () => sGet('org', 'mapdraft') || {};
+function crsBase(n) {
+  if (baseSubs[n]) return baseSubs[n];
+  for (const m of CURRICULUM.micro) { const c = m.courses.find(x => x.n === n); if (c) return c.subs || []; }
+  return [];
+}
+/* 과목의 지금 연계 역량: 승인(또는 직접 입력)한 연결이 있으면 그것, 없으면 교과과정표 기준 */
+function crsLink(n) {
+  const m = mapNow()[n];
+  return m ? { subs: m.subs || [], facs: m.facs || [], st: m.src === '관리자 직접 입력' ? '직접 입력' : '승인' } : { subs: crsBase(n).slice(), facs: [], st: '교과과정표 기준' };
+}
+const sixTags = (subs, facs) => (subs.length + facs.length ? ncSix(subs, facs).map(x => `<span class="ncsix ${x.k === '연결 없음' ? 'none' : ''}"><b>${x.k}</b> ${x.items.join('·')}</span>`).join(' ') : '<span class="meta">연결된 역량이 없습니다.</span>');
+function linkPickHtml(key, subs, facs, max) {
+  const full = subs.length + facs.length >= max;
+  const box = (kind, name, on) => `<label class="chk ncsub ${kind === 'fac' ? 'ncfac' : ''}"><input type="checkbox" data-${key}${kind}="${esc(name)}" ${on ? 'checked' : full ? 'disabled' : ''}> ${esc(kind === 'sub' ? shortSub(name) : name)}${kind === 'fac' ? ' <span class="meta">핵심역량</span>' : ''}</label>`;
+  return `<div class="lpick">${ncGroups().map(g => `<div class="ncgrp"><p class="ncgk"><b>${g.k}</b>${g.k === '연결 없음' ? ' <span class="meta">6대 핵심역량 점수에 반영되지 않음</span>' : ''}</p><div class="ncsubs">${g.subs.map(n => box('sub', n, subs.includes(n))).join('')}${g.facs.map(f => box('fac', f, facs.includes(f))).join('')}</div></div>`).join('')}</div>`;
+}
+/* 같은 항목은 여러 묶음에 있어 함께 체크·해제하고, 최대 개수에 닿으면 나머지를 잠금. 고른 값을 읽는 함수를 돌려줌 */
+function bindLinkPick(root, key, max, onChange, onOver) {
+  const S = `[data-${key}sub], [data-${key}fac]`, A = k => `data-${key}${k}`;
+  const read = () => ({ subs: [...new Set([...root.querySelectorAll(`[${A('sub')}]:checked`)].map(c => c.getAttribute(A('sub'))))], facs: [...new Set([...root.querySelectorAll(`[${A('fac')}]:checked`)].map(c => c.getAttribute(A('fac'))))] });
+  root.querySelectorAll(S).forEach(c => c.onchange = () => {
+    const attr = c.hasAttribute(A('sub')) ? A('sub') : A('fac'), val = c.getAttribute(attr), same = [...root.querySelectorAll(`[${attr}]`)].filter(x => x.getAttribute(attr) === val);
+    same.forEach(x => { x.checked = c.checked; });
+    const n = (o => o.subs.length + o.facs.length)(read());
+    if (n > max) { same.forEach(x => { x.checked = false; }); if (onOver) onOver(); return; }
+    root.querySelectorAll(S).forEach(x => { if (!x.checked) x.disabled = n >= max; });
+    if (onChange) onChange(read());
+  });
+  return read;
+}
+/* 연계 역량 저장(승인·직접 입력 공통): 교과과정표 과목이면 추천·분석에 바로 반영 */
+function saveCrsLink(n, o, src, rows, term) {
+  const M2 = { ...mapNow() }, before = crsLink(n);
+  M2[n] = { subs: o.subs, facs: o.facs, rows: rows || null, by: state.user.name, at: localTime(), src, term: term || '' };
+  sSet('org', 'mapping', M2, `${n}: ${[...before.subs, ...before.facs].join(',') || '없음'} → ${[...o.subs, ...o.facs].join(',')}`);
+  const D = { ...mapDraftNow() }; if (D[n]) { delete D[n]; sSet('org', 'mapdraft', D, `${n}: 검토 완료`); }
+  logLocal(src === '관리자 직접 입력' ? '교과 연계 역량 직접 입력' : '역량 매핑 승인', n, [...o.subs, ...o.facs].join(', '));
+  applyMapping();
+}
+/* 역량 매핑 대상 과목: 명세서·강의계획서를 올린 과목 + 교과과정표 교양 + 융합과정 + 등록된 전공 과목 */
+function smCourses() {
+  const specs = specsNow(), idx = courseIndex(), out = new Map();
+  electCourses().forEach(x => out.set(x.n, { n: x.n, kind: x.kind, cr: x.cr, depts: idx[x.n] ? idx[x.n].depts : 0 }));
+  Object.values(majorsNow()).forEach(ts => Object.values(ts).forEach(l => l.forEach(b => { if (!out.has(b.n)) out.set(b.n, { n: b.n, kind: '전공', cr: crOf(b), depts: 0 }); })));
+  Object.keys(specs).forEach(n => { if (!out.has(n)) out.set(n, { n, kind: specs[n].kind === '전공' ? '전공' : '교양', cr: specs[n].cr, depts: 0 }); });
+  return [...out.values()];
+}
 function renderSpecMap() {
-  const specs = specsNow(), demo = !sGet('org', 'specs'), M = sGet('org', 'mapping') || {}, idx = courseIndex();
-  const names = Object.keys(specs).filter(n => idx[n] || true);
-  state.smSel = names.includes(state.smSel) ? state.smSel : names[0];
-  const sel = state.smSel, sp = specs[sel], base = baseSubs[sel] || [];
-  state.smDraft = state.smDraft || {};
-  const draft = state.smDraft[sel];
-  const prop = draft ? draft.rows : M[sel] ? M[sel].rows : null;
-  const diff = n => { const a = new Set(baseSubs[n] || []), b = new Set((M[n] || {}).subs || []); return { add: [...b].filter(x => !a.has(x)).length, del: [...a].filter(x => !b.has(x)).length }; };
-  const st = n => (M[n] ? `<span class="st st-승인">승인</span>${(d => d.add || d.del ? ` <span class="meta">+${d.add} −${d.del}</span>` : '')(diff(n))}` : state.smDraft[n] ? '<span class="st st-초안">검토 대기</span>' : '<span class="st">매핑 전</span>');
-  const nApproved = names.filter(n => M[n]).length, nAdded = names.filter(n => M[n]).reduce((a, n) => a + diff(n).add, 0);
-  const allSubs = prop ? [...new Set([...prop.map(r => r.sub), ...base])] : base;
+  const specs = specsNow(), demo = !sGet('org', 'specs'), M = mapNow(), Dr = mapDraftNow(), idx = courseIndex();
+  const all = smCourses(), stOf = n => (Dr[n] ? '검토 대기' : M[n] ? (specs[n] && specs[n].term && M[n].term && specs[n].term !== M[n].term ? '재검토' : M[n].src === '관리자 직접 입력' ? '직접 입력' : '승인') : specs[n] ? '매핑 전' : '명세서 없음');
+  state.smKind = state.smKind || '전체'; state.smSt = state.smSt || '전체'; state.smQ = state.smQ || '';
+  const shown = all.filter(x => (state.smKind === '전체' || x.kind === state.smKind) && (state.smSt === '전체' || stOf(x.n) === state.smSt) && (!state.smQ || x.n.includes(state.smQ)))
+    .sort((a, b) => (!!specs[b.n] - !!specs[a.n]) || (!!Dr[b.n] - !!Dr[a.n]) || a.n.localeCompare(b.n, 'ko'));
+  if (!state.smSel || !all.some(x => x.n === state.smSel)) state.smSel = (shown[0] || all[0]).n;
+  const sel = state.smSel, cur = all.find(x => x.n === sel), sp = specs[sel], base = crsBase(sel), link = crsLink(sel);
+  const draft = Dr[sel], st = stOf(sel);
+  const prop = draft ? draft.rows : M[sel] && M[sel].rows ? M[sel].rows : null;
+  /* 결정 입력의 기본값: 초안이 있으면 근거 '주'부터 최대 개수까지, 없으면 지금 연결 */
+  const pre = draft ? (r => ({ subs: r.filter(x => SUBNAMES.includes(x.sub)).map(x => x.sub), facs: r.filter(x => CORE_FNAMES.includes(x.sub)).map(x => x.sub) }))(draft.rows.slice(0, CRS_MAX)) : { subs: link.subs, facs: link.facs };
+  const nOf = s => all.filter(x => stOf(x.n) === s).length, nSpec = all.filter(x => specs[x.n]).length;
+  const stCls = { 승인: 'st-승인', '직접 입력': 'st-승인', '검토 대기': 'st-초안', 재검토: 'st-초안' };
+  const stHtml = n => `<span class="st ${stCls[stOf(n)] || ''}">${stOf(n)}</span>`;
   const hl = t => { let h = esc(t); (prop || []).forEach(r => { if (r.evidence && t.includes(r.evidence)) h = `<mark>${h}</mark>`; }); return h; };
+  const vers = ibVerOpts(), ver = vers.includes(state.smVer) ? state.smVer : (state.smVer = ibNextVer());
+  const opt = (arr, v) => arr.map(x => `<option ${x === v ? 'selected' : ''}>${x}</option>`).join('');
+  const specHtml = sp ? `<div class="spec"><p class="meta">${esc(sp.kind || '교과목 명세서')}${sp.term ? ` · ${esc(sp.term)}` : ''}${sp.at ? ` · ${esc(sp.at)} 올림` : ''}</p>${sp.overview ? `<p><b>${sp.kind === '강의계획서' ? '강의계획서' : '개요'}</b> ${hl(sp.overview)}</p>` : ''}${(sp.goals || []).length ? `<p><b>학습목표</b></p><ol>${sp.goals.map(g => `<li>${hl(g)}</li>`).join('')}</ol>` : ''}${sp.weeks ? `<p><b>주요 내용</b> ${esc(sp.weeks)}</p>` : ''}</div>`
+    : '<p class="meta">이 과목은 아직 명세서·강의계획서가 없습니다. 왼쪽에서 올리면 AI가 분석해 연계 역량 초안을 만듭니다. 지금은 아래에서 직접 입력할 수 있습니다.</p>';
+  const propHtml = prop && prop.length ? `<table class="tbl smtbl"><thead><tr><th>AI 제안</th><th>대학 6대 핵심역량</th><th>정도</th><th>근거 문장</th></tr></thead><tbody>
+      ${prop.map(r => { const isF = CORE_FNAMES.includes(r.sub), six = ncSix(isF ? [] : [r.sub], isF ? [r.sub] : []).map(x => x.k).join('·'); return `<tr class="${!isF && !base.includes(r.sub) ? 'add' : ''}"><td><b>${esc(isF ? r.sub : shortSub(r.sub))}</b>${isF ? ' <span class="meta">핵심역량</span>' : ''}${!isF && !base.includes(r.sub) ? ' <span class="okc">새로 찾음</span>' : ''}</td><td>${esc(six)}</td><td><span class="badge">${r.role}</span></td><td class="meta">${esc(r.evidence || '')}</td></tr>`; }).join('')}</tbody></table>
+      ${draft && draft.note ? `<p class="meta">${esc(draft.note)}</p>` : ''}` : '';
   $view.innerHTML = `
   <div class="dash-grid">
-    <section class="panel p-sum"><p class="eyebrow">교과목 명세서 · AI 역량 매핑</p>
-      <p class="summary">교과목 명세서를 근거로 과목이 기르는 하위능력을 다시 매핑하고, 위원회가 승인하면 추천과 분석에 바로 반영합니다.</p>
-      <div class="stats"><div class="stat"><b>${names.length}개</b><span>명세서 연결 과목</span></div><div class="stat"><b>${nApproved}개</b><span>매핑 승인</span></div><div class="stat"><b>${nAdded}개</b><span>새로 찾은 과목–능력 연결</span></div><div class="stat"><b>${Object.keys(idx).length}개</b><span>교과과정표 교양 과목</span></div></div>
-      <ol class="flow"><li><b>명세서 연결</b>개요·학습목표·주요 내용</li><li><b>AI 매핑</b>21개 하위능력, 근거 문장</li><li><b>위원회 검토</b>채택·제외 선택</li><li><b>승인</b>매핑 확정·변경 기록</li><li><b>반영</b>추천·분반·효과성·편성 현황</li></ol>
-      ${demo ? '<p class="meta" style="margin-top:8px"><span class="badge amber">시연용 예시 명세서</span> 교양 교육과정 명세서를 받으면 양식에 맞춰 올려 교체합니다.</p>' : ''}</section>
-    ${panelH('p-smlist', '과목 목록', `${names.length}개`, `<div class="actions no-print" style="margin:0 0 8px"><button class="btn ghost sm" id="small">전체 매핑 초안 만들기</button><button class="btn ghost sm" id="smtpl">명세서 양식</button><label class="btn ghost sm filebtn">명세서 올리기<input type="file" id="smfile" accept=".csv" hidden></label></div>
+    <section class="panel p-sum"><p class="eyebrow">교과목 명세서·강의계획서 · 교과 연계 역량</p>
+      <p class="summary">학기마다 올린 명세서·강의계획서를 AI가 분석해 과목의 연계 역량을 제안하고, 관리자가 확인해 승인하면 추천과 분석에 반영합니다.</p>
+      <div class="stats"><div class="stat"><b>${nSpec}개</b><span>명세서·강의계획서 있는 과목</span></div><div class="stat"><b>${nOf('검토 대기') + nOf('재검토')}개</b><span>승인 검토 대기</span></div><div class="stat"><b>${nOf('승인') + nOf('직접 입력')}개</b><span>연계 역량 확정</span></div><div class="stat"><b>${all.length}개</b><span>교양·융합·전공 과목</span></div></div>
+      <ol class="flow"><li><b>올리기</b>학기별 명세서·강의계획서</li><li><b>AI 분석</b>하위능력·핵심역량 요인, 근거 문장</li><li><b>관리자 확인</b>최대 ${CRS_MAX}개 선택</li><li><b>승인</b>연결 확정·변경 기록</li><li><b>반영</b>추천·분석·6대 핵심역량</li></ol>
+      ${demo ? '<p class="meta" style="margin-top:8px"><span class="badge amber">시연용 예시 명세서</span> 실제 명세서를 받으면 양식에 맞춰 올려 교체합니다.</p>' : ''}</section>
+    ${panelH('p-smlist', '과목 목록', `${shown.length}개`, `<div class="smup no-print">
+        <label>학기<select id="smver">${opt(vers, ver)}</select></label>
+        <button class="btn ghost sm" id="smtpl" type="button">명세서 양식</button><label class="btn ghost sm filebtn">명세서 올리기(CSV)<input type="file" id="smfile" accept=".csv" hidden></label>
+        <button class="btn ghost sm" id="smplan" type="button" aria-expanded="${!!state.smPlanOpen}">강의계획서 올리기</button>
+        <button class="btn ghost sm" id="small" type="button">검토 대기 초안 만들기</button></div>
+      ${state.smPlanOpen ? `<form class="smplanf" id="smpf"><label>과목<select id="smpn">${all.map(x => `<option ${x.n === sel ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}</select></label>
+        <label class="full">강의계획서 내용<textarea id="smpt" rows="6" placeholder="수업 개요, 학습목표, 주차별 내용, 평가 방법을 붙여 넣거나 텍스트 파일을 고르세요."></textarea></label>
+        <div class="actions full"><label class="btn ghost sm filebtn">텍스트 파일<input type="file" id="smptf" accept=".txt,.md" hidden></label><button class="btn sm" type="submit">${esc(ver)} 강의계획서로 저장하고 분석</button></div></form>` : ''}
       <span class="meta" id="smmsg" aria-live="polite">${state.smMsg || ''}</span>
-      <ul class="smlist">${names.map(n => `<li><button class="${n === sel ? 'on' : ''}" data-sm="${esc(n)}"><b>${esc(n)}</b><span class="meta">${esc((specs[n] || {}).cat || '')} · ${idx[n] ? idx[n].depts + '개 학과 편성' : '교과과정표에 없음'}</span>${st(n)}</button></li>`).join('')}</ul>`)}
-    ${panelH('p-smed', esc(sel), `${esc(sp.cat || '')} · ${sp.cr || '-'}학점`, `
-      <div class="spec"><p><b>개요</b> ${hl(sp.overview || '')}</p><p><b>학습목표</b></p><ol>${(sp.goals || []).map(g => `<li>${hl(g)}</li>`).join('')}</ol><p><b>주요 내용</b> ${esc(sp.weeks || '')}</p></div>
-      <div class="actions no-print"><button class="btn sm" id="smgen">${state.smPend ? '매핑 중…' : 'AI로 역량 매핑'}</button><span class="meta">${draft ? esc(draft.src) : M[sel] ? `승인 · ${esc(M[sel].by)} · ${esc(M[sel].at)}` : ''}</span></div>
-      ${prop ? `<table class="tbl smtbl"><thead><tr><th>채택</th><th>하위능력</th><th>기존(과목명 기준)</th><th>명세서 근거 제안</th><th>근거 문장</th></tr></thead><tbody>
-        ${allSubs.map(sn => { const r = prop.find(x => x.sub === sn); const inBase = base.includes(sn); const on = M[sel] && !draft ? M[sel].subs.includes(sn) : !!r; return `<tr class="${r && !inBase ? 'add' : !r && inBase ? 'del' : ''}"><td><input type="checkbox" class="smchk" value="${sn}" ${on ? 'checked' : ''} aria-label="${sn} 채택"></td><td><b>${sn}</b><br><span class="meta">${AREAS[SUB_AREA[SUBNAMES.indexOf(sn)]].short}</span></td><td>${inBase ? '연결' : '-'}</td><td>${r ? `<span class="badge">${r.role}</span>` : '<span class="meta">근거 없음</span>'}${r && !inBase ? ' <span class="okc">새로 찾음</span>' : ''}</td><td class="meta">${r ? esc(r.evidence) : ''}</td></tr>`; }).join('')}</tbody></table>
-        <p class="meta">'새로 찾음'은 과목명만으로는 몰랐던 연결입니다. 근거 없는 기존 연결은 위원회가 유지할지 정합니다.</p>
-        <div class="actions no-print"><button class="btn" id="smok">선택한 연결로 승인</button>${M[sel] ? '<button class="linkbtn" id="smreset">승인 취소(과목명 기준으로)</button>' : ''}</div>` : '<p class="meta">아직 매핑하지 않았습니다. \'AI로 역량 매핑\'을 누르세요.</p>'}`)}
-    ${panelH('p-smncs', 'NCS 능력단위 매칭', esc(sel), ncsMatchHtml(sel))}
+      <div class="smfilt"><select id="smkind" aria-label="구분">${opt(['전체', '교양', '융합', '전공'], state.smKind)}</select><select id="smst" aria-label="상태">${opt(['전체', '검토 대기', '재검토', '매핑 전', '승인', '직접 입력', '명세서 없음'], state.smSt)}</select><input id="smq" placeholder="과목명 검색" value="${esc(state.smQ)}"></div>
+      <ul class="smlist">${shown.slice(0, 120).map(x => `<li><button class="${x.n === sel ? 'on' : ''}" data-sm="${esc(x.n)}"><b>${esc(x.n)}</b><span class="meta">${x.kind}${x.depts ? ` · ${x.depts}개 학과 편성` : ''}${specs[x.n] && specs[x.n].term ? ` · ${esc(specs[x.n].term)}` : ''}</span>${stHtml(x.n)}</button></li>`).join('')}${shown.length > 120 ? `<li class="meta">${shown.length - 120}개 더 있음 · 검색으로 좁히세요</li>` : ''}</ul>`)}
+    ${panelH('p-smed', esc(sel), `${cur.kind} · ${cur.cr != null ? cur.cr : '-'}학점 · ${stHtml(sel)}`, `
+      ${specHtml}
+      ${sp ? `<div class="actions no-print"><button class="btn sm" id="smgen" type="button">${state.smPend ? '분석 중…' : 'AI로 연계 역량 분석'}</button><span class="meta">${draft ? `${esc(draft.src)} · ${esc(draft.at || '')} · 승인 대기` : M[sel] ? `${esc(M[sel].src || '승인')} · ${esc(M[sel].by)} · ${esc(M[sel].at)}` : ''}</span></div>` : ''}
+      ${st === '재검토' ? `<p class="lmsg">${esc(sp.term)} 명세서가 새로 올라왔습니다. 승인한 연결(${esc(M[sel].term)})이 맞는지 다시 확인하세요.</p>` : ''}
+      ${propHtml}
+      <h3 class="sub3">연계 역량 확정 <span class="meta">최대 ${CRS_MAX}개 · 지금: ${link.st}</span></h3>
+      <p class="meta">${draft ? 'AI 제안 중 근거가 강한 것부터 미리 골라 두었습니다. 맞지 않으면 바꾼 뒤 승인하세요.' : '명세서 없이도 관리자가 직접 고를 수 있습니다. 이 과목이 가장 직접 기르는 역량만 고르세요.'}</p>
+      ${linkPickHtml('cl', pre.subs, pre.facs, CRS_MAX)}
+      <p class="ncsixline" id="clsix"><span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixTags(pre.subs, pre.facs)}</p>
+      <div class="actions no-print"><button class="btn" id="smok" type="button">${draft ? '확인하고 승인' : '직접 입력 저장'}</button>${draft ? '<button class="linkbtn" id="smrej" type="button">초안 버리기</button>' : ''}${M[sel] ? '<button class="linkbtn" id="smreset" type="button">연결 취소(교과과정표 기준으로)</button>' : ''}</div>`)}
+    ${sp ? panelH('p-smncs', 'NCS 능력단위 매칭', esc(sel), ncsMatchHtml(sel)) : ''}
   </div>`;
-  bindNcsMatch(sel, sp, renderSpecMap);
+  if (sp) bindNcsMatch(sel, sp, renderSpecMap);
+  const q = id => document.getElementById(id), say = t => { state.smMsg = t; renderSpecMap(); };
   $view.querySelectorAll('[data-sm]').forEach(b => b.onclick = () => { state.smSel = b.dataset.sm; state.smMsg = ''; renderSpecMap(); });
-  const gen = async n => { const s = specs[n]; let d = await aiMap(n, s); if (!d) d = { rows: specRule(s), src: 'AI 미연결 · 명세서 핵심어 기준 초안' }; state.smDraft[n] = d; return d; };
-  document.getElementById('smgen').onclick = async () => { state.smPend = true; renderSpecMap(); await gen(sel); state.smPend = false; renderSpecMap(); };
-  document.getElementById('small').onclick = async () => { state.smMsg = '매핑 중…'; renderSpecMap(); for (const n of names) if (!M[n]) await gen(n); state.smMsg = `${names.filter(n => !M[n]).length}개 과목의 매핑 초안을 만들었습니다. 과목별로 검토해 승인하세요.`; renderSpecMap(); };
-  document.getElementById('smtpl').onclick = () => download('교과목명세서_양식.csv', [['교과목명', '이수구분', '학점', '교과목 개요', '학습목표(| 구분)', '주요 내용'], ...Object.entries(specs).map(([n, s]) => [n, s.cat, s.cr, s.overview, (s.goals || []).join('|'), s.weeks])]);
-  document.getElementById('smfile').onchange = e => {
+  q('smkind').onchange = e => { state.smKind = e.target.value; renderSpecMap(); };
+  q('smst').onchange = e => { state.smSt = e.target.value; renderSpecMap(); };
+  q('smq').onchange = e => { state.smQ = e.target.value.trim(); renderSpecMap(); };
+  q('smver').onchange = e => { state.smVer = e.target.value; };
+  /* 분석 → 초안을 'mapdraft'에 저장(승인 대기) */
+  const gen = async n => {
+    const s = specsNow()[n]; if (!s) return null;
+    let d = await aiMap(n, s); if (!d) d = { rows: specRule(s), src: 'AI 미연결 · 명세서 핵심어 기준 초안' };
+    d.at = localTime(); d.term = s.term || '';
+    sSet('org', 'mapdraft', { ...mapDraftNow(), [n]: d }, `${n}: 연계 역량 초안(${d.src})`); return d;
+  };
+  if (q('smgen')) q('smgen').onclick = async () => { state.smPend = true; renderSpecMap(); await gen(sel); state.smPend = false; state.smMsg = `${sel} 분석 초안을 만들었습니다. 확인하고 승인하세요.`; renderSpecMap(); };
+  q('small').onclick = async () => {
+    const todo = all.filter(x => specs[x.n] && ['매핑 전', '재검토'].includes(stOf(x.n))).map(x => x.n);
+    if (!todo.length) { say('새로 분석할 과목이 없습니다(명세서가 있고 승인 전·재검토인 과목만 분석).'); return; }
+    say(`${todo.length}개 과목 분석 중…`); for (const n of todo) await gen(n);
+    state.smSt = '검토 대기'; say(`${todo.length}개 과목의 초안을 만들었습니다. 상태 '검토 대기'에서 하나씩 확인해 승인하세요.`);
+  };
+  q('smtpl').onclick = () => download('교과목명세서_양식.csv', [['교과목명', '이수구분', '학점', '교과목 개요', '학습목표(| 구분)', '주요 내용'], ...Object.entries(specs).map(([n, s]) => [n, s.cat, s.cr, s.overview, (s.goals || []).join('|'), s.weeks])]);
+  q('smfile').onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const rd = new FileReader();
     rd.onload = () => {
       const rows = parseCSV(String(rd.result)).slice(1).filter(r => r[0]);
-      if (!rows.length) { state.smMsg = '읽을 수 있는 행이 없습니다. 양식을 확인하세요.'; renderSpecMap(); return; }
-      const out = {}; rows.forEach(r => { out[r[0].trim()] = { cat: r[1], cr: Number(r[2]) || null, overview: r[3] || '', goals: String(r[4] || '').split('|').map(x => x.trim()).filter(Boolean), weeks: r[5] || '' }; });
-      sSet('org', 'specs', out); state.smDraft = {}; state.smMsg = `${rows.length}개 과목 명세서를 올렸습니다.`; renderSpecMap();
+      if (!rows.length) { say('읽을 수 있는 행이 없습니다. 양식을 확인하세요.'); return; }
+      const out = { ...(sGet('org', 'specs') || {}) }, at = todayISO();
+      rows.forEach(r => { out[r[0].trim()] = { cat: r[1], cr: Number(r[2]) || null, overview: r[3] || '', goals: String(r[4] || '').split('|').map(x => x.trim()).filter(Boolean), weeks: r[5] || '', kind: '교과목 명세서', term: ver, at }; });
+      sSet('org', 'specs', out, `${ver} 명세서 ${rows.length}개`); say(`${ver} 명세서 ${rows.length}개를 올렸습니다. '검토 대기 초안 만들기'로 한꺼번에 분석하세요.`);
     };
     rd.readAsText(f, 'utf-8');
   };
-  const ok = document.getElementById('smok');
-  if (ok) ok.onclick = () => {
-    const subs = [...document.querySelectorAll('.smchk:checked')].map(x => x.value);
-    if (!subs.length) { state.smMsg = '하나 이상 채택해야 합니다.'; renderSpecMap(); return; }
-    const M2 = { ...(sGet('org', 'mapping') || {}) };
-    M2[sel] = { subs, rows: prop, by: state.user.name, at: localTime(), src: draft ? draft.src : M[sel].src };
-    sSet('org', 'mapping', M2, `${sel}: ${base.join(',')} → ${subs.join(',')}`); logLocal('역량 매핑 승인', sel, subs.join(', '));
-    delete state.smDraft[sel]; applyMapping(); state.smMsg = `${sel} 매핑을 승인했습니다. 추천과 분석에 반영됩니다.`; renderSpecMap();
+  q('smplan').onclick = () => { state.smPlanOpen = !state.smPlanOpen; renderSpecMap(); };
+  if (q('smptf')) q('smptf').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { q('smpt').value = String(rd.result).slice(0, 12000); }; rd.readAsText(f, 'utf-8'); };
+  if (q('smpf')) q('smpf').onsubmit = async e => {
+    e.preventDefault();
+    const n = q('smpn').value, t = q('smpt').value.trim();
+    if (t.length < 40) { q('smmsg').textContent = '강의계획서 내용이 너무 짧습니다. 학습목표와 주차별 내용을 함께 넣으세요.'; return; }
+    const c = all.find(x => x.n === n);
+    sSet('org', 'specs', { ...(sGet('org', 'specs') || {}), [n]: { cat: c ? c.kind : '', cr: c ? c.cr : null, overview: t.slice(0, 12000), goals: [], weeks: '', kind: '강의계획서', term: ver, at: todayISO() } }, `${n}: ${ver} 강의계획서`);
+    state.smSel = n; state.smPlanOpen = false; state.smPend = true; say(`${n} 강의계획서를 분석 중…`);
+    await gen(n); state.smPend = false; say(`${n} ${ver} 강의계획서를 저장하고 분석했습니다. 확인하고 승인하세요.`);
   };
-  const rs = document.getElementById('smreset');
-  if (rs) rs.onclick = () => { const M2 = { ...(sGet('org', 'mapping') || {}) }; delete M2[sel]; sSet('org', 'mapping', M2, `${sel}: 승인 취소`); applyMapping(); renderSpecMap(); };
+  const read = bindLinkPick($view.querySelector('.p-smed'), 'cl', CRS_MAX, o => { q('clsix').innerHTML = `<span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixTags(o.subs, o.facs)}`; }, () => { q('smmsg').textContent = `연계 역량은 최대 ${CRS_MAX}개까지 고를 수 있습니다.`; });
+  q('smok').onclick = () => {
+    const o = read();
+    if (!o.subs.length && !o.facs.length) { say('연계 역량을 하나 이상 고르세요.'); return; }
+    if (o.subs.length + o.facs.length > CRS_MAX) { say(`연계 역량은 최대 ${CRS_MAX}개입니다. 가장 직접 기르는 역량만 남기세요.`); return; }
+    saveCrsLink(sel, o, draft ? draft.src : '관리자 직접 입력', prop, sp ? sp.term : '');
+    say(`${sel} 연계 역량을 ${draft ? '승인' : '저장'}했습니다. 추천과 분석에 반영됩니다.`);
+  };
+  if (q('smrej')) q('smrej').onclick = () => { const D = { ...mapDraftNow() }; delete D[sel]; sSet('org', 'mapdraft', D, `${sel}: 초안 버림`); say('초안을 버렸습니다.'); };
+  if (q('smreset')) q('smreset').onclick = () => { const M2 = { ...mapNow() }; delete M2[sel]; sSet('org', 'mapping', M2, `${sel}: 연결 취소`); applyMapping(); say(`${sel} 연결을 취소했습니다. 교과과정표 기준으로 돌아갑니다.`); };
 }
 
 /* ======================================================================
@@ -10641,7 +10749,7 @@ function renderMajorTT() {
   </div>`;
   const rows = list.map((b, i) => ed === i
     ? `<tr class="mt-edit"><td><input id="mten" value="${esc(b.n)}" maxlength="30"></td><td><select id="mted">${dayOpt(b.d)}</select></td><td><select id="mtes">${sOpt(b.s)}</select></td><td><select id="mtel">${lOpt(b.len)}</select></td><td><select id="mtecr">${cOpt(crOf(b))}</select></td><td><button class="btn sm" data-mtsave="${i}">저장</button> <button class="linkbtn" id="mtcancel">취소</button></td></tr>`
-    : `<tr class="${bad.has(i) ? 'conf' : ''}"><td><b>${esc(b.n)}</b>${bad.has(i) ? ' <span class="badge amber">시간 겹침</span>' : ''}</td><td>${DAYS[b.d]}</td><td>${pStart(b.s)}~${pEnd(b.s, b.len)}</td><td>${b.len}시간</td><td>${crOf(b)}학점${crOf(b) !== b.len ? ' <span class="badge">시수와 다름</span>' : ''}</td><td><button class="linkbtn" data-mtedit="${i}">수정</button> <button class="linkbtn" data-mtdel="${i}">삭제</button></td></tr>`).join('');
+    : `<tr class="${bad.has(i) ? 'conf' : ''}"><td><b>${esc(b.n)}</b>${bad.has(i) ? ' <span class="badge amber">시간 겹침</span>' : ''}<br>${(L => (L.subs.length + L.facs.length ? `<span class="meta">${esc(ncSix(L.subs, L.facs).map(x => x.k).join('·'))}</span>` : ''))(crsLink(b.n))} <button class="linkbtn" data-mtlink="${esc(b.n)}" type="button">연계 역량</button></td><td>${DAYS[b.d]}</td><td>${pStart(b.s)}~${pEnd(b.s, b.len)}</td><td>${b.len}시간</td><td>${crOf(b)}학점${crOf(b) !== b.len ? ' <span class="badge">시수와 다름</span>' : ''}</td><td><button class="linkbtn" data-mtedit="${i}">수정</button> <button class="linkbtn" data-mtdel="${i}">삭제</button></td></tr>`).join('');
   const at = ((catalogNow() || {}).majorsAt || {})[`${D}|${K}`];
   $view.innerHTML = `
   <div class="dash-grid">
@@ -10694,6 +10802,7 @@ function renderMajorTT() {
   if (q('mtcopy')) q('mtcopy').onclick = () => save(((M[D] || {})[banKey(T, copyFrom)] || []).map(b => ({ ...b })), `${copyFrom}반 시간표 복사`, `${copyFrom}반 시간표를 복사했습니다. ${Bn}반에 맞게 고치세요.`);
   $view.querySelectorAll('[data-mtcell]').forEach(c => c.onclick = () => { state.mtPre = c.dataset.mtcell.split(',').map(Number); state.mtMsg = `${DAYS[state.mtPre[0]]} ${pStart(state.mtPre[1])}로 추가 양식을 채웠습니다. 과목명을 넣고 추가하세요.`; renderMajorTT(); q('mtan').focus(); });
   { let crTouched = false; q('mtacr').onchange = () => { crTouched = true; }; q('mtal').onchange = () => { if (!crTouched) q('mtacr').value = Math.min(6, +q('mtal').value); }; }
+  $view.querySelectorAll('[data-mtlink]').forEach(x => x.onclick = () => { state.smSel = x.dataset.mtlink; go('specmap'); });
   q('mtadd').onsubmit = e => {
     e.preventDefault();
     const b = { n: q('mtan').value.trim(), d: +q('mtad').value, s: +q('mtas').value, len: +q('mtal').value, cr: +q('mtacr').value }, err = valid(b);
@@ -10909,6 +11018,7 @@ function coursesSave(name, list, note) {
 /* 교양·융합 분반의 학점: 시수와 다를 수 있어 분반마다 둠. 없으면 교과과정표 과목 학점(그것도 없으면 시수) */
 const secCr = (sec, c) => (sec && sec.cr != null && sec.cr !== '' ? +sec.cr : c && c.cr != null ? +c.cr : sec ? sec.len : 0);
 function renderElectTT() {
+  if (state.etLinkFor !== state.etSel) state.etLinkOpen = false;
   const all = electCourses(), cat = catalogNow() || {}, C = cat.courses || {};
   state.etKind = state.etKind || '교양'; state.etQ = state.etQ || '';
   const shown = all.filter(x => x.kind === state.etKind && (!state.etQ || x.n.includes(state.etQ))).sort((a, b) => ((C[b.n] || []).length - (C[a.n] || []).length) || a.n.localeCompare(b.n, 'ko'));
@@ -10935,6 +11045,7 @@ function renderElectTT() {
       <div class="actions full"><button class="btn sm" type="submit">${ed != null ? '수정 저장' : '분반 추가'}</button>${ed != null ? '<button class="linkbtn" id="etcancel" type="button">취소</button>' : ''}</div></form>`;
   const semN = sm => Object.values(C).reduce((a, l) => a + l.filter(s => s.sem === sm).length, 0);
   const rows = secs.map((s, i) => `<tr><td><b>${esc(s.sec)}</b></td><td>${s.sem ? s.sem + '학기' : '-'}</td><td>${secScope(s)}</td><td>${DAYS[s.d]} ${pStart(s.s)}~${pEnd(s.s, s.len)}</td><td>${s.len}시간</td><td>${secCr(s, cur)}학점${secCr(s, cur) !== s.len ? ' <span class="badge">시수와 다름</span>' : ''}</td><td>${s.enr || 0}/${s.cap || 40}</td><td><button class="linkbtn" data-etedit="${i}">수정</button> <button class="linkbtn" data-etdel="${i}">삭제</button></td></tr>`).join('');
+  state.etLinkFor = state.etSel;
   /* 대상별 점검: 그 학과·학년·반의 전공 시간표 위에 들을 수 있는 교양·융합 분반을 겹쳐 봄 */
   state.ckDept = depts.includes(state.ckDept) ? state.ckDept : depts[0]; state.ckTerm = MT_TERMS.includes(state.ckTerm) ? state.ckTerm : '1-1'; state.ckBan = state.ckBan || 'A';
   const ckGrade = state.ckTerm.split('-')[0], ckSem = state.ckTerm.split('-')[1];
@@ -10958,7 +11069,12 @@ function renderElectTT() {
     ${panelH('p-etlist', '과목', `${shown.length}개`, `<div class="etkind" role="tablist">${['교양', '융합'].map(k => `<button role="tab" class="pm" data-etkind="${k}" aria-selected="${state.etKind === k}">${k === '융합' ? '융합과정' : '교양'}</button>`).join('')}</div>
       <input class="etq" id="etq" placeholder="과목명 검색" value="${esc(state.etQ)}">
       <ul class="etcourses">${shown.slice(0, 80).map(x => `<li><button class="${x.n === cur.n ? 'on' : ''}" data-etsel="${esc(x.n)}"><b>${esc(x.n)}</b><span class="meta">${x.micro ? esc(x.micro) + ' · ' : ''}${(C[x.n] || []).length ? `분반 ${(C[x.n] || []).length}개` : '미등록'}</span></button></li>`).join('')}</ul>`)}
-    ${panelH('p-etsec', esc(cur.n), `${cur.kind === '융합' ? '융합과정 · ' : '교양 · '}${cur.cr}학점 · 분반 ${secs.length}개`, `<div class="scrollx"><table class="tbl"><thead><tr><th>분반</th><th>학기</th><th>대상</th><th>시간</th><th>시수</th><th>학점</th><th>신청/정원</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="meta">등록된 분반이 없습니다. 아래에서 추가하세요.</td></tr>'}</tbody></table></div>${formHtml}<p class="meta" id="etmsg" aria-live="polite">${esc(state.etMsg || '')}</p>`)}
+    ${panelH('p-etsec', esc(cur.n), `${cur.kind === '융합' ? '융합과정 · ' : '교양 · '}${cur.cr}학점 · 분반 ${secs.length}개`, `<div class="scrollx"><table class="tbl"><thead><tr><th>분반</th><th>학기</th><th>대상</th><th>시간</th><th>시수</th><th>학점</th><th>신청/정원</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="meta">등록된 분반이 없습니다. 아래에서 추가하세요.</td></tr>'}</tbody></table></div>${formHtml}<p class="meta" id="etmsg" aria-live="polite">${esc(state.etMsg || '')}</p>
+      ${(L => `<div class="etlink"><h3 class="sub3">연계 역량 <span class="meta">${L.st} · 최대 ${CRS_MAX}개</span></h3>
+        <p class="ncsixline">${sixTags(L.subs, L.facs)}</p>
+        ${state.etLinkOpen ? `${linkPickHtml('el', L.subs, L.facs, CRS_MAX)}<p class="ncsixline" id="elsix"><span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixTags(L.subs, L.facs)}</p>
+          <div class="actions no-print"><button class="btn sm" id="elsave" type="button">연계 역량 저장</button><button class="linkbtn" id="elclose" type="button">닫기</button></div>`
+        : `<div class="actions no-print"><button class="btn ghost sm" id="elopen" type="button">직접 입력</button><button class="linkbtn" id="elspec" type="button">명세서로 AI 분석·승인</button></div>`}</div>`)(crsLink(cur.n))}`)}
     ${panelH('p-etck', '대상별 점검', `${clash.length ? `전공과 겹치는 분반 ${clash.length}개` : '겹침 없음'}`, `<div class="mt-tools no-print">
       <label>학과<select id="ckdept">${depts.map(d => `<option ${d === state.ckDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
       <label>학기<select id="ckterm">${opt(MT_TERMS.map(t => [t, termName(t)]), state.ckTerm)}</select></label>
@@ -10973,6 +11089,19 @@ function renderElectTT() {
   $view.querySelectorAll('[data-etkind]').forEach(b => b.onclick = () => { state.etKind = b.dataset.etkind; state.etSel = null; state.etEdit = null; state.etForm = null; re(); });
   q('etq').oninput = e => { state.etQ = e.target.value.trim(); state.etSel = null; state.etForm = null; clearTimeout(state.etT); state.etT = setTimeout(() => { re(); const i = q('etq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
   $view.querySelectorAll('[data-etsel]').forEach(b => b.onclick = () => { state.etSel = b.dataset.etsel; state.etEdit = null; state.etForm = null; state.etMsg = ''; re(); });
+  /* 연계 역량 직접 입력(교과목 명세서 없이도) */
+  if (q('elopen')) q('elopen').onclick = () => { state.etLinkOpen = true; re(); };
+  if (q('elspec')) q('elspec').onclick = () => { state.smSel = cur.n; go('specmap'); };
+  if (q('elclose')) q('elclose').onclick = () => { state.etLinkOpen = false; re(); };
+  if (q('elsave')) {
+    const readL = bindLinkPick($view.querySelector('.etlink'), 'el', CRS_MAX, o => { q('elsix').innerHTML = `<span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixTags(o.subs, o.facs)}`; }, () => { q('etmsg').textContent = `연계 역량은 최대 ${CRS_MAX}개까지 고를 수 있습니다.`; });
+    q('elsave').onclick = () => {
+      const o = readL();
+      if (!o.subs.length && !o.facs.length) { q('etmsg').textContent = '연계 역량을 하나 이상 고르세요.'; return; }
+      if (o.subs.length + o.facs.length > CRS_MAX) { q('etmsg').textContent = `연계 역량은 최대 ${CRS_MAX}개입니다.`; return; }
+      saveCrsLink(cur.n, o, '관리자 직접 입력', null, ''); state.etLinkOpen = false; state.etMsg = `${cur.n} 연계 역량을 저장했습니다. 학생 추천과 분석에 반영됩니다.`; re();
+    };
+  }
   $view.querySelectorAll('input[name=etsc]').forEach(r => r.onchange = () => { state.etForm = readF(); re(); });
   q('etf').onsubmit = e => {
     e.preventDefault(); const s = readF();
@@ -11557,9 +11686,9 @@ function renderDeptDash() {
 const rOpen = () => (state.rOpen = state.rOpen || new Set());
 const infoBox = (key, html) => `<details class="rinfo" data-rinfo="${esc(key)}" ${rOpen().has(key) ? 'open' : ''}><summary>과정 보기</summary><div class="rinfo-body">${html}</div></details>`;
 function libInfo(n) {
-  const s = specsNow()[n];
-  if (!s) return '<p class="meta">교과목 명세서를 준비하고 있습니다. 명세서가 등록되면 개요·학습목표·주요 내용이 여기에 나옵니다.</p>';
-  return `${s.overview ? `<p>${esc(s.overview)}</p>` : ''}${(s.goals || []).length ? `<p class="meta">학습목표</p><ul>${s.goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}${s.weeks ? `<p class="meta">주요 내용</p><p>${esc(s.weeks)}</p>` : ''}<p class="meta">${esc(s.cat || '')}${s.cr ? ` · ${s.cr}학점` : ''}${!sGet('org', 'specs') ? ' · 시연용 예시 명세서' : ''}</p>`;
+  const s = specsNow()[n], L = crsLink(n), link = `<p class="ncsixline"><span class="meta">연계 역량</span> ${sixTags(L.subs, L.facs)}</p>`;
+  if (!s) return link + '<p class="meta">교과목 명세서를 준비하고 있습니다. 명세서가 등록되면 개요·학습목표·주요 내용이 여기에 나옵니다.</p>';
+  return `${link}${s.overview ? `<p>${esc(s.overview)}</p>` : ''}${(s.goals || []).length ? `<p class="meta">학습목표</p><ul>${s.goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}${s.weeks ? `<p class="meta">주요 내용</p><p>${esc(s.weeks)}</p>` : ''}<p class="meta">${esc(s.cat || '')}${s.cr ? ` · ${s.cr}학점` : ''}${!sGet('org', 'specs') ? ' · 시연용 예시 명세서' : ''}</p>`;
 }
 function micInfo(m) {
   return `${m.aim ? `<p>${esc(m.aim)}</p>` : ''}<dl class="rinfo-dl"><dt>대상</dt><dd>${esc(m.target || '-')}</dd><dt>주관</dt><dd>${esc(m.host || '-')}${(m.parts || []).length ? ` · 참여 ${esc(m.parts.join(', '))}` : ''}</dd><dt>인증</dt><dd>${m.cert ? esc(m.cert) : (m.tiers || []).map(t => `${t[1]} ${t[0]}학점`).join(' · ') || '-'}</dd>${m.y25 ? `<dt>2025 운영</dt><dd>${m.y25.depts}개 학과 참여 · 수강 ${m.y25.students}명</dd>` : ''}</dl>
