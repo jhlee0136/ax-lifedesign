@@ -113,13 +113,13 @@ i.qn { display: inline-block; height: 14px; cursor: default; }
 /* 3종 진단 안내: 머리 줄(제목·버튼 | 레이더) + 카드 3장(행 높이를 subgrid로 맞춤) + 공통 안내 4개 */
 .ihero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 18px 40px; align-items: center; margin: 0 0 30px; }
 .ihero-main h1 { margin-bottom: 14px; }
-.ihero-main .lede { margin-bottom: 20px; max-width: 32em; text-wrap: pretty; }
+.ihero-main .lede { margin-bottom: 20px; max-width: 32em; text-wrap: wrap; }
 .ihero-main .actions { margin: 0; }
 .ihero-demo { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 12px 0 0; font-size: 14px; }
 .ihero-dial { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px 14px; }
 .ihero-dial .dial { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
 .ihero-dial .dial .lab { font-size: 17px; } .ihero-dial .dial .tick { font-size: 12px; } .ihero-dial .dial .dot { r: 6px; }
-.ihero-dial figcaption { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; text-wrap: pretty; margin-top: 2px; }
+.ihero-dial figcaption { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; text-wrap: wrap; margin-top: 2px; }
 .dcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(7, auto); gap: 0 16px; margin: 0 0 22px; }
 .dcard { grid-row: span 7; display: grid; grid-template-rows: subgrid; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
 .dcard-h { display: grid; grid-template-columns: 52px 1fr; gap: 14px; align-items: center; padding-bottom: 14px; }
@@ -136,10 +136,10 @@ i.qn { display: inline-block; height: 14px; cursor: default; }
 .dcard-facts b { font-size: 22px; font-weight: 700; color: var(--ink); margin-right: 2px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .dcard-row { padding-top: 14px; }
 .dcard-k { margin: 0 0 3px; font-size: 13px; font-weight: 700; color: var(--muted); }
-.dcard-v { margin: 0; font-size: 15px; line-height: 1.65; text-wrap: pretty; word-break: keep-all; }
-.dcard-tip { align-self: end; margin: 16px 0 0; padding: 11px 13px; border-radius: 10px; background: var(--signal-soft); font-size: 14px; line-height: 1.55; text-wrap: pretty; word-break: keep-all; }
+.dcard-v { margin: 0; font-size: 15px; line-height: 1.65; text-wrap: wrap; word-break: keep-all; }
+.dcard-tip { align-self: end; margin: 16px 0 0; padding: 11px 13px; border-radius: 10px; background: var(--signal-soft); font-size: 14px; line-height: 1.55; text-wrap: wrap; word-break: keep-all; }
 .dnotes { list-style: none; padding: 0; margin: 0 0 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 16px; }
-.dnotes li { font-size: 14px; line-height: 1.55; color: var(--muted); padding: 12px 0 0; border-top: 2px solid var(--line); text-wrap: pretty; word-break: keep-all; }
+.dnotes li { font-size: 14px; line-height: 1.55; color: var(--muted); padding: 12px 0 0; border-top: 2px solid var(--line); text-wrap: wrap; word-break: keep-all; }
 .dnotes b { display: block; color: var(--ink); margin-bottom: 2px; }
 /* 열 때 한 번: 카드 그림의 선이 그려짐 */
 @media (prefers-reduced-motion: no-preference) {
@@ -310,7 +310,7 @@ section.block { margin-top: 44px; }
 .gtime li { position: relative; padding: 16px 4px 4px 0; border-top: 2px solid var(--signal); font-size: 14.5px; }
 .gtime li::before { content: ''; position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--signal); }
 .gtime li.gt-micro { border-top-style: dashed; } .gtime li.gt-micro::before { background: var(--panel); border: 2px solid var(--signal); width: 6px; height: 6px; }
-.gtime b { display: block; margin-bottom: 4px; } .gtime span { color: var(--ink); text-wrap: pretty; }
+.gtime b { display: block; margin-bottom: 4px; } .gtime span { color: var(--ink); text-wrap: wrap; }
 @media (max-width: 1100px) { .gr-top, .gr-ref { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 620px) { .own-grid { grid-template-columns: minmax(0, 1fr); } .own-grid .own-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .gtime { grid-template-columns: 1fr; gap: 8px; } }
 /* 진단 결과 · 비슷한 학생: 두 단 */
@@ -1226,7 +1226,7 @@ h2 { font-weight: 640; letter-spacing: -0.02em; }
 .mega-go { all: unset; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--ink); }
 .mega-go:hover, .mega-views button:hover { text-decoration: underline; text-underline-offset: 3px; }
 .mega-go:focus-visible, .mega-views button:focus-visible, .mega-flow button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 4px; }
-.mega-d { margin: 4px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; text-wrap: pretty; }
+.mega-d { margin: 4px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; text-wrap: wrap; }
 .mega-views { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
 .mega-views button { all: unset; cursor: pointer; font-size: 13.5px; color: var(--ink); padding: 2px 0 2px 12px; position: relative; }
 .mega-views button::before { content: ''; position: absolute; left: 2px; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); transform: translateY(-50%); }
@@ -1531,7 +1531,12 @@ body.no-demo .demostrip .phase { display: none !important; }
 .ck-ed { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
 .ck-ed li { display: grid; grid-template-columns: 4em 5.6em 5em minmax(8em, 1fr) 7em auto; gap: 6px; align-items: center; }
 .ck-ed select, .ck-ed input { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; min-width: 0; }
-.ck-mini { margin: 0 0 4px; } .ck-refl { display: grid; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--paper); margin: 4px 0 8px; font-size: 14px; } .ck-refl .meta { margin: 0; } .ck-rs { display: flex; gap: 6px; flex-wrap: wrap; }
+.ck-mini { margin: 0 0 4px; }
+.ck-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0 6px; }
+.ck-sum div { display: grid; gap: 1px; padding: 8px 10px; border-radius: 10px; background: var(--paper); border: 1px solid var(--line); }
+.ck-sum span { font-size: 12px; color: var(--muted); } .ck-sum b { font-size: 22px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; } .ck-sum b small { font-size: 13px; font-weight: 600; margin-left: 1px; } .ck-sum em { font-style: normal; font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.selfd { margin-top: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); } .selfd header { display: flex; justify-content: space-between; align-items: baseline; } .selfd h4 { margin: 12px 0 4px; font-size: 14px; }
+@media (max-width: 700px) { .ck-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); } } .ck-refl { display: grid; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--paper); margin: 4px 0 8px; font-size: 14px; } .ck-refl .meta { margin: 0; } .ck-rs { display: flex; gap: 6px; flex-wrap: wrap; }
 .ck-refl.ck-done { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .ck-refl input { font: inherit; font-size: 13.5px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--panel); color: var(--ink); } .ck-refl .btn { justify-self: start; }
 @media (max-width: 700px) { .ck-ed li { grid-template-columns: 1fr 1fr 1fr; } .ck-ed li input { grid-column: 1 / -1; } }
@@ -1961,11 +1966,11 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 .rinfo-courses li { margin-bottom: 2px; }
 .ncform textarea { font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 8px; resize: vertical; }
 /* v29: 줄바꿈 정리 — 끝줄에 한두 어절만 남지 않게, 넓은 곳에서 글 폭을 과하게 묶지 않게 */
-p, .lede, .fine { text-wrap: pretty; }
+p, .lede, .fine { text-wrap: wrap; }
 dt, th, label, figcaption, summary, .jobcard span, .chip, .badge { text-wrap: balance; }
-li, dd, td, .meta { text-wrap: pretty; }
+li, dd, td, .meta { text-wrap: wrap; }
 /* 문단으로 쓰는 안내 글(p.meta 등)은 줄 길이를 맞추면(balance) 짧은 줄이 여럿 생겨, 화면 너비만큼 채우고 끝줄만 다듬음(pretty) */
-p.meta, div.meta, ul.meta, ol.meta { text-wrap: pretty; word-break: keep-all; overflow-wrap: anywhere; }
+p.meta, div.meta, ul.meta, ol.meta { text-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
 h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: balance; }
 .lede { max-width: 46em; } .login-intro .lede { max-width: 40em; }
 .facts { max-width: 56em; }
@@ -2026,7 +2031,7 @@ h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: bal
 .idot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; background: var(--signal); }
 .ilist li.read .idot { background: transparent; border: 1px solid var(--line); }
 .ilist li.read b { font-weight: 500; color: var(--muted); }
-.imain { display: grid; gap: 2px; min-width: 0; } .imain .meta { font-size: 13px; text-wrap: pretty; }
+.imain { display: grid; gap: 2px; min-width: 0; } .imain .meta { font-size: 13px; text-wrap: wrap; }
 .ik { font-size: 12px; color: var(--signal); font-weight: 600; }
 .iat { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .iempty { padding: 18px 12px; color: var(--muted); font-size: 14px; }
@@ -2038,7 +2043,7 @@ h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: bal
 .shs { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity .45s ease, visibility 0s linear .45s; }
 .shs.on { opacity: 1; visibility: visible; transition: opacity .45s ease; }
 .sht { font-size: 19px; margin: 0 0 4px; letter-spacing: -.01em; }
-.shd { margin: 0 0 6px; color: var(--muted); font-size: 14.5px; max-width: 34em; text-wrap: pretty; }
+.shd { margin: 0 0 6px; color: var(--muted); font-size: 14.5px; max-width: 34em; text-wrap: wrap; }
 .showc .terra-login { margin-top: 0; }
 .sv { position: relative; margin-top: 18px; }
 .svkey { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
@@ -2229,7 +2234,7 @@ i.rdk { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
 .rd-gain { font-weight: 700; color: var(--ok-ink); background: var(--ok-soft, #E3F1E7); border-radius: 999px; padding: 2px 8px; font-size: 13px; font-variant-numeric: tabular-nums; min-width: 46px; text-align: center; }
 .p-kit { grid-column: 1 / -1; }
 .kit-tbl td, .kit-tbl th { vertical-align: top; text-align: left !important; } .kit-tbl tr.plan td { color: var(--muted); } .kit-tbl tr.plan b { color: var(--ink); font-weight: 560; }
-.kit-tbl td:last-child { min-width: 16em; text-wrap: pretty; }
+.kit-tbl td:last-child { min-width: 16em; text-wrap: wrap; }
 .kit-units { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
 .kit-units li { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: grid; gap: 2px; font-size: 13.5px; }
 .kit-units li > span:last-child { color: var(--muted); font-size: 12.5px; }
@@ -2257,7 +2262,7 @@ body:has(.tour-hl) .topbar:not(:has(.tour-hl)) { background: var(--paper); -webk
 .srpath { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 10px; }
 .srpath > li { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
 .sp-h { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
-.sp-t { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 6px; } .sp-t p { margin: 2px 0 0; font-size: 13.5px; text-wrap: pretty; }
+.sp-t { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 6px; } .sp-t p { margin: 2px 0 0; font-size: 13.5px; text-wrap: wrap; }
 @media (max-width: 760px) { .srows li { grid-template-columns: minmax(0, 1fr) auto; } .sr-bar { grid-column: 1 / -1; grid-row: 2; } .sr-act { grid-column: 1 / -1; justify-self: start; } .srcols, .sp-t { grid-template-columns: 1fr; } }
 
 /* 수업 역량 프로필 */
@@ -2271,7 +2276,7 @@ body:has(.tour-hl) .topbar:not(:has(.tour-hl)) { background: var(--paper); -webk
 .cpstack i { display: block; height: 100%; }
 .cpstack .lo, .mlegend .cplo { background: var(--amber); } .cpstack .mid, .mlegend .cpmid { background: color-mix(in srgb, var(--signal) 45%, var(--panel)); } .cpstack .hi, .mlegend .cphi { background: var(--signal); }
 .cptips { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 10px; }
-.cptips li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; font-size: 14px; text-wrap: pretty; }
+.cptips li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; font-size: 14px; text-wrap: wrap; }
 .cpgain { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; max-width: 640px; }
 .cpgain li { display: grid; grid-template-columns: 9em 1fr 5em; gap: 12px; align-items: center; font-size: 14px; }
 .cpgain li.me { font-weight: 600; } .cpgain b { text-align: right; font-variant-numeric: tabular-nums; }
@@ -6986,8 +6991,19 @@ async function fillRealStudents(boxId) {
   const flagged = rows.filter(x => why(x).length);
   box.innerHTML = rows.length ? `<p class="realsum">${flagged.length ? `실제 이용 학생 중 <b>${flagged.length}명</b>이 상담 권장 대상입니다: ${flagged.slice(0, 5).map(x => `${esc(x.name)}(${why(x).join('·')})`).join(', ')}` : '실제 이용 학생 중 상담 권장 대상은 없습니다.'}</p><div class="scrollx"><table class="tbl"><thead><tr><th>학번</th><th>이름</th><th>학과</th><th>진단</th><th>최근 결과</th><th>향상도</th><th>신뢰성</th><th>이수 계획</th><th>자기주도 실천</th><th>조기 경보</th><th class="no-print">상담</th></tr></thead><tbody>${rows.map(x => {
     const g = x.n >= 2 && x.first && x.last ? mean(x.last.vals) - mean(x.first.vals) : null;
-    return `<tr><td>${x.no.slice(0, 4)}****</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td>${x.n}회${x.inProgress ? ' · <span class="meta">응시 중</span>' : ''}</td><td>${x.last ? `${Math.round(mean(x.last.vals))}점 <span class="meta">${x.last.label}</span>` : '-'}</td><td class="${g !== null && g < ((state.alertStd || {}).drop || 0) ? 'low' : ''}">${g === null ? '-' : (g > 0 ? '+' : '') + g.toFixed(1)}</td><td>${x.last ? x.last.verdict : '-'}</td><td>${x.plan ? x.plan + '과목' : '없음'}</td><td class="${x.tt && x.tt.lowStreak >= 2 ? 'low' : ''}">${x.tt && x.tt.rate != null ? `${x.tt.rate}%${x.tt.lowStreak >= 2 ? ' · 상담 권장' : ''}` : '-'}</td><td>${(rk => `${riskChip(rk.score)}${rk.why.length ? `<br><span class="meta">${rk.why.join(' · ')}</span>` : ''}`)(riskOfReal(x))}</td><td class="no-print">${creqCell(x)}</td></tr>`;
+    return `<tr><td>${x.no.slice(0, 4)}****</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td>${x.n}회${x.inProgress ? ' · <span class="meta">응시 중</span>' : ''}</td><td>${x.last ? `${Math.round(mean(x.last.vals))}점 <span class="meta">${x.last.label}</span>` : '-'}</td><td class="${g !== null && g < ((state.alertStd || {}).drop || 0) ? 'low' : ''}">${g === null ? '-' : (g > 0 ? '+' : '') + g.toFixed(1)}</td><td>${x.last ? x.last.verdict : '-'}</td><td>${x.plan ? x.plan + '과목' : '없음'}</td><td class="${x.tt && x.tt.lowStreak >= 2 ? 'low' : ''}">${x.tt && (x.tt.rate != null || x.tt.week) ? `${x.tt.rate != null ? `${x.tt.rate}%` : ''}${x.tt.lowStreak >= 2 ? ' · 상담 권장' : ''}${x.tt.week ? `<br><span class="meta">이번 주 ${x.tt.week.items.filter(i => i.done).length}/${x.tt.week.items.length}${x.tt.week.refl ? ' · 돌아보기 완료' : ''}</span>` : ''} <button class="linkbtn no-print" data-selfd="${x.no}" type="button">자세히</button>` : '<span class="meta">계획 없음</span>'}</td><td>${(rk => `${riskChip(rk.score)}${rk.why.length ? `<br><span class="meta">${rk.why.join(' · ')}</span>` : ''}`)(riskOfReal(x))}</td><td class="no-print">${creqCell(x)}</td></tr>`;
   }).join('')}</tbody></table></div><div id="creqbox"></div><p class="meta">${state.user.role === 'faculty' ? `${esc(state.dept)} 학생만 보입니다. ` : ''}열람 기록이 남습니다. '상담 요청'을 누르면 희망 일시 후보를 보내고, 학생이 고른 일시가 이 표에 표시됩니다.</p>` : `<p class="meta">아직 플랫폼을 이용한 학생이 없습니다.${state.user.role === 'faculty' ? ` (${esc(state.dept)})` : ''}</p>`;
+  /* 자기주도 학습 자세히: 이번 주 계획·체크, 최근 돌아보기, 누적 */
+  box.querySelectorAll('[data-selfd]').forEach(b => b.onclick = () => {
+    const x = rows.find(y => y.no === b.dataset.selfd), t = x.tt || {}, cb = document.getElementById('creqbox'), R = { good: '잘했어요', ok: '보통이에요', bad: '아쉬워요' };
+    cb.innerHTML = `<section class="selfd"><header><b>${esc(x.name)} · 자기주도 학습</b><button class="linkbtn" id="selfx" type="button">닫기</button></header>
+      ${t.sum ? `<div class="ck-sum">${Object.values(t.sum).map(s2 => `<div><span>${s2.t}</span><b>${s2.done}<small>회</small></b><em>${s2.h}시간${s2.plan ? ` · 계획 ${s2.plan}회 중 ${s2.rate}%` : ''}</em></div>`).join('')}</div>` : ''}
+      <h4>이번 주 계획과 실천</h4>${t.week ? `<ul class="ckl">${t.week.items.map(i => `<li class="${i.done ? 'is-done' : ''}">${i.done ? '✓' : '○'} <b>${DAYS[i.d]} ${pStart(i.s)}</b> ${esc(i.n)} <span class="meta">${esc(i.area || '')}</span></li>`).join('')}</ul>` : '<p class="meta">이번 주 계획을 아직 세우지 않았습니다.</p>'}
+      <h4>최근 돌아보기</h4>${t.lastRefl ? `<p>${R[t.lastRefl.s] || ''}${t.lastRefl.memo ? ` · "${esc(t.lastRefl.memo)}"` : ''} <span class="meta">${esc(t.lastRefl.w)}</span></p>` : '<p class="meta">돌아보기 기록이 없습니다.</p>'}
+      <p class="meta">최근 4주: ${(t.weeks || []).map(w => w.total ? `${w.done}/${w.total}` : '-').join(' · ')}${t.lowStreak >= 2 ? ' · 2주 연속 50% 미만' : ''}</p></section>`;
+    document.getElementById('selfx').onclick = () => { cb.innerHTML = ''; };
+    cb.scrollIntoView({ behavior: REDUCED_MOTION.matches ? 'auto' : 'smooth', block: 'nearest' });
+  });
   box.querySelectorAll('[data-creq]').forEach(b => b.onclick = () => {
     const x = rows.find(y => y.no === b.dataset.creq), cb = document.getElementById('creqbox'); cb.innerHTML = creqFormHtml(x);
     const q = id => document.getElementById(id); q('cqmsg').focus();
@@ -10642,13 +10658,33 @@ const studyKey = b => `${b.d}-${b.s}-${b.n}`;
 /* 주간 3단계: ① 계획 세우기(요일·시간·활동·연결 역량, 추천으로 채우거나 직접) → ② 실천 체크 → ③ 돌아보기(평가·한 줄 메모).
    저장: tt.plans[주] = { items: [{ id, d, s, len, n, area, done, doneAt }], at, refl: { s: 'good'|'ok'|'bad', memo, at } }. 예전 기록(tt.checks)도 실천률에 셈 */
 const weekOf = (tt, w) => { const P = (tt.plans || {})[w]; if (P) return { done: P.items.filter(x => x.done).length, total: P.items.length }; const C = (tt.checks || {})[w]; return C ? { done: (C.done || []).length, total: C.total || 0 } : { done: 0, total: 0 }; };
+/* ISO 주 키('2026-W45') → 그 주 월요일(YYYY-MM-DD) */
+function weekMonday(key) {
+  const [y, w] = key.split('-W').map(Number), j4 = new Date(Date.UTC(y, 0, 4)), m1 = new Date(j4); m1.setUTCDate(4 - ((j4.getUTCDay() || 7) - 1));
+  m1.setUTCDate(m1.getUTCDate() + (w - 1) * 7); return m1.toISOString().slice(0, 10);
+}
+/* 누적 실천: 최근 7일·한 달(30일)·이번 학기·1년(365일). 계획한 날(체크한 날이 있으면 그날) 기준, 오늘 이후 계획은 빼고 셈 */
+function selfSum(tt) {
+  const today = todayISO(), T = acadTerms(), term = (T.filter(x => x.start <= today).pop() || T[0]) || { start: isoAdd(today, -120) };
+  const P = [{ k: 'd7', t: '최근 7일', from: isoAdd(today, -6) }, { k: 'm1', t: '최근 한 달', from: isoAdd(today, -29) }, { k: 'term', t: '이번 학기', from: term.start }, { k: 'y1', t: '최근 1년', from: isoAdd(today, -364) }];
+  const rows = [];
+  Object.entries(tt.plans || {}).forEach(([w, pl]) => { const mon = weekMonday(w); (pl.items || []).forEach(x => { const day = x.done && x.doneAt ? String(x.doneAt).slice(0, 10) : isoAdd(mon, x.d); rows.push({ day, done: !!x.done, h: x.len || 1 }); }); });
+  Object.entries(tt.checks || {}).forEach(([w, c]) => { if ((tt.plans || {})[w]) return; const mon = weekMonday(w); for (let i = 0; i < (c.total || 0); i++) rows.push({ day: isoAdd(mon, Math.min(4, i)), done: i < (c.done || []).length, h: 1 }); });
+  const out = {};
+  P.forEach(({ k, t, from }) => { const L = rows.filter(r => r.day >= from && r.day <= today), d = L.filter(r => r.done); out[k] = { t, done: d.length, plan: L.length, h: d.reduce((a, r) => a + r.h, 0), rate: L.length ? Math.round(d.length / L.length * 100) : null }; });
+  return out;
+}
 function ttStat(tt) {
   const W = [3, 2, 1, 0].map(weekBack);
   const weeks = W.map(w => ({ w, ...weekOf(tt, w) }));
   const has = weeks.filter(x => x.total);
   const rate = has.length ? Math.round(has.reduce((a, x) => a + x.done, 0) / has.reduce((a, x) => a + x.total, 0) * 100) : null;
   let low = 0; for (let i = has.length - 1; i >= 0 && has[i].done / has[i].total < .5; i--) low++;
-  return { rate, weeks, lowStreak: low, at: new Date().toISOString().slice(0, 10) };
+  /* 지도교수 화면용: 이번 주 계획·체크·돌아보기 요약과 누적 */
+  const P = (tt.plans || {})[weekBack(0)];
+  const week = P ? { items: P.items.map(x => ({ n: x.n, area: x.area, d: x.d, s: x.s, done: !!x.done })), refl: P.refl || null } : null;
+  const lastRefl = Object.keys(tt.plans || {}).sort().reverse().map(k => tt.plans[k].refl && { w: k, ...tt.plans[k].refl }).find(Boolean) || null;
+  return { rate, weeks, lowStreak: low, week, lastRefl, sum: selfSum(tt), at: new Date().toISOString().slice(0, 10) };
 }
 const todayIdx = () => (new Date().getDay() + 6) % 7; /* 0=월 */
 /* 추천 계획: 시간표 추천이 있으면 그 빈 시간 제안, 없으면 약한 영역 3개를 화·수·목 저녁 시간대로 */
@@ -10689,8 +10725,9 @@ function checkinHtml() {
   }
   return `${head}${body}
     ${st.rate === null ? '' : `<div class="ckw" aria-label="최근 4주 실천률">`}${st.rate === null ? '' : st.weeks.map((x, i) => `<div><i style="height:${x.total ? Math.max(6, x.done / x.total * 100) : 0}%" class="${x.total && x.done / x.total < .5 ? 'low' : ''}"></i><span>${i === 3 ? '이번 주' : `${3 - i}주 전`}</span></div>`).join('') + '</div>'}
+    ${(S => Object.values(S).some(x => x.plan) ? `<div class="ck-sum" aria-label="누적 실천">${Object.values(S).map(x => `<div><span>${x.t}</span><b>${x.done}<small>회</small></b><em>${x.h}시간${x.plan ? ` · 계획 ${x.plan}회 중 ${x.rate}%` : ''}</em></div>`).join('')}</div>` : '')(st.sum)}
     <p class="meta">${st.rate === null ? '계획을 확정하고 실천을 체크하면 주마다 실천률이 쌓입니다.' : `최근 4주 실천률 ${st.rate}%`}${st.lowStreak >= 2 ? ' · 2주 연속 50% 미만이라 지도교수 상담 화면에 표시됩니다.' : ''}</p>
-    ${demoOn() ? '<button class="linkbtn demo-note" id="ckdemo" type="button">시연: 지난 3주 기록 채우기</button>' : ''}`;
+    ${demoOn() ? '<button class="linkbtn demo-note" id="ckdemo" type="button">시연: 지난 12주 기록 채우기</button>' : ''}`;
 }
 function bindCheckin() {
   const tt = state.tt; if (!tt) return;
@@ -10713,7 +10750,7 @@ function bindCheckin() {
   if (q('ckrefl')) q('ckrefl').onclick = () => { tt.plans[wk].refl = { s: state.ckRefl, memo: (q('ckmemo').value || '').trim(), at: localTime() }; state.ckRefl = null; save(); toast('이번 주 돌아보기를 저장했습니다.'); };
   if (q('ckreopen')) q('ckreopen').onclick = () => { state.ckRefl = tt.plans[wk].refl.s; tt.plans[wk].refl = null; render(); };
   const d = q('ckdemo');
-  if (d) d.onclick = () => { const base = suggestPlan(tt); [3, 2, 1].forEach((k, i) => { const items = base.map((x, j) => ({ ...x, done: j < [base.length, Math.min(1, base.length), 0][i] })); tt.plans[weekBack(k)] = { items, at: localTime(), refl: { s: ['good', 'ok', 'bad'][i], memo: '' } }; }); save(); };
+  if (d) d.onclick = () => { const base = suggestPlan(tt); for (let k = 12; k >= 1; k--) { const m = k <= 3 ? [Math.min(1, base.length), Math.min(1, base.length), base.length][3 - k] : (k * 7) % (base.length + 1); tt.plans[weekBack(k)] = { items: base.map((x, j) => ({ ...x, done: j < m })), at: localTime(), refl: { s: m >= base.length * .7 ? 'good' : m ? 'ok' : 'bad', memo: '' } }; } save(); };
 }
 
 /* ======================================================================
@@ -13258,7 +13295,7 @@ function renderHome() {
     ${myFollowHtml()}
     ${panelH('p-hpl', '나의 이수 계획', plan ? '저장됨' : '아직 없음', plan ? `<p>${plan.items.length}과목${plan.micro ? ` · 목표 융합과정 <b>${CURRICULUM.micro.find(m => m.id === plan.micro).name}</b>` : ''}</p><p class="meta">${termName(planTerms(state.dept)[0])} 교양 ${termCr}학점 계획</p><div class="actions"><button class="btn ghost sm" data-go="planmap">계획 보기</button><button class="btn ghost sm" data-go="timetable">이번 학기 시간표</button><button class="btn ghost sm" data-go="career">목표 다시 정하기</button></div>` : '<p class="meta">목표 직무를 정하면 차이 분석과 추천을 거쳐 학기별 계획을 세웁니다.</p><div class="actions"><button class="btn ghost sm" data-go="career">내 설계 시작하기</button></div>')}
     ${acadUpcomingHtml()}
-    ${panelH('p-hck', '이번 주 자기주도 학습', '최근 4주 실천', checkinHtml())}
+    ${panelH('p-hck', '이번 주 자기주도 학습', '계획 · 실천 · 돌아보기 · 누적', checkinHtml())}
     ${panelH('p-hgr', '진단 기록', `${H.length}회`, H.length ? `<table class="tbl"><thead><tr><th>회차</th><th>날짜</th><th>직업기초</th><th>신뢰성</th></tr></thead><tbody>${H.map(h => `<tr><td>${h.label}</td><td>${h.date}</td><td>${Math.round(mean(h.vals))}</td><td>${h.verdict}</td></tr>`).join('')}</tbody></table>` : '<p class="meta">기록이 없습니다.</p>')}
   </div>`;
 }
