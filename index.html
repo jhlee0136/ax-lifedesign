@@ -79,8 +79,9 @@ p { margin: 0 0 14px; }
 /* 3종 진단 소개 카드 */
 /* 목표 직무 캐릭터(준비도 막대 위) */
 .jw-stage { position: relative; height: 60px; margin: 6px 0 2px; }
-.jw { position: absolute; bottom: -2px; left: 0; width: 52px; height: 52px; transform: translateX(-50%); }
-.jw-b { display: block; width: 52px; height: 52px; animation: jwbob 1.6s ease-in-out infinite; } .jw-b svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.jw { position: absolute; bottom: -2px; left: 0; width: 52px; height: 52px; transform: translateX(var(--tx, -50%)); cursor: pointer; perspective: 200px; }
+.jw-b svg { transform: scaleX(var(--face, 1)); transition: transform .15s; }
+.jw-b { display: block; width: 52px; height: 52px; animation: jwbob 1.6s ease-in-out infinite; transform-origin: 50% 100%; } .jw-b svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 .jw-say { position: absolute; bottom: 54px; transform: translateX(-50%); background: var(--ink); color: var(--panel); font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 8px; white-space: nowrap; opacity: 0; transition: opacity .3s; pointer-events: none; }
 .jw-say.on { opacity: 1; }
 .jw-intro { display: flex; align-items: center; gap: 12px; margin: 2px 0 8px; } .jw-intro .jw-say { position: static; transform: none; white-space: normal; }
@@ -12721,33 +12722,64 @@ function jobKind(job) {
   const r = JW_RULES.find(([, re]) => re.test(`${job.ncs || ''} ${job.ind || ''}`));
   return r ? r[0] : 'hardhat';
 }
-function jwSvg(kind, frame, blink) {
-  const A = JW_ACC[kind] || JW_ACC.hardhat, rows = JW_BODY.map(r => (blink ? r.replace(/2/g, '1') : r)).concat(JW_LEGS[frame % 2]);
-  let o = '';
-  rows.forEach((r, y) => [...r].forEach((c, x) => { const f = c === '1' ? '#5b86c5' : c === '2' ? '#1d2433' : c === '3' ? '#f3a3b0' : null; if (f) o += `<rect x="${x}" y="${y}" width="1" height="1" fill="${f}"${c === '3' ? ' opacity=".7"' : ''}/>`; }));
-  A.rows.forEach((r, y) => [...r].forEach((c, x) => { if (A.col[c]) o += `<rect x="${x}" y="${y}" width="1" height="1" fill="${A.col[c]}"/>`; }));
-  return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">${o}</svg>`;
+/* o: { blink, look(-1 왼쪽·1 오른쪽으로 눈), wave('R' 오른팔 들기·'U' 두 팔 들기) } */
+function jwSvg(kind, frame, blink, o) {
+  o = o || {};
+  const A = JW_ACC[kind] || JW_ACC.hardhat, G = JW_BODY.concat(JW_LEGS[frame % 2]).map(r => [...r]);
+  const set = (x, y, c) => { if (G[y]) G[y][x] = c; };
+  if (blink || o.blink) G.forEach(r => r.forEach((c, x) => { if (c === '2') r[x] = '1'; }));
+  if (o.look) { const L = G.map(r => r.slice()); [7, 8].forEach(y => { [4, 5, 10, 11].forEach(x => { if (L[y][x] === '2') G[y][x] = '1'; }); [4, 5, 10, 11].forEach(x => { if (L[y][x] === '2') G[y][x + o.look] = '2'; }); }); }
+  /* 팔 들기: 옆으로 뻗은 팔(8~9행 양 끝 두 칸)을 위로 */
+  /* 팔 들기: 옆으로 뻗은 팔(8~9행 양 끝 두 칸)을 위로. 소품에 가리지 않게 맨 위에 그림 */
+  const arms = [];
+  const raise = side => { const xs = side === 'R' ? [14, 15] : [0, 1]; [8, 9].forEach(y => xs.forEach(x => set(x, y, '.'))); (side === 'R' ? [[14, 7], [15, 6], [15, 5], [15, 4]] : [[1, 7], [0, 6], [0, 5], [0, 4]]).forEach(a => arms.push(a)); };
+  if (o.wave === 'R' || o.wave === 'U') raise('R');
+  if (o.wave === 'U') raise('L');
+  let r = '';
+  G.forEach((row, y) => row.forEach((c, x) => { const f = c === '1' ? '#5b86c5' : c === '2' ? '#1d2433' : c === '3' ? '#f3a3b0' : null; if (f) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${f}"${c === '3' ? ' opacity=".7"' : ''}/>`; }));
+  A.rows.forEach((row, y) => [...row].forEach((c, x) => { if (A.col[c]) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${A.col[c]}"/>`; }));
+  arms.forEach(([x, y]) => { r += `<rect x="${x}" y="${y}" width="1" height="1" fill="#5b86c5"/>`; });
+  return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
 }
-/* 막대 위 무대: 왼쪽 끝에서 goal%까지 걸어간 뒤 말풍선·숨쉬기·눈 깜빡임. 움직임 줄이기면 처음부터 그 자리 */
+/* 막대 위 무대: 왼쪽 끝에서 goal%까지 걸어간 뒤 말풍선. 이후 몇 초마다 동작 하나(점프·뒤돌아 걷기·손 흔들기·한 바퀴·두리번·춤). 누르면 바로 동작. 움직임 줄이기면 서 있기만 */
 function jobWalker(el) {
   if (!el || el.dataset.run) return; el.dataset.run = '1';
   const kind = el.dataset.kind, goal = Math.max(0, Math.min(100, +el.dataset.goal || 0)), say = el.dataset.say || '';
   const W = el.querySelector('.jw'), B = el.querySelector('.jw-b'), bub = el.querySelector('.jw-say');
+  const alive = () => document.body.contains(el), still = REDUCED_MOTION.matches;
+  let pos = 0, busy = false, last = '';
   /* 양 끝에서는 캐릭터·말풍선이 패널 밖으로 나가지 않게 기준점을 옮김 */
-  const place = v => { W.style.left = `${v}%`; bub.style.left = `${v}%`; const k = v < 6 ? 10 : v > 94 ? 90 : 50, kb = v < 12 ? 8 : v > 88 ? 92 : 50; W.style.transform = `translateX(-${k}%)`; bub.style.transform = `translateX(-${kb}%)`; };
-  const arrive = () => {
-    B.innerHTML = jwSvg(kind, 0); if (say) { bub.textContent = say; bub.classList.add('on'); }
-    if (goal >= 80 && !REDUCED_MOTION.matches && B.animate) B.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px)' }, { transform: 'translateY(0)' }], { duration: 420, easing: 'ease-out' });
-    const blink = () => { if (!document.body.contains(el)) return; B.innerHTML = jwSvg(kind, 0, true); setTimeout(() => { B.innerHTML = jwSvg(kind, 0); }, 140); setTimeout(blink, 2600 + Math.random() * 2400); };
-    setTimeout(blink, 1800);
+  const place = v => { pos = v; W.style.left = `${v}%`; bub.style.left = `${v}%`; const k = v < 6 ? 10 : v > 94 ? 90 : 50, kb = v < 12 ? 8 : v > 88 ? 92 : 50; W.style.setProperty('--tx', `-${k}%`); bub.style.transform = `translateX(-${kb}%)`; };
+  const draw = (f, o) => { B.innerHTML = jwSvg(kind, f || 0, false, o); };
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const anim = (frames, opt) => (B.animate ? B.animate(frames, opt).finished.catch(() => {}) : Promise.resolve());
+  const walkTo = async (to, face) => { B.style.setProperty('--face', face || 1); let f = 0; while (alive() && Math.abs(to - pos) > 0.5) { place(pos + Math.sign(to - pos) * Math.min(0.9, Math.abs(to - pos))); draw(Math.floor(++f / 4)); await wait(40); } place(to); draw(0); B.style.setProperty('--face', 1); };
+  const ACTS = {
+    jump: async () => { await anim([{ transform: 'translateY(0) scaleY(1)' }, { transform: 'translateY(2px) scaleY(.85)', offset: .15 }, { transform: 'translateY(-16px) scaleY(1.05)', offset: .5 }, { transform: 'translateY(0) scaleY(.88)', offset: .85 }, { transform: 'translateY(0) scaleY(1)' }], { duration: 620, easing: 'ease-out' }); },
+    turn: async () => { const home = pos, back = Math.max(2, home - 6); B.style.setProperty('--face', -1); draw(0, { look: -1 }); await wait(500); await walkTo(back, -1); draw(0, { look: -1 }); await wait(400); await walkTo(home, 1); },
+    wave: async () => { for (let k = 0; k < 3 && alive(); k++) { draw(0, { wave: 'R' }); await wait(260); draw(0); await wait(200); } },
+    spin: async () => { await anim([{ transform: 'rotateY(0)' }, { transform: 'rotateY(360deg)' }], { duration: 700, easing: 'ease-in-out' }); },
+    look: async () => { draw(0, { look: -1 }); await wait(650); draw(0, { look: 1 }); await wait(650); draw(0); },
+    dance: async () => { for (let k = 0; k < 4 && alive(); k++) { draw(k % 2, { wave: k % 2 ? 'U' : '' }); await anim([{ transform: `rotate(${k % 2 ? -8 : 8}deg)` }, { transform: 'rotate(0)' }], { duration: 240 }); } draw(0); },
+    blink: async () => { draw(0, { blink: true }); await wait(140); draw(0); }
   };
-  if (REDUCED_MOTION.matches || goal === 0) { place(goal); arrive(); return; }
-  let v = 0, f = 0; place(0);
-  const t = setInterval(() => {
-    if (!document.body.contains(el)) { clearInterval(t); return; }
-    v = Math.min(goal, v + Math.max(0.6, goal / 90)); f++; place(v); B.innerHTML = jwSvg(kind, Math.floor(f / 4));
-    if (v >= goal) { clearInterval(t); arrive(); }
-  }, 40);
+  const act = async name => {
+    if (busy || !alive()) return; busy = true;
+    const L = Object.keys(ACTS).filter(k => k !== last && k !== 'blink'); name = name || L[Math.floor(Math.random() * L.length)]; last = name;
+    try { await ACTS[name](); } finally { busy = false; }
+  };
+  const loop = () => { if (!alive()) return; setTimeout(async () => { if (!alive()) return; if (Math.random() < .35) await ACTS.blink(); else await act(); loop(); }, 3500 + Math.random() * 3500); };
+  const arrive = async () => {
+    draw(0); if (say) { bub.textContent = say; bub.classList.add('on'); setTimeout(() => bub.classList.remove('on'), 4500); }
+    if (still) return;
+    await (goal >= 80 ? act('jump') : act('wave'));
+    loop();
+  };
+  el.jwAct = act; /* 둘러보기·점검용 */
+  /* 누르면 동작(말풍선 다시 보이기) */
+  W.addEventListener('click', () => { if (still) return; if (say) { bub.classList.add('on'); setTimeout(() => bub.classList.remove('on'), 2500); } act(); });
+  if (still || goal === 0) { place(goal); arrive(); return; }
+  place(0); walkTo(goal, 1).then(arrive);
 }
 const jobStage = (kind, goal, say) => `<div class="jw-stage" data-kind="${kind}" data-goal="${goal}" data-say="${esc(say)}" role="img" aria-label="${esc(JW_ACC[kind].name)} 캐릭터가 준비도 ${goal}% 위치에 있습니다"><span class="jw-say"></span><span class="jw"><span class="jw-b">${jwSvg(kind, 0)}</span></span></div>`;
 const runJobWalkers = () => setTimeout(() => document.querySelectorAll('.jw-stage').forEach(jobWalker), 60);
