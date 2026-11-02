@@ -9973,7 +9973,7 @@ function renderConsent() {
     <p class="meta">필수 항목에 동의하지 않으면 플랫폼을 이용할 수 없습니다. 동의를 거부할 권리가 있으며, 거부해도 학사상 불이익은 없습니다.</p>
     <h2>선택 동의</h2>
     <ul class="cs-opt">${CONSENT_OPT.map(([k, t, d]) => `<li><label class="chk cs-item"><input type="checkbox" data-cso="${k}" ${D[k] ? 'checked' : ''}> <b>[선택] ${t}</b></label><p class="meta">${d}</p></li>`).join('')}</ul>
-    <p class="meta">동의 내용은 언제든 '동의 관리'에서 바꾸거나 철회할 수 있습니다. 문의: 교수학습지원센터.${c.at ? ` 최근 동의: ${esc(c.at)}` : ''}</p>
+    <p class="meta">동의 내용은 언제든 '동의 관리'에서 바꾸거나 철회할 수 있습니다. 문의: 교육과정혁신센터.${c.at ? ` 최근 동의: ${esc(c.at)}` : ''}</p>
     <div class="actions"><button class="btn" id="cssave" type="button" ${D.req ? '' : 'disabled'}>${first ? '동의하고 시작하기' : '동의 내용 저장'}</button>${first ? '<button class="btn ghost" id="csout" type="button">동의하지 않고 나가기</button>' : '<button class="linkbtn" data-go="home" type="button">돌아가기</button>'}</div>
   </section>`;
   const q = id => document.getElementById(id), re = () => renderConsent();
