@@ -952,17 +952,28 @@ body.no-demo .phase, body.no-demo .badge.amber, body.no-demo .resfoot, body.no-d
 .p-qabad { grid-column: span 12; } .p-qa-ncs { grid-column: span 12; } .p-qa-core, .p-qa-basic { grid-column: span 6; }
 @media print { body.printing #report .rdoc { border: 0; padding: 0; max-width: none; } }
 .p-set5, .p-set7 { grid-column: span 6; } .p-set6 { grid-column: span 12; } .p-set8 { grid-column: span 12; order: 9; }
-.rs-lv { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: 4px 0 12px; font-size: 14px; } .rs-lv > span:first-child { font-weight: 700; } .rs-lv label { display: inline-flex; align-items: center; gap: 6px; } .rs-lv .rs-track { flex: 1 1 220px; min-width: 180px; }
-.rs-in { font: inherit; font-size: 14px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); text-align: right; margin: 0 3px; } .rs-in.chg { border-color: var(--signal); background: var(--signal-soft); }
-.rs-tbl td, .rs-tbl th { vertical-align: middle; } .rs-tbl .rs-l { min-width: 18em; } .rs-tbl .rs-s { width: 38%; min-width: 180px; }
+.set-wrap { grid-column: 1 / -1; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 18px; align-items: start; }
+.set-nav { position: sticky; top: 76px; padding: 8px; } .set-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.set-nav button { all: unset; box-sizing: border-box; display: grid; gap: 1px; width: 100%; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+.set-nav button b { font-size: 15px; } .set-nav button span { font-size: 12.5px; color: var(--muted); line-height: 1.4; } .set-nav button em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--warn-ink); }
+.set-nav button:hover { background: var(--paper); } .set-nav button.on { background: var(--signal-soft); box-shadow: inset 3px 0 0 var(--signal); } .set-nav button:focus-visible { outline: 3px solid var(--signal); }
+.set-body { display: grid; gap: 16px; min-width: 0; } .set-body > .panel { order: 0 !important; grid-column: auto !important; }
+@media (max-width: 900px) { .set-wrap { grid-template-columns: 1fr; } .set-nav { position: static; } .set-nav ul { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } .set-nav button span { display: none; } }
+.rs-rule { padding: 12px 14px; border-radius: 10px; background: var(--paper); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.6; margin-bottom: 6px; } .rs-rule .meta { display: block; margin-top: 2px; }
+.rs-band { display: flex; height: 64px; border-radius: 10px; overflow: hidden; margin-top: 6px; }
+.rs-seg { display: flex; flex-direction: column; justify-content: center; padding: 0 10px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 12.5px; line-height: 1.35; border-right: 2px solid var(--panel); }
+.rs-seg b { font-size: 13.5px; } .rs-seg em { font-style: normal; font-weight: 700; font-size: 14px; }
+.seg-ok { background: var(--paper); color: var(--muted); } .seg-mild { background: #dfe5f0; color: #3a4a6b; } .seg-warn { background: #f3e2c4; color: #6e4b0c; } .seg-bad { background: #f1d2d2; color: #7a2323; }
+.rs-axis { position: relative; height: 18px; font-size: 11.5px; color: var(--muted); } .rs-axis span { position: absolute; transform: translateX(-50%); } .rs-axis span:first-child { left: 0; transform: none; } .rs-axis .end { right: 0; left: auto !important; transform: none; }
+.rs-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 6px; }
+.rs-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); } .rs-card.c-mild { border-top: 4px solid #8a9bbd; } .rs-card.c-warn { border-top: 4px solid #c8922e; } .rs-card.c-bad { border-top: 4px solid #a33a3a; }
+.rs-card p { margin: 0; } .rs-range { margin-top: 6px !important; font-size: 15px; } .rs-n { margin-top: 6px !important; } .rs-n b { font-size: 26px; letter-spacing: -0.02em; } .rs-n span { color: var(--muted); font-size: 13px; margin-left: 4px; } .rs-n small { display: block; color: var(--muted); font-size: 12px; }
+.rs-in { font: inherit; font-size: 14px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); text-align: right; margin: 0 3px; } .rs-in.chg { border-color: var(--amber); background: var(--amber-soft); }
+.rs-tbl td, .rs-tbl th { vertical-align: middle; } .rs-tbl .rs-l { min-width: 20em; line-height: 2; text-align: left !important; } .rs-tbl .rs-p { white-space: nowrap; font-weight: 700; } .rs-tbl .rs-h { white-space: nowrap; }
 .rs-tbl tr.rs-g th { font-size: 13px; color: var(--ink); padding-top: 16px; border-bottom: 1px solid var(--line); text-align: left !important; }
-.rs-tbl td.rs-l { text-align: left !important; } .rs-tbl td:last-child, .rs-tbl th:last-child { text-align: center; width: 6em; }
-.rs-who { font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
-.rs-track { position: relative; height: 12px; border-radius: 6px; background: var(--paper); border: 1px solid var(--line); overflow: hidden; }
-.rs-zone { position: absolute; top: 0; bottom: 0; opacity: .32; } .rs-zone.z-mild { background: var(--rk-mild, #8a9bbd); } .rs-zone.z-warn { background: var(--rk-warn, #c8922e); } .rs-zone.z-bad { background: var(--rk-bad, #a33a3a); }
-.rs-bar { position: absolute; left: 0; top: 3px; bottom: 3px; background: var(--ink); border-radius: 0 3px 3px 0; }
-.rk.rk-off { background: var(--paper); color: var(--muted); }
-.rs-prev { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--signal-soft); font-size: 14.5px; } .p-aiuse { grid-column: span 12; }
+.rs-tbl tr.rs-off td { color: var(--muted); } .rs-who { font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
+.rk.rk-off { background: var(--paper); color: var(--muted); } .rk.rk-ok { background: var(--paper); color: var(--muted); }
+@media (max-width: 700px) { .rs-cards { grid-template-columns: 1fr; } .rs-seg span { display: none; } }
 @media (max-width: 1000px) { .p-set5, .p-set6, .p-set7 { grid-column: 1 / -1; } }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 300; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: min(560px, calc(100vw - 32px)); transition: opacity .2s, transform .2s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -7051,7 +7062,7 @@ function renderAttend() {
       <p class="meta">학생 개인별·과목별 출결을 올려 이탈·부진 조기 경보에 반영합니다. 학사정보시스템 연계가 가능하면 자동으로 가져오고(1안), 어려우면 관리자가 양식을 올립니다(2안). 학기 중에도 수시로 다시 올려 최신 출결로 바꿀 수 있습니다.</p>
       <ol class="steps"><li><b>양식 내려받기</b> ${ATT_COLS.length}개 열(학번~조퇴횟수)</li><li><b>파일 올리기</b> CSV(엑셀에서 'CSV UTF-8'로 저장)</li><li><b>검증</b> 학번·학기·주당시수·중복 확인</li><li><b>반영</b> 오류 행은 빼고 반영 → 조기 경보 점수에 바로 반영</li></ol>
       <p class="meta">입력: 주당시수는 과목의 1주 수업 시간(보통 2~3시간), 수업주수는 비우면 ${ATT_WEEKS}주, 결석은 빠진 시간 수, 지각·조퇴는 횟수입니다. 학기 총 수업시간 = 주당시수 × 수업주수(예: 주 2시간 × ${ATT_WEEKS}주 = ${2 * ATT_WEEKS}시간).</p>
-      <p class="meta">경보 기준: 한 과목 결석시간이 학기 총 수업시간의 ${RISK_ACAD.absent}% 이상이면 출석 미달 위험(+${RISK_ACAD.wAbs}점, 주 2시간 과목이면 ${Math.ceil(2 * ATT_WEEKS * RISK_ACAD.absent / 100)}시간), 이번 학기 전체 결석률 ${RISK_ACAD.rate}% 이상이면 +${RISK_ACAD.wRate}점. 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. <button class="linkbtn" data-go="settings" type="button">기준값 바꾸기</button></p>
+      <p class="meta">경보 기준: 한 과목 결석시간이 학기 총 수업시간의 ${RISK_ACAD.absent}% 이상이면 출석 미달 위험(+${RISK_ACAD.wAbs}점, 주 2시간 과목이면 ${Math.ceil(2 * ATT_WEEKS * RISK_ACAD.absent / 100)}시간), 이번 학기 전체 결석률 ${RISK_ACAD.rate}% 이상이면 +${RISK_ACAD.wRate}점. 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. <button class="linkbtn" type="button" onclick="state.setTab='risk';go('settings')">기준값 바꾸기</button></p>
       <div class="actions no-print"><button class="btn ghost" id="atpl">빈 양식 내려받기</button><button class="btn ghost" id="asample">예시 파일 내려받기</button><button class="btn" id="aload">예시 파일 바로 불러오기</button>
         <label class="btn ghost filebtn">파일 선택<input type="file" id="afile" accept=".csv,text/csv" hidden></label></div>
       <p class="meta"><span class="badge amber">가상 예시 데이터</span> 예시 파일에는 오류 확인용으로 잘못된 행 2개(학번 형식, 결석시간이 학기 총 수업시간보다 많음)가 들어 있습니다.</p>
@@ -8551,35 +8562,54 @@ const SET_FIELDS = [
   ['졸업 요건(학칙)', '학칙 제24조의3(졸업학점)과 제24조④(학기당 이수 학점) 값입니다. 수업연한 3년 학과는 학칙 제5조②로 정합니다. 직업기초 영역 학점과 3-IN 비교과 횟수는 규정에 없는 대학 자체 기준이라 0(선택)으로 둡니다.', [['grad.tot2', '졸업 최저 학점(2년제)'], ['grad.tot3', '졸업 최저 학점(3년제)'], ['grad.lib2', '교양 최저 학점(2년제)'], ['grad.lib3', '교양 최저 학점(3년제)'], ['grad.major2', '전공 최저 학점(2년제)'], ['grad.major3', '전공 최저 학점(3년제)'], ['grad.semMin', '학기당 최소 이수 학점'], ['grad.semMax', '학기당 최대 이수 학점'], ['grad.basicMin', '직업기초 영역 최소 학점(0이면 점검 안 함)'], ['grad.ncPerIn', '3-IN 단계별 비교과 최소 횟수(0이면 선택)']]],
   ['AI 사용 한도', '넘으면 AI를 호출하지 않고 규칙 기반으로 동작합니다. 충전한 크레딧보다 월 예산을 낮게 두세요.', [['ai.budget', '월 예산(US$)'], ['ai.perUserDaily', '1인 하루 호출 수'], ['ai.dailyTotal', '하루 전체 호출 수']]]
 ];
-/* 조기 경보 기준 패널: 신호마다 [묶음, 설명(조건값은 {키}로 입력칸), 점수 키, 적용 대상]. 점수 막대는 100점 척도 위에 주의·경고·위험 경계를 함께 그려 그 신호 하나의 무게를 보여 줌 */
+/* 조기 경보 기준: 신호마다 [영역, 경보 조건(조건값은 {키}로 입력칸), 반영 점수 키, 적용 대상('공통'·'가상'·'실제')] */
 const RISK_SIGS = [
-  ['진단', '진단 재실시 판정 1회', 'wRel1', '가상'], ['진단', '진단 재실시 판정 2회 이상', 'wRel2', '가상'],
-  ['진단', '향상도가 기준 {drop}점 미만', 'wDrop', '공통'], ['진단', '향상도가 기준보다 {dropBig}점 넘게 하락(위 점수 대신)', 'wDropBig', '가상'],
-  ['진단', "'하' 수준이 2회 연속인 능력 {lowCount}개 이상", 'wLow', '가상'], ['진단', '기초학습 낮음·보충 미이수', 'wBasic', '가상'],
-  ['진단', '진단 미응시', 'wNoDiag', '실제'], ['진단', '최근 진단이 재실시 판정', 'wRealRel', '실제'],
+  ['진단', '진단 응답이 재실시 판정 1회', 'wRel1', '가상'], ['진단', '진단 응답이 재실시 판정 2회 이상', 'wRel2', '가상'],
+  ['진단', '향상도(입학 직후 → 재진단 평균 변화)가 {drop}점 미만', 'wDrop', '공통'], ['진단', '향상도가 위 기준보다 {dropBig}점 넘게 더 낮음(위 점수 대신 적용)', 'wDropBig', '가상'],
+  ['진단', "두 번 연속 '하' 수준인 능력이 {lowCount}개 이상", 'wLow', '가상'], ['진단', '기초학습 낮음인데 보충 과정 미이수', 'wBasic', '가상'],
+  ['진단', '진단 미응시', 'wNoDiag', '실제'], ['진단', '가장 최근 진단이 재실시 판정', 'wRealRel', '실제'],
   ['이수·참여', '이수 계획 없음', 'wNoPlan', '공통'], ['이수·참여', '비교과 참여 없음', 'wNoNc', '가상'],
-  ['이수·참여', '자기주도 실천 {selfWeeks}주 연속 저조', 'wSelf', '실제'], ['이수·참여', '상담 요청 {creqDays}일 넘게 무응답', 'wCreq', '실제'],
-  ['학점', '직전 학기 평점 {gpa} 미만(4.5 만점)', 'wGpa', '공통'], ['학점', 'F 학점 과목 있음', 'wF', '공통'],
-  ['출결', '한 과목 결석시간이 학기 총 수업시간의 {absent}% 이상', 'wAbs', '공통'], ['출결', '이번 학기 전체 결석률 {rate}% 이상', 'wRate', '공통']
+  ['이수·참여', '자기주도 학습 실천이 {selfWeeks}주 연속 저조', 'wSelf', '실제'], ['이수·참여', '상담 요청에 {creqDays}일 넘게 응답 없음', 'wCreq', '실제'],
+  ['학점', '직전 학기 평점이 {gpa} 미만(4.5 만점)', 'wGpa', '공통'], ['학점', 'F 학점 과목이 1개 이상', 'wF', '공통'],
+  ['출결', '한 과목이라도 결석시간이 학기 총 수업시간의 {absent}% 이상', 'wAbs', '공통'], ['출결', '이번 학기 전체 결석률이 {rate}% 이상', 'wRate', '공통']
 ];
+/* 기준값(acad)으로 가상 코호트를 다시 계산: 단계별 인원과 신호별 해당 인원 */
+function riskSim(acad) {
+  const keep = RISK_ACAD; RISK_ACAD = acad;
+  const R = cohort().map(st => riskOfCohort(st)); RISK_ACAD = keep;
+  const lv = sc => (sc >= acad.lvBad ? 3 : sc >= acad.lvWarn ? 2 : sc >= acad.lvMild ? 1 : 0), stage = [0, 0, 0, 0], hit = {};
+  R.forEach(r => { stage[lv(r.score)]++; (r.keys || []).forEach(k => { hit[k] = (hit[k] || 0) + 1; }); });
+  return { n: R.length, stage, hit };
+}
 function riskSetHtml(S, saved) {
   const A = S.acad, B = saved.acad, inp = (k, w) => `<input type="number" step="any" class="rs-in${A[k] !== B[k] ? ' chg' : ''}" style="width:${w || 4.2}em" data-sp="acad.${k}" value="${A[k]}" aria-label="${k}">`;
-  const lvOf = v => (v >= A.lvBad ? ['위험', 'bad'] : v >= A.lvWarn ? ['경고', 'warn'] : v >= A.lvMild ? ['주의', 'mild'] : v > 0 ? ['안정', 'ok'] : ['쓰지 않음', 'off']);
-  const scale = (v) => `<div class="rs-track" aria-hidden="true"><i class="rs-zone z-mild" style="left:${A.lvMild}%;width:${A.lvWarn - A.lvMild}%"></i><i class="rs-zone z-warn" style="left:${A.lvWarn}%;width:${A.lvBad - A.lvWarn}%"></i><i class="rs-zone z-bad" style="left:${A.lvBad}%;width:${100 - A.lvBad}%"></i>${v != null ? `<b class="rs-bar" style="width:${Math.min(100, Math.max(0, v))}%"></b>` : ''}</div>`;
-  /* 지금 입력값으로 가상 코호트 단계 인원(저장값과 비교) */
-  const count = acad => { const keep = RISK_ACAD; RISK_ACAD = acad; const L = cohort().map(st => riskLv(riskOfCohort(st).score)[1]); RISK_ACAD = keep; return ['위험', '경고', '주의'].map(t => L.filter(x => x === t).length); };
-  const now = count(A), was = count(B), N = cohort().length;
+  const now = riskSim(A), was = JSON.stringify(A) === JSON.stringify(B) ? null : riskSim(B), N = now.n, pct = x => `${Math.round(x / N * 100)}%`;
+  const ST = [['안정', 'ok', 0, A.lvMild - 1], ['주의', 'mild', A.lvMild, A.lvWarn - 1], ['경고', 'warn', A.lvWarn, A.lvBad - 1], ['위험', 'bad', A.lvBad, 100]];
+  const lvName = v => (v >= A.lvBad ? ['위험', 'bad'] : v >= A.lvWarn ? ['경고', 'warn'] : v >= A.lvMild ? ['주의', 'mild'] : v > 0 ? ['단독으로는 경보 아님', 'ok'] : ['쓰지 않음', 'off']);
+  const alertN = now.stage[1] + now.stage[2] + now.stage[3];
+  /* ① 단계 구간: 0~100점 띠를 구간 너비대로 나누고 각 구간에 점수 범위·인원 */
+  const band = `<div class="rs-band" role="img" aria-label="${ST.map(([t, , a, b], i) => `${t} ${a}~${b}점 ${now.stage[i]}명`).join(', ')}">${ST.map(([t, c, a, b], i) => `<div class="rs-seg seg-${c}" style="flex:${Math.max(1, b - a + 1)}"><b>${t}</b><span>${a}~${b}점</span><em>${now.stage[i]}명</em></div>`).join('')}</div>
+    <div class="rs-axis"><span>0점</span>${ST.slice(1).map(([, , a]) => `<span style="left:${a}%">${a}</span>`).join('')}<span class="end">100점</span></div>`;
+  const cards = ST.slice(1).map(([t, c, a, b], i) => `<div class="rs-card c-${c}"><p class="rs-ct"><span class="rk rk-${c}">${t}</span></p>
+      <p class="rs-range">${i === 0 ? inp('lvMild') : i === 1 ? inp('lvWarn') : inp('lvBad')}점 ~ ${b}점</p>
+      <p class="rs-n"><b>${now.stage[i + 1]}</b>명 <span>${pct(now.stage[i + 1])}</span>${was ? `<small>저장값 ${was.stage[i + 1]}명</small>` : ''}</p></div>`).join('');
   let g0 = '';
   const rows = RISK_SIGS.map(([g, label, k, who]) => {
-    const head = g !== g0 ? `<tr class="rs-g"><th colspan="4">${g}</th></tr>` : ''; g0 = g;
-    const [t, c] = lvOf(A[k]);
-    return `${head}<tr><td class="rs-l">${label.replace(/\{(\w+)\}/g, (_, x) => inp(x, 3.6))}${who !== '공통' ? ` <span class="rs-who">${who === '가상' ? '가상 코호트' : '실제 이용 학생'}</span>` : ''}</td><td>${inp(k)}<span class="meta">점</span></td><td class="rs-s">${scale(A[k])}</td><td><span class="rk rk-${c}">${t}</span></td></tr>`;
+    const head = g !== g0 ? `<tr class="rs-g"><th colspan="5">${g}</th></tr>` : ''; g0 = g;
+    const [t, c] = lvName(A[k]), h = now.hit[k];
+    return `${head}<tr${A[k] ? '' : ' class="rs-off"'}><td class="rs-l">${label.replace(/\{(\w+)\}/g, (_, x) => inp(x, 3.6))}${who !== '공통' ? ` <span class="rs-who">${who === '가상' ? '가상 코호트만' : '실제 이용 학생만'}</span>` : ''}</td>
+      <td class="rs-p">+ ${inp(k, 3.6)}점</td><td><span class="rk rk-${c}">${t}</span></td><td class="rs-h">${who === '실제' ? '<span class="meta">실제 이용 학생 화면에서 계산</span>' : h ? `${h}명 <span class="meta">(${pct(h)})</span>` : '<span class="meta">0명</span>'}</td></tr>`;
   }).join('');
-  return `<p class="meta">신호가 있으면 점수를 더해 0~100점(넘으면 100)으로 셉니다. 막대는 그 신호 하나의 점수가 100점 척도에서 어디까지 오는지, 오른쪽은 그 신호 하나만으로 받는 단계입니다. 0점이면 그 신호를 쓰지 않습니다.</p>
-    <div class="rs-lv"><span>단계 경계</span><label><span class="rk rk-mild">주의</span> ${inp('lvMild')}점 이상</label><label><span class="rk rk-warn">경고</span> ${inp('lvWarn')}점 이상</label><label><span class="rk rk-bad">위험</span> ${inp('lvBad')}점 이상</label>${scale(null)}</div>
-    <div class="scrollx"><table class="tbl rs-tbl"><thead><tr><th>신호와 조건</th><th>점수</th><th>100점 척도에서의 무게</th><th>단독 단계</th></tr></thead><tbody>${rows}
-      <tr class="rs-g"><th colspan="4">환산</th></tr><tr><td class="rs-l" colspan="4">지각·조퇴 ${inp('late', 3.6)}회를 결석 1시간으로 셉니다.</td></tr></tbody></table></div>
-    <p class="rs-prev">지금 입력값이면 가상 코호트 ${N}명 중 <b><span class="rk rk-bad">위험</span> ${now[0]}명 · <span class="rk rk-warn">경고</span> ${now[1]}명 · <span class="rk rk-mild">주의</span> ${now[2]}명</b>${now.join() !== was.join() ? ` <span class="meta">(저장된 값: 위험 ${was[0]} · 경고 ${was[1]} · 주의 ${was[2]})</span>` : ''}</p>`;
+  return `<div class="rs-rule"><b>점수 계산</b> 아래 항목 중 해당하는 것의 점수를 모두 더합니다(최대 100점). 합계가 <b>${A.lvMild}점 이상이면 경보 대상</b>이고, 점수 구간에 따라 주의·경고·위험으로 나눕니다.
+      <span class="meta">예) 재실시 1회(+${A.wRel1}) + 전체 결석률 초과(+${A.wRate}) = ${Math.min(100, A.wRel1 + A.wRate)}점 → ${lvName(A.wRel1 + A.wRate)[0] === '단독으로는 경보 아님' ? '안정' : lvName(A.wRel1 + A.wRate)[0]}</span></div>
+    <h3 class="sub3">① 경보 단계와 점수 구간 <span class="meta">가상 코호트 ${N}명 · 경보 대상 ${alertN}명(${pct(alertN)})</span></h3>
+    ${band}
+    <div class="rs-cards">${cards}</div>
+    <p class="meta">각 단계의 시작 점수를 고치면 구간과 인원이 바로 다시 계산됩니다. 끝 점수는 다음 단계 시작 점수 바로 아래입니다.</p>
+    <h3 class="sub3">② 진단 항목별 경보 조건과 반영 점수</h3>
+    <div class="scrollx"><table class="tbl rs-tbl"><thead><tr><th>경보 조건(이 조건에 해당하면)</th><th>더하는 점수</th><th>이 항목 하나만으로</th><th>해당 학생</th></tr></thead><tbody>${rows}
+      <tr class="rs-g"><th colspan="5">출결 환산</th></tr><tr><td class="rs-l" colspan="4">지각·조퇴 ${inp('late', 3.6)}회를 결석 1시간으로 셉니다.</td></tr></tbody></table></div>
+    <p class="meta">점수를 0으로 두면 그 항목은 쓰지 않습니다. '해당 학생'은 지금 입력값으로 그 조건에 걸리는 가상 코호트 인원입니다.</p>`;
 }
 const SCHED_FIELDS = [['diagStart', '진단 시작일'], ['diagEnd', '진단 종료일'], ['remind', '미응시 독려 발송일'], ['retestStart', '재진단 시작일'], ['retestEnd', '재진단 종료일']];
 const getPath = (o, p) => p.split('.').reduce((a, k) => a[k], o);
@@ -8632,8 +8662,23 @@ function acadPanel() {
     <div class="acad-grid">${months.map(m => `<div class="acad-m"><h3 class="sub3">${m.slice(0, 4)}.${+m.slice(5)}월</h3><ul>${list.filter(x => x.s.startsWith(m)).map(x => `<li class="${x.e < today ? 'past' : x.s <= today ? 'now' : ''}"><span class="acd">${md(x.s)}(${wd(x.s)})${x.e !== x.s ? `~${md(x.e)}(${wd(x.e)})` : ''}</span><span>${esc(x.t)}</span></li>`).join('')}</ul></div>`).join('')}</div>
     <p class="meta">출처: <a href="${ACAD_SRC.url}" target="_blank" rel="noopener">인하공업전문대학 학사일정</a>. 진단 일정 기본값과 학생 홈의 '다가오는 학사일정'에 씁니다.</p>`);
 }
+/* 운영 설정 분류: [키, 이름, 설명, 들어가는 설정(SET_FIELDS 순번·'risk'·'sched'·'aiuse')] */
+const SET_TABS = [
+  ['diag', '진단 판정', '등급·응답 신뢰성·6대 핵심역량 비중', [0, 1, 5]],
+  ['alert', '상담 알림', '지도교수·학생 상담 알림 조건', [2]],
+  ['risk', '이탈·부진 조기 경보', '경보 단계와 항목별 점수', ['risk']],
+  ['analysis', '분석·개인정보', '효과성 판정·최소 집계 인원', [3, 4]],
+  ['grad', '졸업 요건', '학칙의 졸업·학기당 학점', [6]],
+  ['sched', '학기 일정·운영 모드', '진단 일정·예약 알림·학사일정', ['sched']],
+  ['ai', 'AI 사용', '월 예산·호출 한도·사용 현황', [7, 'aiuse']]
+];
 function renderSettings() {
   const S = state.setDraft || settingsNow(), saved = settingsNow();
+  const tab = SET_TABS.find(t => t[0] === state.setTab) || SET_TABS[0];
+  /* 분류별 바뀐 칸 수(왼쪽 메뉴 표시) */
+  const chgOf = t => t[3].reduce((a, x) => a + (typeof x === 'number' ? SET_FIELDS[x][2].filter(([q]) => getPath(S, q) !== getPath(saved, q)).length
+    : x === 'risk' ? Object.keys(S.acad).filter(q => S.acad[q] !== saved.acad[q]).length
+    : x === 'sched' ? SCHED_FIELDS.filter(([q]) => S.schedule[q] !== saved.schedule[q]).length + (!!S.ops !== !!saved.ops) + (S.autoNotify !== saved.autoNotify) : 0), 0);
   const num = (p, label) => `<label>${label}<input type="number" step="any" data-sp="${p}" value="${getPath(S, p)}" class="${getPath(S, p) !== getPath(saved, p) ? 'chg' : ''}"></label>`;
   const err = settingsCheck(S), dirty = JSON.stringify(S) !== JSON.stringify(saved);
   $view.innerHTML = `
@@ -8643,23 +8688,28 @@ function renderSettings() {
       <p class="meta">저장하면 학생 결과 판정, 상담 알림, 향상도·효과성 분석, 예약 알림에 바로 반영되고 변경 이력에 남습니다. 바뀐 칸은 색으로 표시됩니다.</p>
       <div class="actions no-print"><button class="btn" id="sset" ${dirty && !err.length ? '' : 'disabled'}>저장</button><button class="btn ghost" id="sreset">기본값 불러오기</button>${dirty ? '<button class="linkbtn" id="scancel">변경 취소</button>' : ''}<span class="meta" id="smsg" aria-live="polite">${state.setMsg || ''}</span></div>
       ${err.length ? `<ul class="errs">${err.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}</section>
-    ${SET_FIELDS.map(([t, d, fs], i) => panelH('p-set' + i, t, '', `<p class="meta">${d}</p><div class="setgrid">${fs.map(([p, l]) => num(p, l)).join('')}</div>`)).join('')}
-    ${panelH('p-set8', '이탈·부진 조기 경보 기준', '', riskSetHtml(S, saved))}
-    ${panelH('p-sched', '학기 일정과 예약 알림', '', `<div class="setgrid">${SCHED_FIELDS.map(([k, l]) => `<label>${l}<input type="date" data-sd="${k}" value="${S.schedule[k]}" class="${S.schedule[k] !== saved.schedule[k] ? 'chg' : ''}"></label>`).join('')}</div>
+    <div class="set-wrap">
+      <nav class="panel set-nav no-print" aria-label="운영 설정 분류"><ul>${SET_TABS.map(t => { const c = chgOf(t); return `<li><button type="button" data-stab="${t[0]}" class="${t === tab ? 'on' : ''}" aria-current="${t === tab ? 'true' : 'false'}"><b>${t[1]}</b><span>${t[2]}</span>${c ? `<em>${c}개 바뀜</em>` : ''}</button></li>`; }).join('')}</ul></nav>
+      <div class="set-body">
+    ${tab[3].map(x => typeof x === 'number' ? panelH('p-set' + x, SET_FIELDS[x][0], '', `<p class="meta">${SET_FIELDS[x][1]}</p><div class="setgrid">${SET_FIELDS[x][2].map(([p, l]) => num(p, l)).join('')}</div>`)
+      : x === 'risk' ? panelH('p-set8', '이탈·부진 조기 경보 기준', '', riskSetHtml(S, saved))
+      : x === 'aiuse' ? panelH('p-aiuse', 'AI 사용 현황', '이번 달', '<div id="aiuse"><p class="meta">불러오는 중…</p></div>')
+      : panelH('p-sched', '학기 일정과 예약 알림', '', `<div class="setgrid">${SCHED_FIELDS.map(([k, l]) => `<label>${l}<input type="date" data-sd="${k}" value="${S.schedule[k]}" class="${S.schedule[k] !== saved.schedule[k] ? 'chg' : ''}"></label>`).join('')}</div>
       <label class="chk"><input type="checkbox" id="sops" ${S.ops ? 'checked' : ''}> <b>운영 모드</b>: 시연 시점·시연 표시 전환·시연용 응답 채우기를 모두 숨기고, 학기 시점을 위 일정으로 자동 판단합니다. 실제 학생이 쓰기 시작할 때 켭니다. 가상 예시 데이터로 만든 분석에는 계속 '가상 예시 데이터' 표시가 붙습니다.</label>
       <label class="chk"><input type="checkbox" id="sauto" ${S.autoNotify ? 'checked' : ''}> 일정에 맞춰 알림 메일 자동 발송(진단 시작일 안내, 독려일 미응시 안내, 재진단 시작일 안내)</label>
       <p class="meta">자동 발송은 서버가 하루 한 번 일정을 확인해 보냅니다. 문안은 '알림 발송'에서 고칩니다.</p>
-      <div class="actions no-print"><button class="btn ghost sm" id="sacad">학사일정에 맞추기(${acadSchedule(todayISO()).term}학기)</button><span class="meta">진단은 개강일부터 2주, 재진단은 기말종합평가 1주 전부터 종강일까지로 채웁니다.</span></div>`)}
-    ${acadPanel()}
-    ${panelH('p-aiuse', 'AI 사용 현황', '이번 달', '<div id="aiuse"><p class="meta">불러오는 중…</p></div>')}
+      <div class="actions no-print"><button class="btn ghost sm" id="sacad">학사일정에 맞추기(${acadSchedule(todayISO()).term}학기)</button><span class="meta">진단은 개강일부터 2주, 재진단은 기말종합평가 1주 전부터 종강일까지로 채웁니다.</span></div>`) + acadPanel()).join('')}
+      </div>
+    </div>
   </div>`;
-  fillAiUsage();
+  if (document.getElementById('aiuse')) fillAiUsage();
+  $view.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { state.setTab = b.dataset.stab; renderSettings(); });
   const draft = () => (state.setDraft = state.setDraft || JSON.parse(JSON.stringify(S)));
   $view.querySelectorAll('[data-sp]').forEach(inp => inp.onchange = () => { setPath(draft(), inp.dataset.sp, Number(inp.value)); state.setMsg = ''; renderSettings(); });
   $view.querySelectorAll('[data-sd]').forEach(inp => inp.onchange = () => { draft().schedule[inp.dataset.sd] = inp.value; state.setMsg = ''; renderSettings(); });
-  document.getElementById('sauto').onchange = e => { draft().autoNotify = e.target.checked; renderSettings(); };
-  document.getElementById('sops').onchange = e => { draft().ops = e.target.checked; renderSettings(); };
-  document.getElementById('sacad').onclick = () => { const A = acadSchedule(todayISO()); draft().schedule = { ...A.schedule }; state.setMsg = `${A.term}학기 학사일정으로 진단 일정을 채웠습니다. 저장해야 반영됩니다.`; renderSettings(); };
+  (document.getElementById('sauto') || {}).onchange = e => { draft().autoNotify = e.target.checked; renderSettings(); };
+  (document.getElementById('sops') || {}).onchange = e => { draft().ops = e.target.checked; renderSettings(); };
+  (document.getElementById('sacad') || {}).onclick = () => { const A = acadSchedule(todayISO()); draft().schedule = { ...A.schedule }; state.setMsg = `${A.term}학기 학사일정으로 진단 일정을 채웠습니다. 저장해야 반영됩니다.`; renderSettings(); };
   $view.querySelectorAll('[data-acf]').forEach(b => b.onclick = () => { state.acadKind = b.dataset.acf; renderSettings(); });
   document.getElementById('sreset').onclick = () => { state.setDraft = JSON.parse(JSON.stringify(SETTINGS_DEFAULT)); state.setMsg = '기본값을 불러왔습니다. 저장해야 반영됩니다.'; renderSettings(); };
   const cc = document.getElementById('scancel'); if (cc) cc.onclick = () => { state.setDraft = null; state.setMsg = ''; renderSettings(); };
@@ -8667,6 +8717,7 @@ function renderSettings() {
     const before = settingsNow(), diff = [];
     SET_FIELDS.forEach(([, , fs]) => fs.forEach(([p, l]) => { if (getPath(before, p) !== getPath(S, p)) diff.push(`${l}: ${getPath(before, p)} → ${getPath(S, p)}`); }));
     SCHED_FIELDS.forEach(([k, l]) => { if (before.schedule[k] !== S.schedule[k]) diff.push(`${l}: ${before.schedule[k]} → ${S.schedule[k]}`); });
+    Object.keys(S.acad).forEach(k => { if (before.acad[k] !== S.acad[k]) diff.push(`조기 경보 ${k}: ${before.acad[k]} → ${S.acad[k]}`); });
     if (!!before.ops !== !!S.ops) diff.push(`운영 모드: ${before.ops ? '켬' : '끔'} → ${S.ops ? '켬' : '끔'}`);
     if (before.autoNotify !== S.autoNotify) diff.push(`자동 발송: ${before.autoNotify ? '켬' : '끔'} → ${S.autoNotify ? '켬' : '끔'}`);
     sSet('org', 'settings', S, diff.join('\n')); logLocal('기준값 변경', '운영 설정', diff.join('\n'));
@@ -9033,9 +9084,9 @@ const TOUR_CUR = [
 ];
 const TOUR_OPS = [
   S_('총괄 · 홈', '총괄 계정은 모든 메뉴를 봅니다. 담당별 계정(진단·시간표·비교과·교육과정)은 맡은 메뉴만 보이고, 서버도 같은 기준으로 저장을 막습니다.', '.p-todo', adm('all')),
-  S_('운영 설정 · 판정 기준', '등급 기준, 응답 신뢰성, 상담 알림, 교육과정 효과성, 개인정보(최소 집계 인원) 기준값을 정합니다. 바뀐 칸은 색으로 표시되고 변경 이력에 남습니다.', '.p-set0', async () => go('settings')),
-  S_('운영 설정 · 졸업 요건과 AI 사용 한도', '교양·비교과 졸업 요건과 AI 월 예산·호출 한도를 정합니다. 한도를 넘으면 규칙 기반으로 바뀝니다.', '.p-set6', async () => go('settings')),
-  S_('운영 설정 · 학기 일정과 운영 모드', "진단·재진단 일정과 예약 알림을 정합니다. 실제 운영을 시작할 때 '운영 모드'를 켜면 시연 장치가 모두 숨겨지고 학기 시점은 일정으로 자동 판단합니다.", '.p-sched', async () => go('settings')),
+  S_('운영 설정 · 판정 기준', '등급 기준, 응답 신뢰성, 상담 알림, 교육과정 효과성, 개인정보(최소 집계 인원) 기준값을 정합니다. 바뀐 칸은 색으로 표시되고 변경 이력에 남습니다.', '.p-set0', async () => { state.setTab = 'diag'; go('settings'); }),
+  S_('운영 설정 · 졸업 요건과 AI 사용 한도', '교양·비교과 졸업 요건과 AI 월 예산·호출 한도를 정합니다. 한도를 넘으면 규칙 기반으로 바뀝니다.', '.p-set6', async () => { state.setTab = 'grad'; go('settings'); }),
+  S_('운영 설정 · 학기 일정과 운영 모드', "진단·재진단 일정과 예약 알림을 정합니다. 실제 운영을 시작할 때 '운영 모드'를 켜면 시연 장치가 모두 숨겨지고 학기 시점은 일정으로 자동 판단합니다.", '.p-sched', async () => { state.setTab = 'sched'; go('settings'); }),
   S_('AX 성과', '업무별 연간 소요 시간을 도입 전·후로 비교해 행정 업무 절감 효과를 계산합니다(가정값은 직접 고칠 수 있음).', '.p-axchart', async () => go('axkpi')),
   S_('변경 이력', '기준값 변경, 학사 자료 저장, 학생 목록 열람, 알림 발송 등 모든 변경과 열람 기록을 봅니다.', '.p-aud', async () => go('auditlog'))
 ];
@@ -11544,32 +11595,32 @@ function acadSignals(no, gr, at) {
   if (gr && gr.length) {
     const last = gr.map(e => termKey(e[0], e[1])).sort().pop(), L = gr.filter(e => termKey(e[0], e[1]) === last && GRADE_PT[e[5]] != null);
     const crs = L.reduce((a, e) => a + (+e[4] || 0), 0), gpa = crs ? L.reduce((a, e) => a + GRADE_PT[e[5]] * (+e[4] || 0), 0) / crs : null, f = L.filter(e => e[5] === 'F').length;
-    if (A.wGpa && gpa != null && gpa < A.gpa) out.push([A.wGpa, `직전 학기 평점 ${gpa.toFixed(2)}(${(+A.gpa).toFixed(1)} 미만)`]);
-    if (A.wF && f) out.push([A.wF, `F 학점 ${f}과목`]);
+    if (A.wGpa && gpa != null && gpa < A.gpa) out.push([A.wGpa, `직전 학기 평점 ${gpa.toFixed(2)}(${(+A.gpa).toFixed(1)} 미만)`, 'wGpa']);
+    if (A.wF && f) out.push([A.wF, `F 학점 ${f}과목`, 'wF']);
   }
   if (at && at.length) {
     const last = at.map(e => termKey(e[0], e[1])).sort().pop(), L = at.filter(e => termKey(e[0], e[1]) === last);
     const abs = e => (+e[4] || 0) + Math.floor(((+e[5] || 0) + (+e[6] || 0)) / Math.max(1, A.late));
     const over = L.filter(e => +e[3] && abs(e) / +e[3] >= A.absent / 100), tot = L.reduce((a, e) => a + (+e[3] || 0), 0), rate = tot ? L.reduce((a, e) => a + abs(e), 0) / tot : 0;
-    if (A.wAbs && over.length) out.push([A.wAbs, `출석 미달 위험 ${over.length}과목(결석 ${A.absent}% 이상: ${over.slice(0, 2).map(e => e[2]).join('·')}${over.length > 2 ? ' 등' : ''})`]);
-    if (A.wRate && rate >= A.rate / 100) out.push([A.wRate, `결석률 ${Math.round(rate * 100)}%`]);
+    if (A.wAbs && over.length) out.push([A.wAbs, `출석 미달 위험 ${over.length}과목(결석 ${A.absent}% 이상: ${over.slice(0, 2).map(e => e[2]).join('·')}${over.length > 2 ? ' 등' : ''})`, 'wAbs']);
+    if (A.wRate && rate >= A.rate / 100) out.push([A.wRate, `결석률 ${Math.round(rate * 100)}%`, 'wRate']);
   }
   return out;
 }
 /* 이탈·부진 조기 경보: 신호별 가중치를 더해 0~100점. 사유를 함께 돌려 교원이 근거를 보고 판단 */
 function riskOfCohort(st) {
-  const A = RISK_ACAD, why = [];
-  let s = 0; const add = (w, t) => { if (w) { s += w; why.push(t); } };
+  const A = RISK_ACAD, why = [], keys = [];
+  let s = 0; const add = (w, t, k) => { if (w) { s += w; why.push(t); keys.push(k); } };
   const m = a => a.reduce((x, y) => x + y, 0) / a.length, d = m(st.traceArea[1]) - m(st.traceArea[0]);
-  if (st.relCount >= 2) add(A.wRel2, '진단 재실시 2회'); else if (st.relCount === 1) add(A.wRel1, '진단 재실시');
-  if (d < A.drop - A.dropBig) add(A.wDropBig, `향상도 ${d.toFixed(1)}점(크게 하락)`); else if (d < A.drop) add(A.wDrop, `향상도 ${d.toFixed(1)}점(기준 미만)`);
+  if (st.relCount >= 2) add(A.wRel2, '진단 재실시 2회', 'wRel2'); else if (st.relCount === 1) add(A.wRel1, '진단 재실시', 'wRel1');
+  if (d < A.drop - A.dropBig) add(A.wDropBig, `향상도 ${d.toFixed(1)}점(크게 하락)`, 'wDropBig'); else if (d < A.drop) add(A.wDrop, `향상도 ${d.toFixed(1)}점(기준 미만)`, 'wDrop');
   const lowBoth = SUBNAMES.filter((_, k) => st.traceSub[0][k] < MID && st.traceSub[1][k] < MID).length;
-  if (lowBoth >= A.lowCount) add(A.wLow, `'하' 수준 2회 연속 ${lowBoth}개 능력`);
-  if (st.basicLow && !st.suppDone) add(A.wBasic, '기초학습 낮음·보충 미이수');
-  if (!st.picks.length) add(A.wNoPlan, '이수 계획 없음');
-  if (!st.nc.length) add(A.wNoNc, '비교과 참여 없음');
-  acadSignals(st.no).forEach(([w, t]) => add(w, t));
-  return { score: Math.min(100, s), why };
+  if (lowBoth >= A.lowCount) add(A.wLow, `'하' 수준 2회 연속 ${lowBoth}개 능력`, 'wLow');
+  if (st.basicLow && !st.suppDone) add(A.wBasic, '기초학습 낮음·보충 미이수', 'wBasic');
+  if (!st.picks.length) add(A.wNoPlan, '이수 계획 없음', 'wNoPlan');
+  if (!st.nc.length) add(A.wNoNc, '비교과 참여 없음', 'wNoNc');
+  acadSignals(st.no).forEach(([w, t, k]) => add(w, t, k));
+  return { score: Math.min(100, s), why, keys };
 }
 function riskOfReal(x) {
   const A = RISK_ACAD, why = [];
@@ -11599,7 +11650,7 @@ function renderRisk() {
       <div class="pick no-print"><label>학과<select id="rkdept">${['전체', ...depts].map(d => `<option ${d === state.rkDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label></div></div>
       <p class="meta"><span class="badge amber">가상 예시 데이터</span> 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표의 위험도 열에 나옵니다.</p>
       <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '이수 결과 미반영')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결 미반영')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
-      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">${RISK_SIGS.filter(([, , k]) => RISK_ACAD[k]).map(([, l, k, who]) => `${l.replace(/\{(\w+)\}/g, (_, x) => RISK_ACAD[x])} ${RISK_ACAD[k]}점${who === '실제' ? '(실제 이용 학생)' : who === '가상' ? '(가상 코호트)' : ''}`).join(', ')}을 더합니다(최대 100점). 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. 단계는 주의 ${RISK_ACAD.lvMild}점, 경고 ${RISK_ACAD.lvWarn}점, 위험 ${RISK_ACAD.lvBad}점부터입니다. <button class="linkbtn" data-go="settings" type="button">기준 바꾸기</button></p></details></section>
+      <details class="tech"><summary>점수 계산 방법</summary><p class="meta">${RISK_SIGS.filter(([, , k]) => RISK_ACAD[k]).map(([, l, k, who]) => `${l.replace(/\{(\w+)\}/g, (_, x) => RISK_ACAD[x])} ${RISK_ACAD[k]}점${who === '실제' ? '(실제 이용 학생)' : who === '가상' ? '(가상 코호트)' : ''}`).join(', ')}을 더합니다(최대 100점). 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. 단계는 주의 ${RISK_ACAD.lvMild}점, 경고 ${RISK_ACAD.lvWarn}점, 위험 ${RISK_ACAD.lvBad}점부터입니다. <button class="linkbtn" type="button" onclick="state.setTab='risk';go('settings')">기준 바꾸기</button></p></details></section>
     ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, `<div class="rkbars">${byDept.slice(0, 12).map(x => `<div class="rkbar"><span>${esc(x.d)}</span><div class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></div><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></div>`).join('')}</div>
       <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span></div>`)}
     ${panelH('p-rklist', '경보 학생', `${state.rkDept} · 점수 높은 순 30명`, `<div class="scrollx"><table class="tbl"><thead><tr><th>학생</th><th>학과</th><th>위험도</th><th>사유</th></tr></thead><tbody>${shown.filter(r => r.score >= 15).slice(0, 30).map(r => `<tr><td><b>${r.st.alias}</b> <span class="meta">${r.st.no.slice(0, 4)}****</span></td><td>${esc(r.st.dept)}</td><td>${riskChip(r.score)}</td><td class="wrap">${r.why.join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="meta">경보 대상이 없습니다.</td></tr>'}</tbody></table></div>`)}
