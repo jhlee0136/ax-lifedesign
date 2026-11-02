@@ -1607,6 +1607,7 @@ body.no-demo .demostrip .phase { display: none !important; }
 .ncform legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
 .ncsubs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 8px; }
 .ncsub { font-size: 13px; margin: 0; }
+.panel .mt-tbl td[colspan] { text-align: left; } .mt-crnote { flex-basis: 100%; margin: 4px 0 0; }
 .ncgrp { border-top: 1px dashed var(--line); padding: 6px 0 2px; } .ncgrp:first-of-type { border-top: 0; } .ncgk { margin: 0 0 2px; font-size: 13px; }
 .ncform label.ncsub:has(input:disabled) { opacity: .45; cursor: not-allowed; } .ncform label.ncfac .meta { font-size: 11px; }
 .ncsixline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; } .ncsix { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: var(--signal-soft); color: var(--ink); } .ncsix.none { background: var(--paper); color: var(--muted); }
@@ -9744,7 +9745,7 @@ function majorDemoOf(dept, salt) {
 function majorFor(dept, term, ban) {
   const cat = catalogNow(), D = cat && cat.majors && cat.majors[dept], key = D && D[banKey(term, ban)] ? banKey(term, ban) : term, m = D && D[key];
   const at = cat && cat.majorsAt ? cat.majorsAt[`${dept}|${key}`] || null : null;
-  return m && m.length ? { blocks: m.map((b, i) => ({ id: 'm' + i, n: b.n, kind: 'major', d: b.d, s: b.s, len: b.len })), src: 'catalog', at, key } : { blocks: majorDemoOf(dept), src: 'demo', at };
+  return m && m.length ? { blocks: m.map((b, i) => ({ id: 'm' + i, n: b.n, kind: 'major', d: b.d, s: b.s, len: b.len, cr: crOf(b) })), src: 'catalog', at, key } : { blocks: majorDemoOf(dept), src: 'demo', at };
 }
 function courseLevel(c, sub) {
   const v = (c.subs || []).map(s => sub[s]).filter(x => x != null);
@@ -9989,11 +9990,11 @@ function catalogParse(kind, rows) {
       const sem = String(col(/학기/, '') || '').replace(/학기/, '').trim(), scope = /학과/.test(col(/대상/, '') || '') ? '학과' : '공통';
       (out[n] = out[n] || []).push({ sec: sec || String((out[n] || []).length + 1).padStart(2, '0'), lv: lv ? LV_OF[lv] || '' : '', d: DAY_OF[d], s: +s, len: +len, cap: +cap || 40, enr: +enr || 0, sem: sem === '1' || sem === '2' ? sem : '', scope, dept: scope === '학과' ? col(/^학과$/, '') || '' : '', grade: scope === '학과' ? String(col(/학년/, '') || '').replace(/학년/, '') : '', ban: scope === '학과' ? String(col(/^반$/, '') || '').replace(/반/, '').toUpperCase() : '' });
     } else {
-      const hasBan = hdr.some(x => /반/.test(x) && !/학기/.test(x));
-      const [dept, term, ban, n, d, s, len] = hasBan ? c : [c[0], c[1], '', c[2], c[3], c[4], c[5]];
+      const hasBan = hdr.some(x => /반/.test(x) && !/학기/.test(x)), crIx = hdr.findIndex(x => /학점/.test(x));
+      const [dept, term, ban, n, d, s, len] = hasBan ? c : [c[0], c[1], '', c[2], c[3], c[4], c[5]], cr = crIx >= 0 && c[crIx] !== '' ? +c[crIx] : +len;
       const key = banKey(term, String(ban || '').replace(/반$/, '').trim().toUpperCase());
-      if (!dept || !/^\d-[12]$/.test(term) || !n || !(d in DAY_OF) || !(+s >= 1) || !(+len >= 1 && +s + +len - 1 <= EVE_P)) { bad.push(`${line}행: 학과·학기(예: 1-1)·과목·요일·교시를 확인하세요`); return; }
-      ((out[dept] = out[dept] || {})[key] = out[dept][key] || []).push({ n, d: DAY_OF[d], s: +s, len: +len });
+      if (!dept || !/^\d-[12]$/.test(term) || !n || !(d in DAY_OF) || !(+s >= 1) || !(+len >= 1 && +s + +len - 1 <= EVE_P) || !(cr >= 0 && cr <= 9)) { bad.push(`${line}행: 학과·학기(예: 1-1)·과목·요일·교시·시수·학점을 확인하세요`); return; }
+      ((out[dept] = out[dept] || {})[key] = out[dept][key] || []).push({ n, d: DAY_OF[d], s: +s, len: +len, cr });
     }
   });
   return { data: out, bad };
@@ -10004,8 +10005,8 @@ function catalogTemplate(kind) {
     offered(state.dept, 1).slice(0, 40).forEach(c => sectionsDemo({ n: c.n, cr: c.t[0] ? c.t[0].credit : 2 }).forEach((s, i) => rows.push([c.n, String(i + 1).padStart(2, '0'), '1', '공통', '', '', '', DAYS[s.d], s.s, s.len, s.cap, s.enr])));
     return rows;
   }
-  const rows = [['학과', '학기(학년-학기)', '반', '과목', '요일', '시작교시', '시간']];
-  CURRICULUM.depts.filter(d => CURRICULUM.deptGroup[d]).forEach(d => ['A', 'B'].forEach(bn => majorDemoOf(d, bn).forEach(b => rows.push([d, '1-1', bn, b.n, DAYS[b.d], b.s, b.len]))));
+  const rows = [['학과', '학기(학년-학기)', '반', '과목', '요일', '시작교시', '시수', '학점']];
+  CURRICULUM.depts.filter(d => CURRICULUM.deptGroup[d]).forEach(d => ['A', 'B'].forEach(bn => majorDemoOf(d, bn).forEach(b => rows.push([d, '1-1', bn, b.n, DAYS[b.d], b.s, b.len, crOf(b)]))));
   return rows;
 }
 const ADMIN_API = { url: '', auth: '학교 SSO 토큰', status: '미연결' };
@@ -10564,6 +10565,8 @@ function majorSave(dept, term, list, note) {
   /* term 자리에는 '학기#반' 키가 옴. 이 학과·학기·반만 저장(다른 직원이 같은 반을 먼저 고쳤으면 충돌 안내) */
   catalogPatch(['majors', dept, term], list.length ? list : null, note); logLocal('전공 시간표 변경', `${dept} ${banLabel(term)}`, note);
 }
+/* 전공 교과목 학점: 시수(시간표 칸 수)와 다를 수 있어 따로 둠(예: 실습 4시간 3학점). 예전 자료처럼 학점이 없으면 시수와 같다고 봄 */
+const crOf = b => (b && b.cr != null && b.cr !== '' ? +b.cr : b ? b.len : 0);
 const mtConflicts = list => { const o = {}; const bad = new Set(); list.forEach((b, i) => { for (let p = b.s; p < b.s + b.len; p++) { const k = b.d + ':' + p; if (k in o) { bad.add(i); bad.add(o[k]); } else o[k] = i; } }); return bad; };
 function renderMajorTT() {
   const depts = CURRICULUM.depts.filter(d => CURRICULUM.deptGroup[d]);
@@ -10574,26 +10577,26 @@ function renderMajorTT() {
   const bans = [...new Set([...exist, state.mtBan])].sort(), Bn = state.mtBan, K = banKey(state.mtTerm, Bn);
   const D = state.mtDept, T = state.mtTerm, M = majorsNow(), list = ((M[D] || {})[K] || []).map(b => ({ ...b })), bad = mtConflicts(list);
   const copyFrom = exist.filter(b => b !== Bn)[0];
-  const nDept = Object.keys(M).length, hours = list.reduce((a, b) => a + b.len, 0), ed = state.mtEdit;
+  const nDept = Object.keys(M).length, hours = list.reduce((a, b) => a + b.len, 0), credits = list.reduce((a, b) => a + crOf(b), 0), ed = state.mtEdit;
   const opt = (arr, v) => arr.map(([k, t]) => `<option value="${k}" ${String(k) === String(v) ? 'selected' : ''}>${t}</option>`).join('');
-  const dayOpt = v => opt(DAYS.map((d, i) => [i, d]), v), sOpt = v => opt(Array.from({ length: EVE_P }, (_, i) => [i + 1, `${i + 1}교시 ${pStart(i + 1)}`]), v), lOpt = v => opt([1, 2, 3, 4, 5, 6].map(n => [n, n + '시간']), v);
+  const dayOpt = v => opt(DAYS.map((d, i) => [i, d]), v), sOpt = v => opt(Array.from({ length: EVE_P }, (_, i) => [i + 1, `${i + 1}교시 ${pStart(i + 1)}`]), v), lOpt = v => opt([1, 2, 3, 4, 5, 6].map(n => [n, n + '시간']), v), cOpt = v => opt([0, 1, 2, 3, 4, 5, 6].map(n => [n, n + '학점']), v);
   const cell = (d, p) => `<button class="tt-cell" data-mtcell="${d},${p}" style="grid-column:${d + 2};grid-row:${p + 1}" aria-label="${DAYS[d]} ${pStart(p)}에 과목 추가"></button>`;
   const grid = `<div class="tt mt-grid" aria-label="${esc(D)} ${termName(T)} 전공 시간표">
     <div class="tt-h" style="grid-column:1;grid-row:1"></div>${DAYS.map((d, i) => `<div class="tt-h" style="grid-column:${i + 2};grid-row:1">${d}</div>`).join('')}
     ${Array.from({ length: DAY_P }, (_, i) => `<div class="tt-p" style="grid-column:1;grid-row:${i + 2}"><b>${i + 1}</b>${pStart(i + 1)}</div>`).join('')}
     ${DAYS.map((_, d) => Array.from({ length: DAY_P }, (_, i) => cell(d, i + 1)).join('')).join('')}
-    ${list.filter(b => b.s <= DAY_P).map((b, i) => `<div class="tt-b k-major${bad.has(list.indexOf(b)) ? ' miss' : ''}" style="grid-column:${b.d + 2};grid-row:${b.s + 1} / span ${Math.min(b.len, DAY_P - b.s + 1)};--i:${i}"><b>${esc(b.n)}</b><span>${b.len}시간</span><button class="tt-x" data-mtdel="${list.indexOf(b)}" aria-label="${esc(b.n)} 삭제">×</button></div>`).join('')}
+    ${list.filter(b => b.s <= DAY_P).map((b, i) => `<div class="tt-b k-major${bad.has(list.indexOf(b)) ? ' miss' : ''}" style="grid-column:${b.d + 2};grid-row:${b.s + 1} / span ${Math.min(b.len, DAY_P - b.s + 1)};--i:${i}"><b>${esc(b.n)}</b><span>${b.len}시간 · ${crOf(b)}학점</span><button class="tt-x" data-mtdel="${list.indexOf(b)}" aria-label="${esc(b.n)} 삭제">×</button></div>`).join('')}
   </div>`;
   const rows = list.map((b, i) => ed === i
-    ? `<tr class="mt-edit"><td><input id="mten" value="${esc(b.n)}" maxlength="30"></td><td><select id="mted">${dayOpt(b.d)}</select></td><td><select id="mtes">${sOpt(b.s)}</select></td><td><select id="mtel">${lOpt(b.len)}</select></td><td><button class="btn sm" data-mtsave="${i}">저장</button> <button class="linkbtn" id="mtcancel">취소</button></td></tr>`
-    : `<tr class="${bad.has(i) ? 'conf' : ''}"><td><b>${esc(b.n)}</b>${bad.has(i) ? ' <span class="badge amber">시간 겹침</span>' : ''}</td><td>${DAYS[b.d]}</td><td>${pStart(b.s)}~${pEnd(b.s, b.len)}</td><td>${b.len}시간</td><td><button class="linkbtn" data-mtedit="${i}">수정</button> <button class="linkbtn" data-mtdel="${i}">삭제</button></td></tr>`).join('');
+    ? `<tr class="mt-edit"><td><input id="mten" value="${esc(b.n)}" maxlength="30"></td><td><select id="mted">${dayOpt(b.d)}</select></td><td><select id="mtes">${sOpt(b.s)}</select></td><td><select id="mtel">${lOpt(b.len)}</select></td><td><select id="mtecr">${cOpt(crOf(b))}</select></td><td><button class="btn sm" data-mtsave="${i}">저장</button> <button class="linkbtn" id="mtcancel">취소</button></td></tr>`
+    : `<tr class="${bad.has(i) ? 'conf' : ''}"><td><b>${esc(b.n)}</b>${bad.has(i) ? ' <span class="badge amber">시간 겹침</span>' : ''}</td><td>${DAYS[b.d]}</td><td>${pStart(b.s)}~${pEnd(b.s, b.len)}</td><td>${b.len}시간</td><td>${crOf(b)}학점${crOf(b) !== b.len ? ' <span class="badge">시수와 다름</span>' : ''}</td><td><button class="linkbtn" data-mtedit="${i}">수정</button> <button class="linkbtn" data-mtdel="${i}">삭제</button></td></tr>`).join('');
   const at = ((catalogNow() || {}).majorsAt || {})[`${D}|${K}`];
   $view.innerHTML = `
   <div class="dash-grid">
     <section class="panel p-sum"><p class="eyebrow">교과·비교과 운영 · 전공 시간표</p>
       <p class="summary">학과·학기·반별로 미리 편성된 전공 교과목 시간표를 관리합니다.</p>
       <p class="meta">여기서 등록한 시간표는 학생이 '이번 학기 시간표'에서 불러오기를 누르면 들어가고, 그 빈 시간에 교양·비교과를 추천하는 기준이 됩니다. 학사정보시스템 API가 연결되면 같은 자리에 자동으로 채워집니다.</p>
-      <div class="stats"><div class="stat"><b>${nDept}개</b><span>시간표를 등록한 학과</span></div><div class="stat"><b>${list.length}과목 · ${hours}시간</b><span>${esc(D)} ${termName(T)} ${Bn}반 (반 ${exist.length}개 등록)</span></div><div class="stat"><b>${bad.size ? `${bad.size}과목` : '없음'}</b><span>시간 겹침</span></div><div class="stat"><b>${at ? at.slice(0, 10) : '-'}</b><span>마지막 수정</span></div></div></section>
+      <div class="stats"><div class="stat"><b>${nDept}개</b><span>시간표를 등록한 학과</span></div><div class="stat"><b>${list.length}과목 · ${hours}시간 · ${credits}학점</b><span>${esc(D)} ${termName(T)} ${Bn}반 (반 ${exist.length}개 등록)</span></div><div class="stat"><b>${bad.size ? `${bad.size}과목` : '없음'}</b><span>시간 겹침</span></div><div class="stat"><b>${at ? at.slice(0, 10) : '-'}</b><span>마지막 수정</span></div></div></section>
     <section class="panel p-mtsel"><div class="pbody mt-tools no-print">
       <label>학과<select id="mtdept">${depts.map(d => `<option ${d === D ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
       <label>학기<select id="mtterm">${opt(MT_TERMS.map(t => [t, termName(t)]), T)}</select></label>
@@ -10616,13 +10619,15 @@ function renderMajorTT() {
         <button class="btn sm" type="submit" ${list.length ? '' : 'disabled'}>선택한 반에 적용</button></form>
       <p class="meta">시간표는 학년·학기·반 단위로 남아 해가 바뀌어도 그대로 쓰이므로, 매년 바뀐 과목만 고치면 됩니다. 학사정보시스템 API가 연결되면 자동으로 채워집니다.</p></div>`) : ''}
     ${panelH('p-mtgrid', '주간 시간표', `${esc(D)} · ${termName(T)} ${Bn}반`, list.length ? grid : `<p class="meta">${Bn}반에 등록된 전공 시간표가 없습니다. 오른쪽에서 과목을 추가하거나 CSV로 올리세요. 등록 전에는 학생에게 학과 계열 표준 예시가 대신 쓰입니다.</p>${grid}`)}
-    ${panelH('p-mtlist', '전공 교과목', `${list.length}과목`, `<table class="tbl mt-tbl"><thead><tr><th>과목</th><th>요일</th><th>시간</th><th>시수</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="meta">등록된 과목이 없습니다.</td></tr>'}</tbody></table>
+    ${panelH('p-mtlist', '전공 교과목', `${list.length}과목`, `<table class="tbl mt-tbl"><thead><tr><th>과목</th><th>요일</th><th>시간</th><th>시수</th><th>학점</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="meta">등록된 과목이 없습니다.</td></tr>'}</tbody></table>
       <form class="mt-add" id="mtadd"><h3 class="sub3">과목 추가</h3>
         <label>과목명<input id="mtan" required maxlength="30" placeholder="예: 공학수학"></label>
         <label>요일<select id="mtad">${dayOpt(state.mtPre ? state.mtPre[0] : 0)}</select></label>
         <label>시작<select id="mtas">${sOpt(state.mtPre ? state.mtPre[1] : 1)}</select></label>
         <label>시수<select id="mtal">${lOpt(2)}</select></label>
-        <button class="btn sm" type="submit">추가</button></form>`)}
+        <label>학점<select id="mtacr">${cOpt(2)}</select></label>
+        <button class="btn sm" type="submit">추가</button>
+        <p class="meta mt-crnote">시수는 시간표에 차지하는 시간, 학점은 이수 학점입니다. 실습 과목처럼 둘이 다르면 따로 고르세요(학점을 바꾸지 않으면 시수와 같게 맞춰짐).</p></form>`)}
   </div>`;
   const q = id => document.getElementById(id);
   const save = (nl, note, msg) => { majorSave(D, K, nl, `${Bn}반 ${note}`); state.mtMsg = msg; state.mtEdit = null; state.mtBanNew = null; renderMajorTT(); };
@@ -10636,25 +10641,26 @@ function renderMajorTT() {
   if (q('mtto')) q('mtto').onsubmit = e => { e.preventDefault(); const to = [...$view.querySelectorAll('[data-mtto]:checked')].map(c => c.value); if (!to.length) { q('mtmsg').textContent = '적용할 반을 고르세요.'; return; } if (!confirm(`${to.join('·')}반에 ${Bn}반 시간표(${list.length}과목)를 넣을까요? 기존 시간표는 바뀝니다.`)) return; catalogPatchMany(to.map(b => [['majors', D, banKey(T, b)], list.map(x => ({ ...x }))]), `${Bn}반 시간표를 ${to.join('·')}반에 적용`).then(n => { state.mtMsg = `${n}개 반(${to.join('·')})에 ${Bn}반 시간표를 적용했습니다.`; renderMajorTT(); }); logLocal('전공 시간표 변경', `${D} ${termName(T)}`, `${Bn}반 → ${to.join('·')}반 일괄 적용`); };
   if (q('mtcopy')) q('mtcopy').onclick = () => save(((M[D] || {})[banKey(T, copyFrom)] || []).map(b => ({ ...b })), `${copyFrom}반 시간표 복사`, `${copyFrom}반 시간표를 복사했습니다. ${Bn}반에 맞게 고치세요.`);
   $view.querySelectorAll('[data-mtcell]').forEach(c => c.onclick = () => { state.mtPre = c.dataset.mtcell.split(',').map(Number); state.mtMsg = `${DAYS[state.mtPre[0]]} ${pStart(state.mtPre[1])}로 추가 양식을 채웠습니다. 과목명을 넣고 추가하세요.`; renderMajorTT(); q('mtan').focus(); });
+  { let crTouched = false; q('mtacr').onchange = () => { crTouched = true; }; q('mtal').onchange = () => { if (!crTouched) q('mtacr').value = Math.min(6, +q('mtal').value); }; }
   q('mtadd').onsubmit = e => {
     e.preventDefault();
-    const b = { n: q('mtan').value.trim(), d: +q('mtad').value, s: +q('mtas').value, len: +q('mtal').value }, err = valid(b);
+    const b = { n: q('mtan').value.trim(), d: +q('mtad').value, s: +q('mtas').value, len: +q('mtal').value, cr: +q('mtacr').value }, err = valid(b);
     if (err) { q('mtmsg').textContent = err; return; }
     const nl = [...list, b], conf = mtConflicts(nl).has(nl.length - 1);
-    state.mtPre = null; save(nl, `${b.n} 추가(${DAYS[b.d]} ${pStart(b.s)}, ${b.len}시간)`, `${b.n}을(를) 추가했습니다.${conf ? ' 다른 과목과 시간이 겹칩니다. 확인하세요.' : ''}`);
+    state.mtPre = null; save(nl, `${b.n} 추가(${DAYS[b.d]} ${pStart(b.s)}, ${b.len}시간·${b.cr}학점)`, `${b.n}을(를) 추가했습니다.${conf ? ' 다른 과목과 시간이 겹칩니다. 확인하세요.' : ''}`);
   };
   $view.querySelectorAll('[data-mtedit]').forEach(x => x.onclick = () => { state.mtEdit = +x.dataset.mtedit; state.mtMsg = ''; renderMajorTT(); });
   if (q('mtcancel')) q('mtcancel').onclick = () => { state.mtEdit = null; renderMajorTT(); };
   $view.querySelectorAll('[data-mtsave]').forEach(x => x.onclick = () => {
-    const i = +x.dataset.mtsave, b = { n: q('mten').value.trim(), d: +q('mted').value, s: +q('mtes').value, len: +q('mtel').value }, err = valid(b);
+    const i = +x.dataset.mtsave, b = { n: q('mten').value.trim(), d: +q('mted').value, s: +q('mtes').value, len: +q('mtel').value, cr: +q('mtecr').value }, err = valid(b);
     if (err) { q('mtmsg').textContent = err; return; }
     const nl = list.map((o, k) => (k === i ? b : o));
-    save(nl, `${list[i].n} 수정 → ${b.n}(${DAYS[b.d]} ${pStart(b.s)}, ${b.len}시간)`, `${b.n}을(를) 수정했습니다.${mtConflicts(nl).has(i) ? ' 다른 과목과 시간이 겹칩니다.' : ''}`);
+    save(nl, `${list[i].n} 수정 → ${b.n}(${DAYS[b.d]} ${pStart(b.s)}, ${b.len}시간·${b.cr}학점)`, `${b.n}을(를) 수정했습니다.${mtConflicts(nl).has(i) ? ' 다른 과목과 시간이 겹칩니다.' : ''}`);
   });
   $view.querySelectorAll('[data-mtdel]').forEach(x => x.onclick = e => { e.stopPropagation(); const i = +x.dataset.mtdel; if (!confirm(`${list[i].n}을(를) 삭제할까요?`)) return; save(list.filter((_, k) => k !== i), `${list[i].n} 삭제`, `${list[i].n}을(를) 삭제했습니다.`); });
   if (q('mtclear')) q('mtclear').onclick = () => { if (!confirm(`${D} ${termName(T)} ${Bn}반 전공 시간표 ${list.length}과목을 모두 지울까요?`)) return; save([], '시간표 비움', `${Bn}반 시간표를 비웠습니다.`); };
-  if (q('mtdemo')) q('mtdemo').onclick = () => save(majorDemoOf(D, Bn).map(b => ({ n: b.n, d: b.d, s: b.s, len: b.len })), '학과 계열 표준 예시로 채움', '학과 계열 표준 예시로 채웠습니다. 실제 시간에 맞게 고치세요.');
-  q('mtdown').onclick = () => { const rows2 = [['학과', '학기(학년-학기)', '반', '과목', '요일', '시작교시', '시간']]; Object.entries(majorsNow()).forEach(([d, ts]) => Object.entries(ts).forEach(([k, l]) => { const [t, b0] = k.split('#'); l.forEach(b => rows2.push([d, t, b0 || '', b.n, DAYS[b.d], b.s, b.len])); })); if (rows2.length === 1) catalogTemplate('majors').slice(1, 13).forEach(r => rows2.push(r)); download('전공시간표.csv', rows2); };
+  if (q('mtdemo')) q('mtdemo').onclick = () => save(majorDemoOf(D, Bn).map(b => ({ n: b.n, d: b.d, s: b.s, len: b.len, cr: crOf(b) })), '학과 계열 표준 예시로 채움', '학과 계열 표준 예시로 채웠습니다. 실제 시간에 맞게 고치세요.');
+  q('mtdown').onclick = () => { const rows2 = [['학과', '학기(학년-학기)', '반', '과목', '요일', '시작교시', '시수', '학점']]; Object.entries(majorsNow()).forEach(([d, ts]) => Object.entries(ts).forEach(([k, l]) => { const [t, b0] = k.split('#'); l.forEach(b => rows2.push([d, t, b0 || '', b.n, DAYS[b.d], b.s, b.len, crOf(b)])); })); if (rows2.length === 1) catalogTemplate('majors').slice(1, 13).forEach(r => rows2.push(r)); download('전공시간표.csv', rows2); };
   q('mtfile').onchange = e => {
     const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
     rd.onload = () => {
