@@ -4694,6 +4694,7 @@ const coreGrade = v => (v == null ? '-' : v >= CORE_CUT.hi ? '1등급' : v >= CO
    정답표를 받기 전이라 c는 null이고, 채점 결과는 '정답 대기'로 둠. 정답표를 받으면 BASIC_KEY에 넣으면 바로 채점됨 */
 const BASIC_SUBJ = ['국어', '수학', '영어'];
 const BASIC_KEY = {}; /* 정답은 화면 파일에 두지 않음: 서버 비공개 테이블(private.basic_key)에서 score_basic으로 채점 */
+const BASIC_ALT_N = BASIC_SRC.reduce((a, x) => a + (x.alt || []).length, 0); /* 기초학습 후보 문항(B형 평행) 수 */
 const BASIC_ITEMS = BASIC_SRC.map(x => ({ ...x, q: `${x.sub} ${x.n}번 문항`, c: BASIC_KEY[x.id] ?? null }));
 const BASIC_DK = 4; /* '모르겠다' */
 const DIAGS = [{ id: 'ncs', name: '직업기초역량진단' }, { id: 'core', name: '핵심역량진단' }, { id: 'basic', name: '기초학습역량진단' }];
@@ -8027,7 +8028,7 @@ function ibStepStat(rows) {
   const L = legacyOf(rows), done = L.filter(r => legacySt(r.key) !== '미검토').length, C = ibCands(rows), pend = C.filter(c => c.st === '검토 대기').length;
   const par = rows.filter(r => !r.anchor && r.diag !== '기초학습'), parHas = par.filter(r => r.r && r.r.variant).length, supAi = supBankItems().filter(x => x.id[0] !== 'r').length, lock = ibLocks().slice(-1)[0];
   return {
-    1: { s: `3종 ${rows.length}문항 등록`, left: 0 },
+    1: { s: `3종 ${rows.length + BASIC_ALT_N}문항 등록(기초학습 후보 ${BASIC_ALT_N} 포함)`, left: 0 },
     2: { s: L.length - done ? `${L.length}개 중 ${L.length - done}개 남음` : `기존 ${L.length}문항 검토 완료`, left: L.length - done },
     3: { s: `평행 후보 ${parHas}/${par.length} · 보완 후보 ${supAi}`, left: 0 },
     4: { s: pend ? `검토 대기 ${pend}개` : '검토 대기 없음', left: pend },
@@ -8095,7 +8096,8 @@ function ibStep1(rows) {
     <div class="scrollx"><table class="tbl"><thead><tr><th>진단</th><th>기존 문항</th><th>AI 신규(이미 작성)</th><th>유형</th><th>측정 단위</th></tr></thead><tbody>
       <tr><td><b>직업기초역량진단</b></td><td>${leg('직업기초')}</td><td>${by('직업기초').length - leg('직업기초')} <span class="meta">2026 표준 신설 하위능력</span></td><td>선택형·척도형(7점)</td><td>10개 요인 · 21개 하위능력</td></tr>
       <tr><td><b>핵심역량진단</b></td><td>${leg('핵심역량')}</td><td>${by('핵심역량').length - leg('핵심역량')} <span class="meta">AI 책임 활용(보조)</span></td><td>척도형(5점)</td><td>9요인</td></tr>
-      <tr><td><b>기초학습역량진단</b></td><td>${leg('기초학습')}</td><td>-</td><td>성취형(5지선다, 그림 발문)</td><td>국어·수학·영어 세부 능력</td></tr></tbody></table></div>
+      <tr><td><b>기초학습역량진단</b></td><td>${leg('기초학습') + BASIC_ALT_N} <span class="meta">본 문항 ${leg('기초학습')}(A형) + 후보 ${BASIC_ALT_N}(B형 평행, 문항마다 2개) · 과목별 ${(leg('기초학습') + BASIC_ALT_N) / 3}문항</span></td><td>-</td><td>성취형(5지선다, 그림 발문)</td><td>국어·수학·영어 세부 능력</td></tr></tbody></table></div>
+    <p class="meta">기초학습역량진단은 원 시험지(과목별 60문항: 본 문항 20 + 후보 40)를 모두 등록했습니다. 진단에는 본 문항 60개를 쓰고, 학기말 재진단(B형)에는 후보 문항을 씁니다.</p>
     <p class="meta">양식 열: 진단, 하위능력, 유형(성취형·상황판단형·사례형·자기보고), 문항, 선택지(| 구분), 정답 또는 선택지별 배점, 역문항, 원 문항 번호</p>
     <div class="actions"><button class="btn ghost sm" id="ibtpl">입력 양식 내려받기</button><label class="btn ghost sm filebtn">문항 파일 올리기<input type="file" id="ibfile" accept=".csv" hidden></label><button class="btn sm" data-ibstep="2">2단계 기존 문항 검토로</button><span class="meta" id="ibmsg" aria-live="polite"></span></div>`);
 }
