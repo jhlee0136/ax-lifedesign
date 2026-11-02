@@ -1965,11 +1965,11 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 .rinfo-dl { display: grid; grid-template-columns: 5.5em 1fr; gap: 3px 10px; margin: 6px 0; } .rinfo-dl dt { color: var(--muted); } .rinfo-dl dd { margin: 0; }
 .rinfo-courses li { margin-bottom: 2px; }
 .ncform textarea { font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 8px; resize: vertical; }
-/* v29: 줄바꿈 정리 — 끝줄에 한두 어절만 남지 않게, 넓은 곳에서 글 폭을 과하게 묶지 않게 */
+/* 줄바꿈: 본문 문장·목록은 칸 끝까지 채우는 일반 줄바꿈(pretty·balance는 앞줄을 일찍 끊어 오른쪽 여백이 커짐). 줄 길이 맞추기(balance)는 짧은 이름표에만 */
 p, .lede, .fine { text-wrap: wrap; }
 dt, th, label, figcaption, summary, .jobcard span, .chip, .badge { text-wrap: balance; }
 li, dd, td, .meta { text-wrap: wrap; }
-/* 문단으로 쓰는 안내 글(p.meta 등)은 줄 길이를 맞추면(balance) 짧은 줄이 여럿 생겨, 화면 너비만큼 채우고 끝줄만 다듬음(pretty) */
+/* 문단으로 쓰는 안내 글(p.meta 등)도 화면 너비만큼 채움 */
 p.meta, div.meta, ul.meta, ol.meta { text-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
 h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: balance; }
 .lede { max-width: 46em; } .login-intro .lede { max-width: 40em; }
