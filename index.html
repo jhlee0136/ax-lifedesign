@@ -77,19 +77,54 @@ p { margin: 0 0 14px; }
 .lede { font-size: 18px; max-width: 34em; }
 .facts { list-style: none; padding: 0; margin: 28px 0; max-width: 34em; }
 /* 3종 진단 소개 카드 */
-.dcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin: 26px 0 14px; }
-.dcard { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 14px; display: flex; flex-direction: column; }
-.dcard-no { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--signal, var(--ink)); }
-.dcard-t { margin: 2px 0 0; font-size: 19px; line-height: 1.3; }
-.dcard-sub { margin: 2px 0 10px; color: var(--muted); font-size: 14px; }
-.dcard-dl { margin: 0; display: grid; gap: 8px; flex: 1; }
-.dcard-dl dt { font-size: 12.5px; font-weight: 700; color: var(--muted); }
-.dcard-dl dd { margin: 1px 0 0; font-size: 14px; line-height: 1.55; word-break: keep-all; }
-.dcard-tip { margin: 12px 0 0; padding: 9px 11px; border-radius: 8px; background: var(--paper); font-size: 13.5px; line-height: 1.5; word-break: keep-all; }
-.dnotes { list-style: none; padding: 0; margin: 0 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
-@media (max-width: 640px) { .dnotes { grid-template-columns: 1fr; } }
-.dnotes li { font-size: 14px; line-height: 1.5; color: var(--muted); padding: 8px 0; border-top: 1px solid var(--line); word-break: keep-all; }
-.dnotes b { display: block; color: var(--ink); }
+/* 3종 진단 안내: 머리 줄(제목·버튼 | 레이더) + 카드 3장(행 높이를 subgrid로 맞춤) + 공통 안내 4개 */
+.ihero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 18px 40px; align-items: center; margin: 0 0 30px; }
+.ihero-main h1 { margin-bottom: 14px; }
+.ihero-main .lede { margin-bottom: 20px; max-width: 32em; text-wrap: pretty; }
+.ihero-main .actions { margin: 0; }
+.ihero-demo { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 12px 0 0; font-size: 14px; }
+.ihero-dial { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px 14px; }
+.ihero-dial .dial { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
+.ihero-dial .dial .lab { font-size: 17px; } .ihero-dial .dial .tick { font-size: 12px; } .ihero-dial .dial .dot { r: 6px; }
+.ihero-dial figcaption { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; text-wrap: pretty; margin-top: 2px; }
+.dcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(6, auto); gap: 0 16px; margin: 0 0 22px; }
+.dcard { grid-row: span 6; display: grid; grid-template-rows: subgrid; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+.dcard-h { display: grid; grid-template-columns: 52px 1fr; gap: 14px; align-items: center; padding-bottom: 14px; }
+.dglyph { width: 52px; height: 54px; }
+.dglyph .g-line { fill: none; stroke: var(--signal); stroke-width: 2; stroke-linejoin: round; stroke-dasharray: 100; }
+.dglyph .g-soft { stroke: var(--line); stroke-width: 1.2; }
+.dglyph .g-fill { fill: var(--signal); fill-opacity: .18; stroke: var(--signal); stroke-width: 1.2; }
+.dglyph .g-dot { fill: var(--panel); stroke: var(--signal); stroke-width: 1.6; } .dglyph .g-dot.on { fill: var(--signal); }
+.dglyph .g-bar { fill: var(--signal); fill-opacity: .8; } .dglyph .g-t { font-size: 9.5px; font-weight: 700; fill: var(--muted); font-family: var(--font); }
+.dcard-no { margin: 0; font-size: 13px; font-weight: 700; color: var(--signal); }
+.dcard-t { margin: 0; font-size: 20px; line-height: 1.3; }
+.dcard-sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.dcard-facts { display: flex; gap: 18px; margin: 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.dcard-facts b { font-size: 22px; font-weight: 700; color: var(--ink); margin-right: 2px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dcard-row { padding-top: 14px; }
+.dcard-k { margin: 0 0 3px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.dcard-v { margin: 0; font-size: 15px; line-height: 1.65; text-wrap: pretty; word-break: keep-all; }
+.dcard-tip { align-self: end; margin: 16px 0 0; padding: 11px 13px; border-radius: 10px; background: var(--signal-soft); font-size: 14px; line-height: 1.55; text-wrap: pretty; word-break: keep-all; }
+.dnotes { list-style: none; padding: 0; margin: 0 0 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 16px; }
+.dnotes li { font-size: 14px; line-height: 1.55; color: var(--muted); padding: 12px 0 0; border-top: 2px solid var(--line); text-wrap: pretty; word-break: keep-all; }
+.dnotes b { display: block; color: var(--ink); margin-bottom: 2px; }
+/* 열 때 한 번: 카드 그림의 선이 그려짐 */
+@media (prefers-reduced-motion: no-preference) {
+  .dglyph .g-line { animation: gdraw .9s ease-out both; }
+  .dc-core .g-dot { animation: gpop .35s ease-out both; } .dc-core .g-dot:nth-of-type(2) { animation-delay: .08s; } .dc-core .g-dot:nth-of-type(3) { animation-delay: .16s; } .dc-core .g-dot:nth-of-type(4) { animation-delay: .24s; } .dc-core .g-dot:nth-of-type(5) { animation-delay: .32s; }
+  .dc-basic .g-bar { transform-box: fill-box; transform-origin: bottom; animation: grow .6s ease-out both; } .dc-basic .g-bar:nth-of-type(2) { animation-delay: .1s; } .dc-basic .g-bar:nth-of-type(3) { animation-delay: .2s; }
+}
+@keyframes gdraw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes gpop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes grow { from { transform: scaleY(0); } to { transform: none; } }
+@media (max-width: 1080px) { .dnotes { grid-template-columns: 1fr 1fr; gap: 14px 16px; } }
+@media (max-width: 900px) {
+  .ihero { grid-template-columns: 1fr; }
+  .ihero-dial { max-width: 360px; }
+  .dcards { grid-template-columns: 1fr; grid-template-rows: none; gap: 14px; }
+  .dcard { grid-row: auto; grid-template-rows: none; }
+}
+@media (max-width: 560px) { .dnotes { grid-template-columns: 1fr; } .dcard { padding: 16px; } }
 .facts li { padding: 10px 0; border-top: 1px solid var(--line); }
 .facts li:last-child { border-bottom: 1px solid var(--line); }
 .facts b { font-weight: 700; }
@@ -1834,7 +1869,8 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 .ncform textarea { font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 8px; resize: vertical; }
 /* v29: 줄바꿈 정리 — 끝줄에 한두 어절만 남지 않게, 넓은 곳에서 글 폭을 과하게 묶지 않게 */
 p, .lede, .fine { text-wrap: pretty; }
-li, dd, dt, td, th, label, figcaption, summary, .meta, .jobcard span, .chip, .badge { text-wrap: balance; }
+dt, th, label, figcaption, summary, .jobcard span, .chip, .badge { text-wrap: balance; }
+li, dd, td, .meta { text-wrap: pretty; }
 /* 문단으로 쓰는 안내 글(p.meta 등)은 줄 길이를 맞추면(balance) 짧은 줄이 여럿 생겨, 화면 너비만큼 채우고 끝줄만 다듬음(pretty) */
 p.meta, div.meta, ul.meta, ol.meta { text-wrap: pretty; word-break: keep-all; overflow-wrap: anywhere; }
 h1, h2, h3, .summary, .pf-headline, .vbadge, .empty-state .lede { text-wrap: balance; }
@@ -4768,32 +4804,39 @@ function setDial(vals, opts, note) {
 /* ---------- 화면 ---------- */
 const $view = document.getElementById('view');
 
-/* 3종 진단 소개 카드: 진단을 처음 받는 학생이 무엇을·왜·어떻게 하는지 미리 알 수 있게(목적·내용·방법·시간·결과 활용) */
+/* 3종 진단 소개 카드: 진단을 처음 받는 학생이 무엇을·왜·어떻게 하는지 미리 알 수 있게(목적·내용·방법·시간·결과 활용).
+   카드 위 그림은 응답 방식을 보여 줌: 7각형=직업기초 7개 영역, 점 5개=핵심역량 5칸 척도, 막대 3개=기초학습 국어·수학·영어 */
+const DGLYPH = {
+  ncs: (() => { const P = Array.from({ length: 7 }, (_, k) => { const a = -Math.PI / 2 + k * 2 * Math.PI / 7; return [28 + 22 * Math.cos(a), 29 + 22 * Math.sin(a)]; });
+    return `<polygon class="g-line" pathLength="100" points="${P.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}"/>${P.map(([x, y]) => `<line class="g-soft" x1="28" y1="29" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`).join('')}<polygon class="g-fill" points="${P.map(([x, y], k) => { const f = [.9, .7, .8, .55, .75, .65, .85][k]; return `${(28 + (x - 28) * f).toFixed(1)},${(29 + (y - 29) * f).toFixed(1)}`; }).join(' ')}"/>`; })(),
+  core: `<line class="g-soft" x1="6" y1="30" x2="50" y2="30"/>${[6, 17, 28, 39, 50].map((x, k) => `<circle class="${k === 3 ? 'g-dot on' : 'g-dot'}" cx="${x}" cy="30" r="${k === 3 ? 5.5 : 4}"/>`).join('')}`,
+  basic: [['국', 10, 30], ['수', 26, 40], ['영', 42, 24]].map(([t, x, h]) => `<rect class="g-bar" x="${x - 5}" y="${48 - h}" width="10" height="${h}" rx="2"/><text class="g-t" x="${x}" y="56" text-anchor="middle">${t}</text>`).join('') + '<line class="g-line" pathLength="100" x1="2" y1="48.5" x2="54" y2="48.5"/>'
+};
 function diagCardsHtml(retest) {
   const sup = supInDiag(retest) ? supItems().length : 0;
-  const mins = ms => `약 ${Math.max(5, Math.round(ms / 60000 / 5) * 5)}분`;
+  const mins = ms => Math.max(5, Math.round(ms / 60000 / 5) * 5);
   const tN = ITEMS.reduce((a, it) => a + TYP_T[it.t], 0), tC = (CORE_ITEMS.length + sup) * TYP_T.self, tB = BASIC_ITEMS.length * TYP_T.ach;
-  const card = (no, name, sub, rows, tip) => `<article class="dcard"><p class="dcard-no">${no}</p><h2 class="dcard-t">${name}</h2><p class="dcard-sub">${sub}</p>
-    <dl class="dcard-dl">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>${tip ? `<p class="dcard-tip">${tip}</p>` : ''}</article>`;
+  const card = (key, no, name, sub, n, t, rows, tip) => `<article class="dcard dc-${key}">
+    <header class="dcard-h"><svg class="dglyph" viewBox="0 0 56 58" aria-hidden="true">${DGLYPH[key]}</svg><div><p class="dcard-no">${no}</p><h2 class="dcard-t">${name}</h2><p class="dcard-sub">${sub}</p></div></header>
+    <p class="dcard-facts"><span><b>${n}</b>문항</span><span>약 <b>${t}</b>분</span></p>
+    ${rows.map(([k, v]) => `<div class="dcard-row"><p class="dcard-k">${k}</p><p class="dcard-v">${v}</p></div>`).join('')}
+    <p class="dcard-tip">${tip}</p></article>`;
   return `<section class="dcards" aria-label="3종 진단 소개">
-    ${card('진단 1', '직업기초역량진단', '일할 때 어디서나 필요한 기본 능력', [
+    ${card('ncs', '진단 1', '직업기초역량진단', '일할 때 어디서나 필요한 기본 능력', ITEMS.length, mins(tN), [
       ['왜 받나요', '회사나 실습 현장에서 공통으로 쓰는 능력(말하고 쓰기, 숫자 다루기, 문제 해결, 자기 관리, 함께 일하기, 디지털·AI 활용, 직업윤리)이 지금 어느 정도인지 알아봅니다.'],
-      ['무엇을 하나요', `${ITEMS.length}문항입니다. 업무 상황을 읽고 내 수준을 고르거나, "나는 ~한다" 같은 문장에 얼마나 그런지 7칸 중에서 고릅니다.`],
-      ['걸리는 시간', mins(tN)],
+      ['무엇을 하나요', '업무 상황을 읽고 내 수준을 고르거나, "나는 ~한다" 같은 문장에 얼마나 그런지 7칸 중에서 고릅니다.'],
       ['결과는', '7개 영역 21개 능력의 점수로 나오고, 낮은 능력을 채울 교양·비교과 추천과 이수 계획에 쓰입니다.']
     ], '정답을 맞히는 시험이 아닙니다. 잘 보이려 하기보다 평소 내 모습대로 고르는 것이 가장 정확합니다.')}
-    ${card('진단 2', '핵심역량진단', '대학 생활과 사회생활의 태도·성향', [
+    ${card('core', '진단 2', '핵심역량진단', '대학 생활과 사회생활의 태도·성향', CORE_ITEMS.length + sup, mins(tC), [
       ['왜 받나요', '책임감, 목표를 세우고 실천하는 힘, 다른 사람과 어울리는 태도처럼 우리 대학이 키우려는 역량을 확인합니다.'],
-      ['무엇을 하나요', `${CORE_ITEMS.length + sup}문항입니다. 문장을 읽고 "전혀 그렇지 않다"부터 "매우 그렇다"까지 5칸 중 하나를 고릅니다.${sup ? ` 입학 직후에는 전문성·자기주도성을 더 묻는 ${sup}문항이 끝에 붙습니다.` : ''}`],
-      ['걸리는 시간', mins(tC)],
-      ['결과는', '대학 6대 핵심역량(전문성·자기주도성·성실성·창의·융합·의사소통·외국어)으로 정리되어, 강점과 보완할 점, 지도교수 상담에 쓰입니다.']
+      ['무엇을 하나요', `문장을 읽고 "전혀 그렇지 않다"부터 "매우 그렇다"까지 5칸 중 하나를 고릅니다.${sup ? ` 입학 직후에는 전문성·자기주도성을 더 묻는 ${sup}문항이 끝에 붙습니다.` : ''}`],
+      ['결과는', '대학 6대 핵심역량(전문성·자기주도성·성실성·창의·융합·의사소통·외국어)으로 정리되어 강점과 보완할 점, 지도교수 상담에 쓰입니다.']
     ], '정답이 없습니다. 비슷한 내용을 반대로 묻는 문항이 있으니 문장을 끝까지 읽고 솔직하게 답하세요.')}
-    ${card('진단 3', '기초학습역량진단', '대학 공부의 바탕이 되는 국어·수학·영어', [
+    ${card('basic', '진단 3', '기초학습역량진단', '대학 공부의 바탕이 되는 국어·수학·영어', BASIC_ITEMS.length, mins(tB), [
       ['왜 받나요', '전공 수업을 따라가는 데 필요한 읽기·계산·영어 기초 실력을 확인하고, 보충이 필요한 과목을 미리 찾습니다.'],
-      ['무엇을 하나요', `국어·수학·영어 각 20문항, 모두 ${BASIC_ITEMS.length}문항입니다. 보기 4개 중 정답을 고르는 문제이고, 모르면 ⑤ '모르겠다'를 고릅니다.`],
-      ['걸리는 시간', mins(tB)],
+      ['무엇을 하나요', "국어·수학·영어 각 20문항입니다. 보기 4개 중 정답을 고르고, 모르면 ⑤ '모르겠다'를 고릅니다."],
       ['결과는', '과목별 점수와 보충이 필요한 과목이 나오고, 기초학습 지원 프로그램 추천에 쓰입니다.']
-    ], '정답이 있는 문제입니다. 모르는 문제를 찍기보다 \'모르겠다\'를 고르면 내게 맞는 도움을 더 정확히 받을 수 있습니다.')}
+    ], "정답이 있는 문제입니다. 모르는 문제를 찍기보다 '모르겠다'를 고르면 내게 맞는 도움을 더 정확히 받을 수 있습니다.")}
   </section>
   <ul class="dnotes">
     <li><b>성적과 무관합니다</b> 결과는 나에게 맞는 공부와 활동을 찾는 데만 쓰고, 학점이나 평가에 들어가지 않습니다.</li>
@@ -4813,17 +4856,23 @@ function renderIntro() {
     : needRetake ? `최근 응시(${last.date})가 재실시 판정을 받았습니다. 문항을 천천히 읽고 다시 응시해 주세요.`
       : retest ? `입학 직후 진단(${H[0].date})과 같은 능력을 다른 문항(B형)으로 다시 재서 이번 학기 성장을 확인합니다. 점수는 같은 척도로 맞춰 비교합니다.`
         : `${last.label} 진단을 ${last.date}에 마쳤습니다.${isEnd ? '' : ' 학기말 재진단은 학기말에 열립니다.'}`;
+  const dialNote = last ? `${last.label} 결과입니다. 영역마다 0~100점이며, 진단을 다시 받으면 새 결과로 바뀝니다.` : '직업기초역량 7개 영역의 다이얼입니다. 진단을 마치면 영역별 점수가 여기에 그려집니다.';
   $view.innerHTML = `
-    <p class="eyebrow">${esc(state.dept)} · 학적 기준</p>
-    <h1>${title}</h1>
-    <p class="lede">${status}</p>
+    <div class="ihero">
+      <div class="ihero-main">
+        <p class="eyebrow">${esc(state.dept)} · 학적 기준</p>
+        <h1>${title}</h1>
+        <p class="lede">${status}</p>
+        <div class="actions">
+          ${doneNow ? '<button class="btn" data-go="result">결과 보기</button><button class="btn ghost" id="start">다시 응시(시연)</button>' : `<button class="btn" id="start">${retest ? '재진단 시작' : needRetake ? '다시 응시하기' : '진단 시작'}</button>`}
+        </div>
+        <p class="ihero-demo">${opsMode() ? '' : `<button class="linkbtn" id="demo">시연용 응답으로 ${retest ? '재진단' : '결과'} 보기</button>`}<button class="linkbtn" id="demo2">불성실 응답 시연(재실시 판정)</button></p>
+      </div>
+      <figure class="ihero-dial">${dial(last ? last.vals : AREAS.map(() => null), last ? { poly: true } : {})}<figcaption>${dialNote}</figcaption></figure>
+    </div>
     ${diagCardsHtml(retest)}
     ${pgN ? `<div class="resume"><p><b>진행 중인 진단이 있습니다</b> ${pgN} / ${QSEQ.length || ITEMS.length + CORE_ITEMS.length + BASIC_ITEMS.length + (pg.supIds || []).length}문항 응답 · 마지막 저장 ${esc(pg.at || '')}${pg.form === 'B' ? ' · 학기말 B형' : ''}</p><div class="actions"><button class="btn" id="resume">이어서 응시</button><button class="linkbtn" id="discard">처음부터 다시</button></div></div>` : ''}
-    <div class="actions">
-      ${doneNow ? '<button class="btn" data-go="result">결과 보기</button><button class="btn ghost" id="start">다시 응시(시연)</button>' : `<button class="btn" id="start">${retest ? '재진단 시작' : needRetake ? '다시 응시하기' : '진단 시작'}</button>`}
-      ${opsMode() ? '' : `<button class="linkbtn" id="demo">시연용 응답으로 ${retest ? '재진단' : '결과'} 보기</button>`}
-      <button class="linkbtn" id="demo2">불성실 응답 시연(재실시 판정)</button>
-    </div>`;
+    `;
   setDial(last ? last.vals : AREAS.map(() => null), last ? { poly: true } : {}, last ? `${last.label} 결과입니다.` : '직업기초역량 7개 영역의 다이얼입니다. 영역을 마칠 때마다 눈금이 올라갑니다.');
   document.getElementById('start').onclick = () => { newOrder(); resetDiag(); useForm(retest ? 'B' : 'A'); buildQseq(supInDiag(retest) ? supItems().map(x => x.id) : null); state.step = 'quiz'; render(); };
   if (document.getElementById('demo')) document.getElementById('demo').onclick = () => { fillDemo(false, retest); go(retest ? 'growth' : 'result'); if (retest) { state.pendingSnap = false; snapshot(); render(); } };
@@ -12771,7 +12820,7 @@ function render() {
   const u = state.user;
   if (!u) state.step = 'login';
   else if (state.step === 'login' || !groupOf(state.step) && !['quiz', 'retake', 'needdiag', 'ncsurvey', 'supsurvey'].includes(state.step)) state.step = HOME[u.role];
-  document.body.classList.toggle('wide', !u || !['intro', 'quiz'].includes(state.step));
+  document.body.classList.toggle('wide', !u || state.step !== 'quiz');
   document.body.classList.toggle('authpage', !u);
   if (u && opsMode()) state.phase = phaseBySchedule();
   document.body.classList.toggle('no-demo', !demoOn());
