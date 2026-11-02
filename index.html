@@ -77,6 +77,12 @@ p { margin: 0 0 14px; }
 .lede { font-size: 18px; max-width: 34em; }
 .facts { list-style: none; padding: 0; margin: 28px 0; max-width: 34em; }
 /* 3종 진단 소개 카드 */
+/* 개인정보 동의 */
+.consent { max-width: 920px; } .consent h2 { font-size: 18px; margin: 22px 0 8px; }
+.cs-all { display: flex; gap: 8px; align-items: center; padding: 12px 14px; border: 1.5px solid var(--signal); border-radius: 12px; background: var(--signal-soft); margin: 14px 0 4px; font-size: 15.5px; }
+.cs-item { font-size: 15px; margin: 8px 0 2px; } .cs-tbl td { vertical-align: top; text-align: left !important; font-size: 14px; } .cs-tbl td:first-child { white-space: nowrap; }
+.cs-opt { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; } .cs-opt li { padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); } .cs-opt .meta { margin: 2px 0 0 26px; }
+.adv-st { margin: -4px 0 8px; } .home-foot { grid-column: 1 / -1; margin: 0; text-align: right; }
 /* 목표 직무 캐릭터(준비도 막대 위) */
 .jw-stage { position: relative; height: 60px; margin: 6px 0 2px; }
 .jw { position: absolute; bottom: -2px; left: 0; width: 52px; height: 52px; transform: translateX(var(--tx, -50%)); cursor: pointer; perspective: 200px; }
@@ -6544,6 +6550,7 @@ function addToPlan(name) {
   return true;
 }
 async function checkAI(force) {
+  if (state.user && state.user.role === 'student' && consentNow() && consentNow().ai === false) { state.aiMode = false; state.aiAt = Date.now(); aiDot(); return false; }
   /* 연결됨은 기억하고, 연결 안 됨은 30초 뒤 다시 확인(키를 나중에 넣거나 서버가 늦게 깨어날 때). force면 바로 다시 확인 */
   if (!force && (state.aiMode === true || (state.aiMode === false && Date.now() - (state.aiAt || 0) < 30000))) return state.aiMode;
   try { const r = await aiFetch('health'), j = r.ok ? await r.json() : {}; state.aiMode = r.ok && j.ai === true; state.aiModel = j.model || state.aiModel; }
@@ -6991,14 +6998,15 @@ async function fillRealStudents(boxId) {
   const flagged = rows.filter(x => why(x).length);
   box.innerHTML = rows.length ? `<p class="realsum">${flagged.length ? `실제 이용 학생 중 <b>${flagged.length}명</b>이 상담 권장 대상입니다: ${flagged.slice(0, 5).map(x => `${esc(x.name)}(${why(x).join('·')})`).join(', ')}` : '실제 이용 학생 중 상담 권장 대상은 없습니다.'}</p><div class="scrollx"><table class="tbl"><thead><tr><th>학번</th><th>이름</th><th>학과</th><th>진단</th><th>최근 결과</th><th>향상도</th><th>신뢰성</th><th>이수 계획</th><th>자기주도 실천</th><th>조기 경보</th><th class="no-print">상담</th></tr></thead><tbody>${rows.map(x => {
     const g = x.n >= 2 && x.first && x.last ? mean(x.last.vals) - mean(x.first.vals) : null;
-    return `<tr><td>${x.no.slice(0, 4)}****</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td>${x.n}회${x.inProgress ? ' · <span class="meta">응시 중</span>' : ''}</td><td>${x.last ? `${Math.round(mean(x.last.vals))}점 <span class="meta">${x.last.label}</span>` : '-'}</td><td class="${g !== null && g < ((state.alertStd || {}).drop || 0) ? 'low' : ''}">${g === null ? '-' : (g > 0 ? '+' : '') + g.toFixed(1)}</td><td>${x.last ? x.last.verdict : '-'}</td><td>${x.plan ? x.plan + '과목' : '없음'}</td><td class="${x.tt && x.tt.lowStreak >= 2 ? 'low' : ''}">${x.tt && (x.tt.rate != null || x.tt.week) ? `${x.tt.rate != null ? `${x.tt.rate}%` : ''}${x.tt.lowStreak >= 2 ? ' · 상담 권장' : ''}${x.tt.week ? `<br><span class="meta">이번 주 ${x.tt.week.items.filter(i => i.done).length}/${x.tt.week.items.length}${x.tt.week.refl ? ' · 돌아보기 완료' : ''}</span>` : ''} <button class="linkbtn no-print" data-selfd="${x.no}" type="button">자세히</button>` : '<span class="meta">계획 없음</span>'}</td><td>${(rk => `${riskChip(rk.score)}${rk.why.length ? `<br><span class="meta">${rk.why.join(' · ')}</span>` : ''}`)(riskOfReal(x))}</td><td class="no-print">${creqCell(x)}</td></tr>`;
+    return `<tr><td>${x.no.slice(0, 4)}****</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td>${x.n}회${x.inProgress ? ' · <span class="meta">응시 중</span>' : ''}</td><td>${x.last ? `${Math.round(mean(x.last.vals))}점 <span class="meta">${x.last.label}</span>` : '-'}</td><td class="${g !== null && g < ((state.alertStd || {}).drop || 0) ? 'low' : ''}">${g === null ? '-' : (g > 0 ? '+' : '') + g.toFixed(1)}</td><td>${x.last ? x.last.verdict : '-'}</td><td>${x.plan ? x.plan + '과목' : '없음'}</td><td class="${x.tt && x.tt.lowStreak >= 2 ? 'low' : ''}">${x.tt && (x.tt.rate != null || x.tt.week) ? `${x.tt.rate != null ? `${x.tt.rate}%` : ''}${x.tt.lowStreak >= 2 ? ' · 상담 권장' : ''}${x.tt.week ? `<br><span class="meta">이번 주 ${x.tt.week.items.filter(i => i.done).length}/${x.tt.week.items.length}${x.tt.week.refl ? ' · 돌아보기 완료' : ''}</span>` : ''} <button class="linkbtn no-print" data-selfd="${x.no}" type="button">자세히</button>` : `<span class="meta">계획 없음</span>${x.advnote ? ` <button class="linkbtn no-print" data-selfd="${x.no}" type="button">공유 요약</button>` : ''}`}</td><td>${(rk => `${riskChip(rk.score)}${rk.why.length ? `<br><span class="meta">${rk.why.join(' · ')}</span>` : ''}`)(riskOfReal(x))}</td><td class="no-print">${creqCell(x)}</td></tr>`;
   }).join('')}</tbody></table></div><div id="creqbox"></div><p class="meta">${state.user.role === 'faculty' ? `${esc(state.dept)} 학생만 보입니다. ` : ''}열람 기록이 남습니다. '상담 요청'을 누르면 희망 일시 후보를 보내고, 학생이 고른 일시가 이 표에 표시됩니다.</p>` : `<p class="meta">아직 플랫폼을 이용한 학생이 없습니다.${state.user.role === 'faculty' ? ` (${esc(state.dept)})` : ''}</p>`;
   /* 자기주도 학습 자세히: 이번 주 계획·체크, 최근 돌아보기, 누적 */
   box.querySelectorAll('[data-selfd]').forEach(b => b.onclick = () => {
     const x = rows.find(y => y.no === b.dataset.selfd), t = x.tt || {}, cb = document.getElementById('creqbox'), R = { good: '잘했어요', ok: '보통이에요', bad: '아쉬워요' };
     cb.innerHTML = `<section class="selfd"><header><b>${esc(x.name)} · 자기주도 학습</b><button class="linkbtn" id="selfx" type="button">닫기</button></header>
       ${t.sum ? `<div class="ck-sum">${Object.values(t.sum).map(s2 => `<div><span>${s2.t}</span><b>${s2.done}<small>회</small></b><em>${s2.h}시간${s2.plan ? ` · 계획 ${s2.plan}회 중 ${s2.rate}%` : ''}</em></div>`).join('')}</div>` : ''}
-      <h4>이번 주 계획과 실천</h4>${t.week ? `<ul class="ckl">${t.week.items.map(i => `<li class="${i.done ? 'is-done' : ''}">${i.done ? '✓' : '○'} <b>${DAYS[i.d]} ${pStart(i.s)}</b> ${esc(i.n)} <span class="meta">${esc(i.area || '')}</span></li>`).join('')}</ul>` : '<p class="meta">이번 주 계획을 아직 세우지 않았습니다.</p>'}
+      <h4>학생이 공유한 진단 해석 요약</h4>${x.advnote && x.advnote.note ? `<p class="advnote">${esc(x.advnote.note)}</p>` : `<p class="meta">${x.consent && x.consent.share ? '아직 공유된 요약이 없습니다(학생이 AI 분석 화면을 열면 저장됨).' : '학생이 지도교수 공유에 동의하지 않았습니다. 진단 점수 요약만 볼 수 있습니다.'}</p>`}
+      <h4>이번 주 계획과 실천</h4>${t.week ? `<ul class="ckl">${t.week.items.map(i => `<li class="${i.done ? 'is-done' : ''}">${i.done ? '✓' : '○'} <b>${DAYS[i.d]} ${pStart(i.s)}</b> ${esc(i.n)} <span class="meta">${esc(i.area || '')}</span></li>`).join('')}</ul>` : `<p class="meta">${x.consent && x.consent.share ? '이번 주 계획을 아직 세우지 않았습니다.' : '학생이 지도교수 공유에 동의하지 않아 계획 세부는 보이지 않습니다.'}</p>`}
       <h4>최근 돌아보기</h4>${t.lastRefl ? `<p>${R[t.lastRefl.s] || ''}${t.lastRefl.memo ? ` · "${esc(t.lastRefl.memo)}"` : ''} <span class="meta">${esc(t.lastRefl.w)}</span></p>` : '<p class="meta">돌아보기 기록이 없습니다.</p>'}
       <p class="meta">최근 4주: ${(t.weeks || []).map(w => w.total ? `${w.done}/${w.total}` : '-').join(' · ')}${t.lowStreak >= 2 ? ' · 2주 연속 50% 미만' : ''}</p></section>`;
     document.getElementById('selfx').onclick = () => { cb.innerHTML = ''; };
@@ -7422,11 +7430,14 @@ function renderAnalysis() {
     ${panelH('p-pri', '보완 우선순위와 처방', '점수 부족 + 대학 평균 대비 + 목표 직무 + 기초학습 연계로 순위', `<div class="pri-grid">${F.priorities.length ? F.priorities.map((p, i) => `<div class="pri"><p class="pri-no">${i + 1}</p><h3>${p.s} <span class="meta">${p.v}점</span></h3><ul class="tips">${p.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>
         ${p.course ? `<p><b>교양</b> ${p.course.n} <span class="meta">${p.course.term}</span> <button class="btn ghost sm" data-addplan="${encodeURIComponent(p.course.n)}" ${plan && plan.items.some(x => x.n === p.course.n) ? 'disabled' : ''}>${plan && plan.items.some(x => x.n === p.course.n) ? '계획에 있음' : '계획에 넣기'}</button></p>` : ''}
         ${p.nc ? `<p><b>비교과</b> ${p.nc}</p>` : ''}</div>`).join('') : '<p class="meta">보완이 급한 능력이 없습니다. 융합과정으로 전공 역량을 넓혀 보세요.</p>'}</div>`)}
-    ${panelH('p-adv', '지도교수 공유 요약', '학생 동의 후 지도교수 상담 화면에 표시', `<p class="advnote">${esc(T.advisor_note)}</p>
+    ${panelH('p-adv', '지도교수 공유 요약', (consentNow() || {}).share ? '지도교수 공유에 동의함 · 상담 화면에 표시됨' : '지도교수 공유에 동의하지 않아 표시되지 않음', `<p class="advnote">${esc(T.advisor_note)}</p>
+      <p class="meta adv-st">${(consentNow() || {}).share ? '이 요약이 지도교수 상담 화면에 보입니다.' : '지도교수는 진단 점수 요약만 봅니다. 이 요약까지 보여 주려면 지도교수 공유에 동의하세요.'} <button class="linkbtn" data-go="consent" type="button">동의 관리</button></p>
       <div class="actions no-print"><button class="btn ghost sm" id="acopy">요약 복사</button>${state.aiMode ? `<button class="btn ghost sm" id="aredo">AI로 다시 해석</button>` : ''}<span class="meta" id="amsg" aria-live="polite"></span></div>
       ${dataPeek(F)}`)}
   </div>`;
   $view.querySelectorAll('[data-addplan]').forEach(b => b.onclick = () => { if (addToPlan(decodeURIComponent(b.dataset.addplan))) { savePlan(); renderAnalysis(); } });
+  /* 지도교수 공유에 동의했으면 요약을 저장(바뀐 때만) */
+  if ((consentNow() || {}).share && T.advisor_note && (sGet('user', 'advshare') || {}).note !== T.advisor_note) sSet('user', 'advshare', { note: T.advisor_note, at: localTime() });
   document.getElementById('acopy').onclick = () => { try { navigator.clipboard.writeText(T.advisor_note); document.getElementById('amsg').textContent = '복사했습니다.'; } catch (e) { document.getElementById('amsg').textContent = '복사할 수 없는 환경입니다.'; } };
   const redo = document.getElementById('aredo');
   if (redo) redo.onclick = () => { delete state.aiRes[key]; ensureAI(key, 'student', F, 'analysis'); };
@@ -8588,7 +8599,7 @@ async function aiFetch(op, body) {
    로그인할 때 한 번 불러오고, 바꿀 때마다 저장합니다.
    ====================================================================== */
 const STORE = { user: {}, org: {}, pending: 0, failed: false };
-const USER_KEYS = ['hist', 'seen', 'plan', 'progress', 'chat', 'tt', 'creq', 'ready', 'ncpp', 'sup'], ORG_KEYS = ['ncperf', 'bank', 'settings', 'counsel', 'grades', 'notify_tpl', 'audit', 'outbox', 'catalog', 'specs', 'mapping', 'evals', 'ncsmap', 'mapdraft', 'attend'];
+const USER_KEYS = ['hist', 'seen', 'plan', 'progress', 'chat', 'tt', 'creq', 'ready', 'ncpp', 'sup', 'consent', 'advshare'], ORG_KEYS = ['ncperf', 'bank', 'settings', 'counsel', 'grades', 'notify_tpl', 'audit', 'outbox', 'catalog', 'specs', 'mapping', 'evals', 'ncsmap', 'mapdraft', 'attend'];
 const localKey = (scope, key) => (scope === 'org' ? `store:org:${key}` : `store:u:${state.user ? state.user.no || state.user.role : 'guest'}:${key}`);
 async function storeLoad() {
   STORE.user = {}; STORE.org = {}; STORE.failed = false; state.myGrades = null;
@@ -8647,7 +8658,8 @@ function localStudents() {
     const slim = x => (x ? { dept: x.dept, term: x.term, label: x.label, date: x.date, form: x.form, end: x.end, vals: x.vals, core: x.core, basic: x.basic, verdict: x.verdict } : null);
     return { no: r.no, name: r.name, dept: r.dept, email: !!users[r.no], n: h.length, first: slim(h[0]), last: slim(h[h.length - 1]), plan: p && p.items ? p.items.length : 0, inProgress: !!pg, tt: (lsGet(`store:u:${r.no}:tt`) || {}).stat || null, creq: lsGet(`store:u:${r.no}:creq`) };
   }).filter(Boolean).filter(x => state.user.role !== 'faculty' || x.dept === state.user.dept)
-    .map(x => ({ ...x, grades: ((sGet('org', 'grades') || {}).rows || {})[x.no] || null, attend: ((sGet('org', 'attend') || {}).rows || {})[x.no] || null }));
+    .map(x => { const cs = lsGet(`store:u:${x.no}:consent`), sh = !!(cs && cs.share), tt = x.tt && !sh ? (({ week, lastRefl, ...r }) => r)(x.tt) : x.tt;
+      return { ...x, tt, consent: cs ? { share: sh, at: cs.at } : null, advnote: sh ? lsGet(`store:u:${x.no}:advshare`) : null, grades: ((sGet('org', 'grades') || {}).rows || {})[x.no] || null, attend: ((sGet('org', 'attend') || {}).rows || {})[x.no] || null }; });
 }
 
 /* ======================================================================
@@ -9880,6 +9892,53 @@ async function authInit() {
 }
 const HOME = { student: 'home', faculty: 'fhome', admin: 'ahome' };
 const histKey = () => `platform_hist:${state.user ? state.user.no || state.user.role : 'guest'}`;
+/* ---------- 개인정보 수집·이용·활용 동의: 학생 첫 로그인 때(운영 서버) 받고, 언제든 '동의 관리'에서 바꿈 ----------
+   저장: user_kv 'consent' = { ver, at, req: true, share, ai, notify, log: [{ at, share, ai, notify }] }. 내용이 바뀌면 ver를 올려 다시 받음 */
+const CONSENT_VER = '2026-11';
+const CONSENT_REQ = [
+  ['학사 기본정보 이용', '학번·성명·학과·학년·반(학사정보시스템에서 연동)', '본인 확인, 학과·학년별 진단 운영', '졸업 후 1년'],
+  ['진단·설계 기록 수집·이용', '3종 진단 응답과 결과, 이수 계획, 시간표, 자기주도 학습 계획·실천 기록, 이용 기록', '결과 해석, 교과·비교과 추천, 학과별 집계(개인을 알아볼 수 없게)와 교육과정 개선, 지도교수 상담 지원(진단 점수 요약)', '졸업 후 1년'],
+  ['학업 정보 연계 이용', '이수 결과(학점), 출결', '향상도·효과성 분석, 이탈·부진 조기 경보와 학업 지원', '졸업 후 1년']
+];
+const CONSENT_OPT = [
+  ['share', '지도교수 공유', 'AI 진단 해석 요약, 자기주도 학습 계획·돌아보기 메모를 지도교수 상담 화면에 보여 줍니다. 동의하지 않으면 지도교수는 진단 점수 요약만 봅니다.'],
+  ['ai', 'AI 분석 이용', '이름·학번을 뺀 점수와 과목 정보를 AI 서버로 보내 결과 해석·추천·상담 문장을 만듭니다. 동의하지 않으면 같은 근거로 규칙 기반 문장을 보여 줍니다.'],
+  ['notify', '알림 수신', '진단 일정, 비교과 개설, 상담 요청을 이메일·앱 알림으로 받습니다.']
+];
+const consentNow = () => sGet('user', 'consent');
+const consentOk = () => { const c = consentNow(); return !!(c && c.req && c.ver === CONSENT_VER); };
+/* 운영 서버(클라우드·학교 서버)에서만 첫 로그인 때 막고 받음. 파일로 연 시연은 ?consent=1일 때만 */
+const needConsent = () => !!(state.user && state.user.role === 'student' && !consentOk() && (AUTH.mode === 'supa' || AUTH.mode === 'server' || /[?&]consent=1/.test(location.search)));
+function renderConsent() {
+  const c = consentNow() || {}, first = !consentOk(), D = state.cdraft = state.cdraft || { req: first ? false : true, share: first ? false : !!c.share, ai: first ? false : !!c.ai, notify: first ? false : !!c.notify };
+  const all = D.req && CONSENT_OPT.every(([k]) => D[k]);
+  $view.innerHTML = `<section class="block consent">
+    <p class="eyebrow">${first ? '처음 로그인' : '내 정보 · 동의 관리'}</p>
+    <h1>${first ? '플랫폼을 시작하기 전에 개인정보 이용에 동의해 주세요' : '개인정보 수집·이용·활용 동의'}</h1>
+    <p class="lede">인하공업전문대학 대학 생활 설계 플랫폼은 진단 결과와 학업 기록으로 나에게 맞는 공부와 활동을 추천합니다. 진단 결과는 성적이나 평가에 쓰지 않습니다.</p>
+    <label class="chk cs-all"><input type="checkbox" id="csall" ${all ? 'checked' : ''}> <b>아래 내용에 모두 동의합니다</b> <span class="meta">(필수·선택 포함)</span></label>
+    <h2>필수 동의</h2>
+    <div class="scrollx"><table class="tbl cs-tbl"><thead><tr><th>항목</th><th>수집·이용 정보</th><th>목적</th><th>보유 기간</th></tr></thead><tbody>${CONSENT_REQ.map(([t, a, b, d]) => `<tr><td><b>${t}</b></td><td>${a}</td><td>${b}</td><td>${d}</td></tr>`).join('')}</tbody></table></div>
+    <label class="chk cs-item"><input type="checkbox" id="csreq" ${D.req ? 'checked' : ''}> <b>[필수]</b> 위 개인정보 수집·이용에 동의합니다.</label>
+    <p class="meta">필수 항목에 동의하지 않으면 플랫폼을 이용할 수 없습니다. 동의를 거부할 권리가 있으며, 거부해도 학사상 불이익은 없습니다.</p>
+    <h2>선택 동의</h2>
+    <ul class="cs-opt">${CONSENT_OPT.map(([k, t, d]) => `<li><label class="chk cs-item"><input type="checkbox" data-cso="${k}" ${D[k] ? 'checked' : ''}> <b>[선택] ${t}</b></label><p class="meta">${d}</p></li>`).join('')}</ul>
+    <p class="meta">동의 내용은 언제든 '동의 관리'에서 바꾸거나 철회할 수 있습니다. 문의: 교수학습지원센터.${c.at ? ` 최근 동의: ${esc(c.at)}` : ''}</p>
+    <div class="actions"><button class="btn" id="cssave" type="button" ${D.req ? '' : 'disabled'}>${first ? '동의하고 시작하기' : '동의 내용 저장'}</button>${first ? '<button class="btn ghost" id="csout" type="button">동의하지 않고 나가기</button>' : '<button class="linkbtn" data-go="home" type="button">돌아가기</button>'}</div>
+  </section>`;
+  const q = id => document.getElementById(id), re = () => renderConsent();
+  q('csall').onchange = e => { const v = e.target.checked; D.req = v; CONSENT_OPT.forEach(([k]) => { D[k] = v; }); re(); };
+  q('csreq').onchange = e => { D.req = e.target.checked; re(); };
+  $view.querySelectorAll('[data-cso]').forEach(x => x.onchange = () => { D[x.dataset.cso] = x.checked; re(); });
+  q('cssave').onclick = () => {
+    const rec = { at: localTime(), share: !!D.share, ai: !!D.ai, notify: !!D.notify };
+    sSet('user', 'consent', { ver: CONSENT_VER, req: true, ...rec, log: [...((c.log) || []).slice(-19), rec] });
+    if (!D.share) sSet('user', 'advshare', null);
+    if (!D.ai) { state.aiMode = false; state.aiAt = Date.now(); }
+    state.cdraft = null; toast(first ? '동의를 저장했습니다. 시작합니다.' : '동의 내용을 저장했습니다.'); go(HOME.student);
+  };
+  if (q('csout')) q('csout').onclick = async () => { state.cdraft = null; toast('필수 동의가 없으면 이용할 수 없습니다. 언제든 다시 로그인해 동의할 수 있습니다.'); await tourLogout(); };
+}
 async function enterUser(u) {
   { const t = document.getElementById('toast'); if (t) t.classList.remove('on'); } /* 이전 사용자의 안내가 남지 않게 */
   state.user = u; state.bank = null; EQUATE = null;
@@ -13297,6 +13356,7 @@ function renderHome() {
     ${acadUpcomingHtml()}
     ${panelH('p-hck', '이번 주 자기주도 학습', '계획 · 실천 · 돌아보기 · 누적', checkinHtml())}
     ${panelH('p-hgr', '진단 기록', `${H.length}회`, H.length ? `<table class="tbl"><thead><tr><th>회차</th><th>날짜</th><th>직업기초</th><th>신뢰성</th></tr></thead><tbody>${H.map(h => `<tr><td>${h.label}</td><td>${h.date}</td><td>${Math.round(mean(h.vals))}</td><td>${h.verdict}</td></tr>`).join('')}</tbody></table>` : '<p class="meta">기록이 없습니다.</p>')}
+    <p class="meta home-foot no-print">내 개인정보 수집·이용·활용 동의 내용을 확인하거나 바꿀 수 있습니다. <button class="linkbtn" data-go="consent" type="button">동의 관리</button></p>
   </div>`;
 }
 
@@ -13412,7 +13472,8 @@ function demoFill() {
 function render() {
   const u = state.user;
   if (!u) state.step = 'login';
-  else if (state.step === 'login' || !groupOf(state.step) && !['quiz', 'retake', 'needdiag', 'ncsurvey', 'supsurvey'].includes(state.step)) state.step = HOME[u.role];
+  else if (needConsent()) state.step = 'consent';
+  else if (state.step === 'login' || !groupOf(state.step) && !['quiz', 'retake', 'needdiag', 'ncsurvey', 'supsurvey', 'consent'].includes(state.step)) state.step = HOME[u.role];
   document.body.classList.toggle('wide', true);
   document.body.classList.toggle('authpage', !u);
   if (u && opsMode()) state.phase = phaseBySchedule();
@@ -13421,7 +13482,7 @@ function render() {
   watchTerms(); closeHelp();
   document.body.classList.toggle('dash', ['home', 'fhome', 'ahome', 'result', 'analysis', 'plan', 'planmap', 'timetable', 'gap', 'recs', 'roadmap', 'studio', 'counsel', 'career', 'sections', 'advisor', 'diagops', 'grades', 'gain', 'impact', 'itembank', 'forms', 'settings', 'integration', 'majortt', 'electt', 'ncopen', 'notify', 'auditlog', 'axkpi', 'specmap', 'report', 'ask', 'itemqa', 'portfolio', 'risk', 'evals', 'deptdash', 'fdept', 'counselstat'].includes(state.step));
   renderNav();
-  const R = { followup: renderFollowup, ffollowup: renderFollowup, ncprepost: renderNcPrePost, ncsurvey: renderNcSurvey, supsurvey: renderSupSurvey, stulookup: renderStuLookup, fstulookup: renderStuLookup, partic: renderPartic, classprof: renderClassProf, dbreak: renderDBreak, jobkit: renderJobKit, counselstat: renderCounselStat, portfolio: renderPortfolio, risk: renderRisk, evals: renderEvals, deptdash: renderDeptDash, fdept: renderDeptDash, login: renderLogin, home: renderHome, fhome: renderFHome, ahome: renderAHome, needdiag: renderNeedDiag, intro: renderIntro, quiz: renderQuiz, coverage: renderCoverage, roadmap: renderRoadmap,
+  const R = { consent: renderConsent, followup: renderFollowup, ffollowup: renderFollowup, ncprepost: renderNcPrePost, ncsurvey: renderNcSurvey, supsurvey: renderSupSurvey, stulookup: renderStuLookup, fstulookup: renderStuLookup, partic: renderPartic, classprof: renderClassProf, dbreak: renderDBreak, jobkit: renderJobKit, counselstat: renderCounselStat, portfolio: renderPortfolio, risk: renderRisk, evals: renderEvals, deptdash: renderDeptDash, fdept: renderDeptDash, login: renderLogin, home: renderHome, fhome: renderFHome, ahome: renderAHome, needdiag: renderNeedDiag, intro: renderIntro, quiz: renderQuiz, coverage: renderCoverage, roadmap: renderRoadmap,
     committee: renderCommittee, growth: renderGrowth, impact: renderImpact, plan: renderPlan, studio: renderStudio, counsel: renderCounsel, career: renderCareer, sections: renderSections,
     advisor: renderAdvisor, diagops: renderDiagOps, grades: renderGrades, attend: renderAttend, analysis: renderAnalysis, timetable: renderTimetable, gap: renderGap, recs: renderRecs, planmap: renderPlanMap, gain: renderGain, itembank: renderItemBank, forms: renderForms, settings: renderSettings, integration: renderIntegration, majortt: renderMajorTT, electt: renderElectTT, ncopen: renderNcOpen, notify: renderNotify, auditlog: renderAudit, axkpi: renderAxKpi, specmap: renderSpecMap, report: renderReport, ask: renderAsk, itemqa: renderItemQA, result: renderResult };
   const ph = document.getElementById('pagehead'); if (ph) ph.innerHTML = u ? crumbHtml() + viewSwitchHtml() : '';
