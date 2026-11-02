@@ -76,6 +76,20 @@ h2 { font-size: 22px; letter-spacing: -0.02em; margin: 0 0 12px; font-weight: 70
 p { margin: 0 0 14px; }
 .lede { font-size: 18px; max-width: 34em; }
 .facts { list-style: none; padding: 0; margin: 28px 0; max-width: 34em; }
+/* 3종 진단 소개 카드 */
+.dcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin: 26px 0 14px; }
+.dcard { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 14px; display: flex; flex-direction: column; }
+.dcard-no { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--signal, var(--ink)); }
+.dcard-t { margin: 2px 0 0; font-size: 19px; line-height: 1.3; }
+.dcard-sub { margin: 2px 0 10px; color: var(--muted); font-size: 14px; }
+.dcard-dl { margin: 0; display: grid; gap: 8px; flex: 1; }
+.dcard-dl dt { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.dcard-dl dd { margin: 1px 0 0; font-size: 14px; line-height: 1.55; word-break: keep-all; }
+.dcard-tip { margin: 12px 0 0; padding: 9px 11px; border-radius: 8px; background: var(--paper); font-size: 13.5px; line-height: 1.5; word-break: keep-all; }
+.dnotes { list-style: none; padding: 0; margin: 0 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+@media (max-width: 640px) { .dnotes { grid-template-columns: 1fr; } }
+.dnotes li { font-size: 14px; line-height: 1.5; color: var(--muted); padding: 8px 0; border-top: 1px solid var(--line); word-break: keep-all; }
+.dnotes b { display: block; color: var(--ink); }
 .facts li { padding: 10px 0; border-top: 1px solid var(--line); }
 .facts li:last-child { border-bottom: 1px solid var(--line); }
 .facts b { font-weight: 700; }
@@ -1579,7 +1593,7 @@ body.no-demo .demostrip .phase { display: none !important; }
 @media print { .pmap { grid-auto-flow: row; } .pnode { break-inside: avoid; } }
 .p-grad { grid-column: span 12; }
 /* v17: 관리자 전공 시간표 */
-.p-mtsel { grid-column: span 12; } .p-mtgrid { grid-column: span 7; } .p-mtlist { grid-column: span 5; }
+.p-mtsel { grid-column: span 12; } .p-mtgrid { grid-column: span 6; } .p-mtlist { grid-column: span 6; }
 .mt-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 12px; }
 .mt-tools label:not(.btn) { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
 .mt-tools select, .mt-add input, .mt-add select, .mt-tbl input, .mt-tbl select { font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 8px; }
@@ -1594,6 +1608,12 @@ body.no-demo .demostrip .phase { display: none !important; }
 .mt-add h3 { flex-basis: 100%; margin: 0; }
 .mt-add label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
 .mt-add input { width: 10em; }
+/* 과목 추가: 과목명·요일·시작·시수·학점·추가를 한 줄로 */
+.mt-add { display: grid; grid-template-columns: minmax(6em, 1fr) repeat(4, auto) auto; gap: 6px; }
+.mt-add h3, .mt-add .mt-crnote { grid-column: 1 / -1; }
+.mt-add input { width: 100%; min-width: 0; box-sizing: border-box; }
+.mt-add input, .mt-add select { font-size: 13px; padding: 5px 4px; } .mt-add label { font-size: 12px; } .mt-add .btn { white-space: nowrap; }
+@media (max-width: 640px) { .mt-add { grid-template-columns: 1fr 1fr 1fr; } .mt-add label:first-of-type { grid-column: 1 / -1; } }
 @media (max-width: 1000px) { .p-mtgrid, .p-mtlist { grid-column: 1 / -1; } }
 .tt-term select { font: inherit; font-size: 14px; padding: 3px 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); color: var(--ink); }
 .p-rlib .pbody > .meta:first-child, .p-rmic .pbody > .meta:first-child, .p-rnc .pbody > .meta:first-child { min-height: 3.2em; margin-bottom: 6px; }
@@ -4742,6 +4762,40 @@ function setDial(vals, opts, note) {
 /* ---------- 화면 ---------- */
 const $view = document.getElementById('view');
 
+/* 3종 진단 소개 카드: 진단을 처음 받는 학생이 무엇을·왜·어떻게 하는지 미리 알 수 있게(목적·내용·방법·시간·결과 활용) */
+function diagCardsHtml(retest) {
+  const sup = supInDiag(retest) ? supItems().length : 0;
+  const mins = ms => `약 ${Math.max(5, Math.round(ms / 60000 / 5) * 5)}분`;
+  const tN = ITEMS.reduce((a, it) => a + TYP_T[it.t], 0), tC = (CORE_ITEMS.length + sup) * TYP_T.self, tB = BASIC_ITEMS.length * TYP_T.ach;
+  const card = (no, name, sub, rows, tip) => `<article class="dcard"><p class="dcard-no">${no}</p><h2 class="dcard-t">${name}</h2><p class="dcard-sub">${sub}</p>
+    <dl class="dcard-dl">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>${tip ? `<p class="dcard-tip">${tip}</p>` : ''}</article>`;
+  return `<section class="dcards" aria-label="3종 진단 소개">
+    ${card('진단 1', '직업기초역량진단', '일할 때 어디서나 필요한 기본 능력', [
+      ['왜 받나요', '회사나 실습 현장에서 공통으로 쓰는 능력(말하고 쓰기, 숫자 다루기, 문제 해결, 자기 관리, 함께 일하기, 디지털·AI 활용, 직업윤리)이 지금 어느 정도인지 알아봅니다.'],
+      ['무엇을 하나요', `${ITEMS.length}문항입니다. 업무 상황을 읽고 내 수준을 고르거나, "나는 ~한다" 같은 문장에 얼마나 그런지 7칸 중에서 고릅니다.`],
+      ['걸리는 시간', mins(tN)],
+      ['결과는', '7개 영역 21개 능력의 점수로 나오고, 낮은 능력을 채울 교양·비교과 추천과 이수 계획에 쓰입니다.']
+    ], '정답을 맞히는 시험이 아닙니다. 잘 보이려 하기보다 평소 내 모습대로 고르는 것이 가장 정확합니다.')}
+    ${card('진단 2', '핵심역량진단', '대학 생활과 사회생활의 태도·성향', [
+      ['왜 받나요', '책임감, 목표를 세우고 실천하는 힘, 다른 사람과 어울리는 태도처럼 우리 대학이 키우려는 역량을 확인합니다.'],
+      ['무엇을 하나요', `${CORE_ITEMS.length + sup}문항입니다. 문장을 읽고 "전혀 그렇지 않다"부터 "매우 그렇다"까지 5칸 중 하나를 고릅니다.${sup ? ` 입학 직후에는 전문성·자기주도성을 더 묻는 ${sup}문항이 끝에 붙습니다.` : ''}`],
+      ['걸리는 시간', mins(tC)],
+      ['결과는', '대학 6대 핵심역량(전문성·자기주도성·성실성·창의·융합·의사소통·외국어)으로 정리되어, 강점과 보완할 점, 지도교수 상담에 쓰입니다.']
+    ], '정답이 없습니다. 비슷한 내용을 반대로 묻는 문항이 있으니 문장을 끝까지 읽고 솔직하게 답하세요.')}
+    ${card('진단 3', '기초학습역량진단', '대학 공부의 바탕이 되는 국어·수학·영어', [
+      ['왜 받나요', '전공 수업을 따라가는 데 필요한 읽기·계산·영어 기초 실력을 확인하고, 보충이 필요한 과목을 미리 찾습니다.'],
+      ['무엇을 하나요', `국어·수학·영어 각 20문항, 모두 ${BASIC_ITEMS.length}문항입니다. 보기 4개 중 정답을 고르는 문제이고, 모르면 ⑤ '모르겠다'를 고릅니다.`],
+      ['걸리는 시간', mins(tB)],
+      ['결과는', '과목별 점수와 보충이 필요한 과목이 나오고, 기초학습 지원 프로그램 추천에 쓰입니다.']
+    ], '정답이 있는 문제입니다. 모르는 문제를 찍기보다 \'모르겠다\'를 고르면 내게 맞는 도움을 더 정확히 받을 수 있습니다.')}
+  </section>
+  <ul class="dnotes">
+    <li><b>성적과 무관합니다</b> 결과는 나에게 맞는 공부와 활동을 찾는 데만 쓰고, 학점이나 평가에 들어가지 않습니다.</li>
+    <li><b>입학 직후와 학기말, 두 번 받습니다</b> 학기말에는 같은 능력을 다른 문항으로 다시 재서 한 학기 동안 얼마나 성장했는지 비교합니다.</li>
+    <li><b>나눠서 받아도 됩니다</b> 답은 자동으로 저장됩니다. 한 진단을 마치고 쉬었다가 '진단'에서 이어서 받으세요.</li>
+    <li><b>성의 있게 답해 주세요</b> 너무 빨리 넘기거나 한 번호만 계속 고르면 결과를 믿기 어려워 다시 응시하도록 안내합니다.</li>
+  </ul>`;
+}
 function renderIntro() {
   const H = state.history || [], last = H[H.length - 1], isEnd = state.phase === 'end';
   const retest = isEnd && H.length && !H.some(h => h.end);
@@ -4757,13 +4811,7 @@ function renderIntro() {
     <p class="eyebrow">${esc(state.dept)} · 학적 기준</p>
     <h1>${title}</h1>
     <p class="lede">${status}</p>
-    <ul class="facts">
-      <li><b>직업기초역량진단</b> 직업기초진단검사 137문항(선택형 23 · 척도형 114, 7점 척도)과 2026 NCS 표준 신설 하위능력 [AI 신규] 20문항 · 10개 요인과 7영역 21개 하위능력으로 결과를 냅니다</li>
-      <li><b>핵심역량진단</b> 기존 참(眞)인성/리더십 72문항(참인성 6요인 · 참리더십 3요인, 5점 척도)과 [AI 신규] AI 책임 활용 2문항 · 결과는 대학 6대 핵심역량과도 연결해 보여 줍니다${supInDiag(retest) ? ` · 입학 직후 첫 진단에는 6대 핵심역량(전문성·자기주도성) 보완 문항 ${supItems().length}개가 끝에 붙습니다` : ''}</li>
-      <li><b>기초학습역량진단</b> 기존 기초학습능력진단 국어·수학·영어 각 20문항(60문항, 5지선다) · 학기말에는 같은 번호의 후보 문항(B형)으로 다시 잽니다</li>
-      <li>세 진단은 하나씩 나눠 받을 수 있습니다. 한 진단을 마칠 때마다 쉬었다가 나중에 이어서 받으면 됩니다.</li>
-      <li>응답 시간과 일관성을 함께 살펴, 성의 없이 답한 경우 다시 응시하도록 안내합니다.</li>
-    </ul>
+    ${diagCardsHtml(retest)}
     ${pgN ? `<div class="resume"><p><b>진행 중인 진단이 있습니다</b> ${pgN} / ${QSEQ.length || ITEMS.length + CORE_ITEMS.length + BASIC_ITEMS.length + (pg.supIds || []).length}문항 응답 · 마지막 저장 ${esc(pg.at || '')}${pg.form === 'B' ? ' · 학기말 B형' : ''}</p><div class="actions"><button class="btn" id="resume">이어서 응시</button><button class="linkbtn" id="discard">처음부터 다시</button></div></div>` : ''}
     <div class="actions">
       ${doneNow ? '<button class="btn" data-go="result">결과 보기</button><button class="btn ghost" id="start">다시 응시(시연)</button>' : `<button class="btn" id="start">${retest ? '재진단 시작' : needRetake ? '다시 응시하기' : '진단 시작'}</button>`}
@@ -8606,7 +8654,7 @@ const TOUR_OVERVIEW = [
   { who: '관리자', when: '학기 초', title: '전공 시간표 등록', text: '학과·학기·반별로 미리 편성된 전공 시간표를 등록합니다(학사정보시스템이 연결되면 자동). 학생은 이 시간표를 불러와 빈 시간에 들을 교양을 추천받습니다.', sel: '.p-mtgrid', prep: async () => { go('majortt'); const d = document.getElementById('mtdemo'); if (d) d.click(); } },
   { who: '관리자', when: '학기 초', title: '교양·융합 분반 배치', text: '교양과 융합과정 분반을 공통 또는 학과·학년·반 전용으로 배치합니다. 분반은 시간·정원만 정하고 수준으로 나누지 않습니다. 학생 추천은 그 학생이 들을 수 있는 분반만 쓰고, 교원은 각 분반 수업 안에서 수준별 조를 편성합니다.', sel: '.p-etck', prep: async () => go('electt') },
   { who: '관리자', when: '학기 초', title: '진단 기간 안내 보내기', text: '정한 일정에 맞춰 학생에게 진단 기간 안내를 보냅니다(예약 발송 가능). 학생 홈의 ‘지금 할 일’에도 같은 안내가 뜹니다.', sel: '.p-ned', prep: async () => go('notify') },
-  { who: '학생', when: '학기 초', title: '안내를 받고 진단 받기', text: "학생 홈 '지금 할 일'에 진단 안내가 떠 있습니다. 3종 진단(직업기초·핵심·기초학습)을 약 20분 동안 받습니다.", sel: '.facts', prep: async () => { await tourLogin('student', '20261001'); state.phase = 'start'; go('intro'); } },
+  { who: '학생', when: '학기 초', title: '안내를 받고 진단 받기', text: "학생 홈 '지금 할 일'에 진단 안내가 떠 있습니다. 3종 진단(직업기초·핵심·기초학습)을 약 20분 동안 받습니다.", sel: '.dcards', prep: async () => { await tourLogin('student', '20261001'); state.phase = 'start'; go('intro'); } },
   { who: '학생', when: '학기 초', title: '진단 결과와 AI 분석', text: '3종 결과와 응답 신뢰성, 강점과 보완할 점이 나오고, AI가 무엇부터 보완할지 처방합니다. 신뢰성이 낮으면 재실시를 안내합니다.', sel: '.p-three', prep: async () => { await tourStudentReady(); go('result'); } },
   { who: '학생', when: '학기 초', title: '목표 직무 정하기', text: '전공 관련 직업(한국고용직업분류), 인천 전략산업 직무, 기타 직무 중에서 목표를 고릅니다. 아직 없으면 진단 기반 보완으로 설계합니다.', sel: '.p-jfirst', prep: async () => go('career') },
   { who: '학생', when: '학기 초', title: '차이 분석과 추천 교육과정', text: "목표 직무가 요구하는 역량과 내 점수의 차이를 보고, 차이를 메우는 교양·융합과정·비교과를 추천받습니다. 항목마다 '과정 보기'로 명세서와 과정 개요를 확인하고 고릅니다.", sel: '.p-rlib', prep: async () => { const J = JOBS.find(j => j.id === 'k1513') || JOBS[0]; state.targetJob = J.id; state.designMode = 'job'; go('recs'); } },
@@ -8692,7 +8740,7 @@ const TOUR_STUDENT = [
   S_('알림함', '진단 기간 안내, 지도교수 상담 요청, 관심 비교과 개설 같은 알림이 위쪽 알림함에 모입니다. 숫자는 안 읽은 알림 수이고, 누르면 해당 화면으로 갑니다.', '#inboxbtn', async () => go('home')),
   S_('홈 · 나의 역량', '최근 진단의 직업기초 7영역 점수와 핵심역량·기초학습에서 보완할 축을 요약합니다. 낮은 영역은 노란 막대로 표시됩니다.', '.p-hme', async () => go('home')),
   S_('홈 · 이수 계획과 진단 기록', '저장한 이수 계획의 과목 수와 이번 학기 학점, 지금까지 받은 진단 기록(회차·날짜·신뢰성)을 봅니다.', '.p-hgr', async () => go('home')),
-  S_('내 진단 · 진단 받기', '직업기초·핵심·기초학습 3종 진단을 한 번에 받습니다(약 20분). 중간에 나가도 자동 저장돼 이어서 할 수 있고, 응답 시간과 일관성으로 성의 있게 답했는지도 함께 봅니다.', '.facts', async () => go('intro')),
+  S_('내 진단 · 진단 받기', '직업기초·핵심·기초학습 3종 진단을 받습니다. 진단마다 왜 받는지, 무엇을 하는지, 걸리는 시간과 결과 활용을 카드로 먼저 안내합니다. 중간에 나가도 자동 저장돼 이어서 할 수 있고, 응답 시간과 일관성으로 성의 있게 답했는지도 함께 봅니다.', '.dcards', async () => go('intro')),
   S_('진단 결과 · 3종 결과', '세 진단의 결과를 한 화면에서 먼저 보여 줍니다. 응답 신뢰성 판정도 함께 나오며, 재실시 판정이면 결과 대신 다시 응시를 안내합니다.', '.p-three', async () => go('result')),
   S_('진단 결과 · 강점과 보완할 점', '강점 영역과 보완할 영역을 카드로 보여 주고, 보완할 점 안에 바로 들을 수 있는 교과·비교과 추천을 함께 둡니다.', '.p-cards', async () => go('result')),
   S_('진단 결과 · 자세히 보기', '7영역 다이얼, 영역별 상세 점수, 우리 대학·학과에서의 내 위치, 학과 교양 교과목, 융합과정, 나와 비슷한 학생의 선택을 펼쳐 볼 수 있습니다.', 'details.pd', async () => go('result')),
@@ -9985,10 +10033,10 @@ function catalogParse(kind, rows) {
     if (kind === 'courses') {
       const ix = re => hdr.findIndex(x => re.test(x)), col = (re, def) => { const k = ix(re); return k >= 0 ? c[k] : def; };
       const named = ix(/요일/) >= 0;
-      const [n, sec, lv, d, s, len, cap, enr] = named ? [col(/교과목|과목/), col(/분반/), col(/수준/), col(/요일/), col(/시작/), col(/^시간$|시수/), col(/정원/), col(/신청/)] : c;
+      const [n, sec, lv, d, s, len, cap, enr] = named ? [col(/교과목|과목/), col(/분반/), col(/수준/), col(/요일/), col(/시작/), col(/^시간$|시수/), col(/정원/), col(/신청/)] : c, crv = named ? col(/학점/, '') : '';
       if (!n || !(d in DAY_OF) || !(+s >= 1 && +s <= EVE_P) || !(+len >= 1 && +s + +len - 1 <= EVE_P)) { bad.push(`${line}행: 교과목·요일·교시를 확인하세요`); return; }
       const sem = String(col(/학기/, '') || '').replace(/학기/, '').trim(), scope = /학과/.test(col(/대상/, '') || '') ? '학과' : '공통';
-      (out[n] = out[n] || []).push({ sec: sec || String((out[n] || []).length + 1).padStart(2, '0'), lv: lv ? LV_OF[lv] || '' : '', d: DAY_OF[d], s: +s, len: +len, cap: +cap || 40, enr: +enr || 0, sem: sem === '1' || sem === '2' ? sem : '', scope, dept: scope === '학과' ? col(/^학과$/, '') || '' : '', grade: scope === '학과' ? String(col(/학년/, '') || '').replace(/학년/, '') : '', ban: scope === '학과' ? String(col(/^반$/, '') || '').replace(/반/, '').toUpperCase() : '' });
+      (out[n] = out[n] || []).push({ sec: sec || String((out[n] || []).length + 1).padStart(2, '0'), lv: lv ? LV_OF[lv] || '' : '', d: DAY_OF[d], s: +s, len: +len, ...(crv !== '' && crv != null && +crv >= 0 ? { cr: +crv } : {}), cap: +cap || 40, enr: +enr || 0, sem: sem === '1' || sem === '2' ? sem : '', scope, dept: scope === '학과' ? col(/^학과$/, '') || '' : '', grade: scope === '학과' ? String(col(/학년/, '') || '').replace(/학년/, '') : '', ban: scope === '학과' ? String(col(/^반$/, '') || '').replace(/반/, '').toUpperCase() : '' });
     } else {
       const hasBan = hdr.some(x => /반/.test(x) && !/학기/.test(x)), crIx = hdr.findIndex(x => /학점/.test(x));
       const [dept, term, ban, n, d, s, len] = hasBan ? c : [c[0], c[1], '', c[2], c[3], c[4], c[5]], cr = crIx >= 0 && c[crIx] !== '' ? +c[crIx] : +len;
@@ -10001,8 +10049,8 @@ function catalogParse(kind, rows) {
 }
 function catalogTemplate(kind) {
   if (kind === 'courses') {
-    const rows = [['교과목', '분반', '학기', '대상(공통/학과)', '학과', '학년', '반', '요일', '시작교시', '시간', '정원', '신청인원']];
-    offered(state.dept, 1).slice(0, 40).forEach(c => sectionsDemo({ n: c.n, cr: c.t[0] ? c.t[0].credit : 2 }).forEach((s, i) => rows.push([c.n, String(i + 1).padStart(2, '0'), '1', '공통', '', '', '', DAYS[s.d], s.s, s.len, s.cap, s.enr])));
+    const rows = [['교과목', '분반', '학기', '대상(공통/학과)', '학과', '학년', '반', '요일', '시작교시', '시수', '학점', '정원', '신청인원']];
+    offered(state.dept, 1).slice(0, 40).forEach(c => { const cr = c.t[0] ? c.t[0].credit : 2; sectionsDemo({ n: c.n, cr }).forEach((s, i) => rows.push([c.n, String(i + 1).padStart(2, '0'), '1', '공통', '', '', '', DAYS[s.d], s.s, s.len, cr, s.cap, s.enr])); });
     return rows;
   }
   const rows = [['학과', '학기(학년-학기)', '반', '과목', '요일', '시작교시', '시수', '학점']];
@@ -10847,6 +10895,8 @@ function secFits(s, dept, grade, ban, sem) {
 function coursesSave(name, list, note) {
   catalogPatch(['courses', name], list.length ? list : null, note); logLocal('교양·융합 시간표 변경', name, note);
 }
+/* 교양·융합 분반의 학점: 시수와 다를 수 있어 분반마다 둠. 없으면 교과과정표 과목 학점(그것도 없으면 시수) */
+const secCr = (sec, c) => (sec && sec.cr != null && sec.cr !== '' ? +sec.cr : c && c.cr != null ? +c.cr : sec ? sec.len : 0);
 function renderElectTT() {
   const all = electCourses(), cat = catalogNow() || {}, C = cat.courses || {};
   state.etKind = state.etKind || '교양'; state.etQ = state.etQ || '';
@@ -10855,13 +10905,14 @@ function renderElectTT() {
   const cur = all.find(x => x.n === state.etSel), secs = (C[cur.n] || []).map(s => ({ ...s })), ed = state.etEdit;
   const depts = CURRICULUM.depts.filter(d => CURRICULUM.deptGroup[d]);
   const opt = (arr, v) => arr.map(([k, t]) => `<option value="${k}" ${String(k) === String(v ?? '') ? 'selected' : ''}>${t}</option>`).join('');
-  const F = state.etForm = state.etForm || { sec: String(secs.length + 1).padStart(2, '0'), lv: '', d: 0, s: 1, len: Math.max(1, Math.min(3, cur.cr || 2)), cap: 40, enr: 0, sem: '1', scope: '공통', dept: depts[0], grade: '', ban: '' };
+  const F = state.etForm = state.etForm || { sec: String(secs.length + 1).padStart(2, '0'), lv: '', d: 0, s: 1, len: Math.max(1, Math.min(4, cur.cr || 2)), cr: cur.cr || 2, cap: 40, enr: 0, sem: '1', scope: '공통', dept: depts[0], grade: '', ban: '' };
   const formHtml = `<form class="etform" id="etf"><h3 class="sub3">${ed != null ? `${esc(secs[ed].sec)}분반 수정` : '분반 추가'}</h3>
       <label>분반<input id="etsec" maxlength="6" value="${esc(F.sec)}"></label>
       <label>학기<select id="etsem">${opt([['1', '1학기'], ['2', '2학기']], F.sem)}</select></label>
       <label>요일<select id="etd">${opt(DAYS.map((d, i) => [i, d]), F.d)}</select></label>
       <label>시작<select id="ets">${opt(Array.from({ length: EVE_P }, (_, i) => [i + 1, `${i + 1}교시 ${pStart(i + 1)}`]), F.s)}</select></label>
-      <label>시수<select id="etl">${opt([1, 2, 3, 4].map(n => [n, n + '시간']), F.len)}</select></label>
+      <label>시수<select id="etl">${opt([1, 2, 3, 4, 5, 6].map(n => [n, n + '시간']), F.len)}</select></label>
+      <label>학점<select id="etcr">${opt([0, 1, 2, 3, 4, 5, 6].map(n => [n, n + '학점']), secCr(F, cur))}</select></label>
       <label>정원<input id="etcap" type="number" min="1" value="${F.cap}"></label>
       <label>신청 인원<input id="etenr" type="number" min="0" value="${F.enr}"></label>
       <fieldset class="full etscope"><legend>대상</legend>
@@ -10872,7 +10923,7 @@ function renderElectTT() {
         <select id="etban" aria-label="반">${opt([['', '전체 반'], ...BANS.slice(0, 6).map(b => [b, b + '반'])], F.ban)}</select></span></fieldset>
       <div class="actions full"><button class="btn sm" type="submit">${ed != null ? '수정 저장' : '분반 추가'}</button>${ed != null ? '<button class="linkbtn" id="etcancel" type="button">취소</button>' : ''}</div></form>`;
   const semN = sm => Object.values(C).reduce((a, l) => a + l.filter(s => s.sem === sm).length, 0);
-  const rows = secs.map((s, i) => `<tr><td><b>${esc(s.sec)}</b></td><td>${s.sem ? s.sem + '학기' : '-'}</td><td>${secScope(s)}</td><td>${DAYS[s.d]} ${pStart(s.s)}~${pEnd(s.s, s.len)}</td><td>${s.enr || 0}/${s.cap || 40}</td><td><button class="linkbtn" data-etedit="${i}">수정</button> <button class="linkbtn" data-etdel="${i}">삭제</button></td></tr>`).join('');
+  const rows = secs.map((s, i) => `<tr><td><b>${esc(s.sec)}</b></td><td>${s.sem ? s.sem + '학기' : '-'}</td><td>${secScope(s)}</td><td>${DAYS[s.d]} ${pStart(s.s)}~${pEnd(s.s, s.len)}</td><td>${s.len}시간</td><td>${secCr(s, cur)}학점${secCr(s, cur) !== s.len ? ' <span class="badge">시수와 다름</span>' : ''}</td><td>${s.enr || 0}/${s.cap || 40}</td><td><button class="linkbtn" data-etedit="${i}">수정</button> <button class="linkbtn" data-etdel="${i}">삭제</button></td></tr>`).join('');
   /* 대상별 점검: 그 학과·학년·반의 전공 시간표 위에 들을 수 있는 교양·융합 분반을 겹쳐 봄 */
   state.ckDept = depts.includes(state.ckDept) ? state.ckDept : depts[0]; state.ckTerm = MT_TERMS.includes(state.ckTerm) ? state.ckTerm : '1-1'; state.ckBan = state.ckBan || 'A';
   const ckGrade = state.ckTerm.split('-')[0], ckSem = state.ckTerm.split('-')[1];
@@ -10896,7 +10947,7 @@ function renderElectTT() {
     ${panelH('p-etlist', '과목', `${shown.length}개`, `<div class="etkind" role="tablist">${['교양', '융합'].map(k => `<button role="tab" class="pm" data-etkind="${k}" aria-selected="${state.etKind === k}">${k === '융합' ? '융합과정' : '교양'}</button>`).join('')}</div>
       <input class="etq" id="etq" placeholder="과목명 검색" value="${esc(state.etQ)}">
       <ul class="etcourses">${shown.slice(0, 80).map(x => `<li><button class="${x.n === cur.n ? 'on' : ''}" data-etsel="${esc(x.n)}"><b>${esc(x.n)}</b><span class="meta">${x.micro ? esc(x.micro) + ' · ' : ''}${(C[x.n] || []).length ? `분반 ${(C[x.n] || []).length}개` : '미등록'}</span></button></li>`).join('')}</ul>`)}
-    ${panelH('p-etsec', esc(cur.n), `${cur.kind === '융합' ? '융합과정 · ' : '교양 · '}${cur.cr}학점 · 분반 ${secs.length}개`, `<div class="scrollx"><table class="tbl"><thead><tr><th>분반</th><th>학기</th><th>대상</th><th>시간</th><th>신청/정원</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="meta">등록된 분반이 없습니다. 아래에서 추가하세요.</td></tr>'}</tbody></table></div>${formHtml}<p class="meta" id="etmsg" aria-live="polite">${esc(state.etMsg || '')}</p>`)}
+    ${panelH('p-etsec', esc(cur.n), `${cur.kind === '융합' ? '융합과정 · ' : '교양 · '}${cur.cr}학점 · 분반 ${secs.length}개`, `<div class="scrollx"><table class="tbl"><thead><tr><th>분반</th><th>학기</th><th>대상</th><th>시간</th><th>시수</th><th>학점</th><th>신청/정원</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="meta">등록된 분반이 없습니다. 아래에서 추가하세요.</td></tr>'}</tbody></table></div>${formHtml}<p class="meta" id="etmsg" aria-live="polite">${esc(state.etMsg || '')}</p>`)}
     ${panelH('p-etck', '대상별 점검', `${clash.length ? `전공과 겹치는 분반 ${clash.length}개` : '겹침 없음'}`, `<div class="mt-tools no-print">
       <label>학과<select id="ckdept">${depts.map(d => `<option ${d === state.ckDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
       <label>학기<select id="ckterm">${opt(MT_TERMS.map(t => [t, termName(t)]), state.ckTerm)}</select></label>
@@ -10906,7 +10957,7 @@ function renderElectTT() {
       ${clash.length ? `<ul class="skips">${clash.map(x => `<li><b>${esc(x.n)}</b> ${esc(x.sec)}분반 · ${DAYS[x.d]} ${pStart(x.s)} · ${secScope(x)}</li>`).join('')}</ul>` : ''}`)}
   </div>`;
   const q = id => document.getElementById(id);
-  const readF = () => ({ sec: q('etsec').value.trim() || '01', sem: q('etsem').value, lv: '', d: +q('etd').value, s: +q('ets').value, len: +q('etl').value, cap: +q('etcap').value || 40, enr: +q('etenr').value || 0, scope: ($view.querySelector('input[name=etsc]:checked') || {}).value || '공통', dept: q('etdept').value, grade: q('etgr').value, ban: q('etban').value });
+  const readF = () => ({ sec: q('etsec').value.trim() || '01', sem: q('etsem').value, lv: '', d: +q('etd').value, s: +q('ets').value, len: +q('etl').value, cr: +q('etcr').value, cap: +q('etcap').value || 40, enr: +q('etenr').value || 0, scope: ($view.querySelector('input[name=etsc]:checked') || {}).value || '공통', dept: q('etdept').value, grade: q('etgr').value, ban: q('etban').value });
   const re = () => renderElectTT();
   $view.querySelectorAll('[data-etkind]').forEach(b => b.onclick = () => { state.etKind = b.dataset.etkind; state.etSel = null; state.etEdit = null; state.etForm = null; re(); });
   q('etq').oninput = e => { state.etQ = e.target.value.trim(); state.etSel = null; state.etForm = null; clearTimeout(state.etT); state.etT = setTimeout(() => { re(); const i = q('etq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
@@ -10917,7 +10968,7 @@ function renderElectTT() {
     if (s.s + s.len - 1 > EVE_P) { q('etmsg').textContent = '하루 시간표(12교시)를 넘습니다.'; return; }
     if (s.scope !== '학과') { s.dept = ''; s.grade = ''; s.ban = ''; }
     const nl = ed != null ? secs.map((o, i) => (i === ed ? s : o)) : [...secs, s];
-    coursesSave(cur.n, nl, `${s.sec}분반 ${ed != null ? '수정' : '추가'}(${secScope(s)}, ${DAYS[s.d]} ${pStart(s.s)}, ${s.sem}학기)`);
+    coursesSave(cur.n, nl, `${s.sec}분반 ${ed != null ? '수정' : '추가'}(${secScope(s)}, ${DAYS[s.d]} ${pStart(s.s)}, ${s.sem}학기, ${s.len}시간·${s.cr}학점)`);
     state.etMsg = `${s.sec}분반을 ${ed != null ? '고쳤' : '추가했'}습니다(${secScope(s)}).`; state.etEdit = null; state.etForm = null; re();
   };
   if (q('etcancel')) q('etcancel').onclick = () => { state.etEdit = null; state.etForm = null; re(); };
