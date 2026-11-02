@@ -77,6 +77,16 @@ p { margin: 0 0 14px; }
 .lede { font-size: 18px; max-width: 34em; }
 .facts { list-style: none; padding: 0; margin: 28px 0; max-width: 34em; }
 /* 3종 진단 소개 카드 */
+/* 목표 직무 캐릭터(준비도 막대 위) */
+.jw-stage { position: relative; height: 60px; margin: 6px 0 2px; }
+.jw { position: absolute; bottom: -2px; left: 0; width: 52px; height: 52px; transform: translateX(-50%); }
+.jw-b { display: block; width: 52px; height: 52px; animation: jwbob 1.6s ease-in-out infinite; } .jw-b svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.jw-say { position: absolute; bottom: 54px; transform: translateX(-50%); background: var(--ink); color: var(--panel); font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 8px; white-space: nowrap; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.jw-say.on { opacity: 1; }
+.jw-intro { display: flex; align-items: center; gap: 12px; margin: 2px 0 8px; } .jw-intro .jw-say { position: static; transform: none; white-space: normal; }
+@keyframes jwbob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .jw-b { animation: none; } .jw-say { transition: none; } }
+@media print { .jw-stage { display: none; } }
 /* 문항 풀이: 왼쪽 현황판 | 문항 | (직업기초) 다이얼 */
 .qlayout { display: grid; grid-template-columns: 260px minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
 .qlayout:not(:has(.qdial)) { grid-template-columns: 260px minmax(0, 1fr); }
@@ -12684,6 +12694,63 @@ function renderDBreak() {
   document.getElementById('dblater').onclick = () => { toast('응답을 저장했습니다. 진단 받기에서 이어서 받을 수 있습니다.'); go('home'); };
 }
 
+/* ---------- 목표 직무 캐릭터: 16×16 픽셀 몸 + 직무 계열 소품. 준비도 막대 위를 지금 준비도 위치까지 걸어감 ---------- */
+const JW_BODY = ['................', '................', '................', '................', '.....111111.....', '...1111111111...', '..111111111111..', '..112211112211..', '1111221111221111', '1113311111133111', '..111111111111..', '..111111111111..', '...1111111111...'];
+const JW_LEGS = [['...11..11..11...', '...11..11..11...', '................'], ['..11...11...11..', '..11...11...11..', '................']];
+const JW_ACC = {
+  hardhat: { name: '공학·기계·전기', rows: ['................', '.....HHHHHH.....', '....HHHHHHHH....', '...HHHHhHHHHH...', '..BBBBBBBBBBBB..'], col: { H: '#f2c230', h: '#fff3b0', B: '#c99a10' } },
+  headset: { name: 'IT·소프트웨어·통신', rows: ['................', '.....KKKKKK.....', '...KK......KK...', '..K..........K..', '..K..........K..', '.PP..........PP.', '.PP..........PP.'], col: { K: '#3a3f4b', P: '#4f7fd6' } },
+  beret: { name: '디자인', rows: ['........R.......', '....RRRRRRRR....', '...RRRRRRRRRRR..', '....RRRRRRRRR...'], col: { R: '#d6455d' } },
+  pilot: { name: '항공 운항·정비', rows: ['................', '....NNNNNNNN....', '...NNNNYYNNNNN..', '...NNNNNNNNNNN..', '..VVVVVVVVVVVV..'], col: { N: '#1f2f55', Y: '#f2c230', V: '#0f1830' } },
+  goggles: { name: '화학·소재·환경', rows: ['................', '................', '................', '................', '................', '................', '..SSSSSSSSSSSS..', '..SGGSSSSSSGGS..', '..SGGSSSSSSGGS..'], col: { S: '#2f8f7a', G: '#bfeee3' } },
+  ruler: { name: '건축·공간', rows: ['................', '.....WWWWWW.....', '....WWWWWWWW....', '...WWWWWWWWWW...', '..CCCCCCCCCCCC..'], col: { W: '#f4f6fa', C: '#e07a2c' } },
+  bowtie: { name: '서비스·관광·호텔', rows: ['................', '.....MMMMMM.....', '....MMMMMMMM....', '....MMMMMMMM....', '................', '................', '................', '................', '................', '................', '................', '......T..T......', '......TTTT......', '......T..T......'], col: { M: '#8a2b3a', T: '#f2c230' } },
+  tie: { name: '경영·사무·물류', rows: ['................', '................', '................', '................', '................', '................', '................', '................', '................', '................', '.......TT.......', '.......TT.......', '......TTTT......', '.......TT.......'], col: { T: '#c8922e' } },
+  grad: { name: '목표 직무 미정', rows: ['.......Q........', '..QQQQQQQQQQQ...', '....QQQQQQQ.Y...', '....QQQQQQQ.Y...', '...........Y....'], col: { Q: '#1d2433', Y: '#f2c230' } }
+};
+/* 직무 계열: 직무명·NCS 분류·산업 이름의 낱말로 고름(앞 규칙 우선). 어느 것도 아니면 공학 */
+const JW_RULES = [['pilot', /항공|조종|운항|객실/], ['headset', /소프트웨어|정보|컴퓨터|데이터|네트워크|통신|인공지능|AI|웹|프로그램|보안|게임/], ['beret', /디자인|디자이너|패션|시각|영상|콘텐츠|미디어/],
+  ['ruler', /건축|인테리어|실내|토목|측량|공간정보|건설|도시/], ['goggles', /화학|소재|재료|환경|바이오|생명|식품|제약|에너지/], ['bowtie', /호텔|관광|여행|조리|식음|외식|서비스|미용|스포츠|레저|웨딩|이벤트/],
+  ['tie', /경영|사무|회계|물류|무역|마케팅|광고|홍보|금융|비서|영업|인사|유통|구매/]];
+function jobKind(job) {
+  if (!job) return 'grad';
+  /* 직무명에서 먼저 찾고(공학 낱말 포함), 없으면 NCS 분류·산업 이름에서 */
+  const eng = ['hardhat', /기계|로봇|자동화|전기|전자|설비|정비|반도체|자동차|조선|금형|용접|생산|품질|제어|드론|배터리/];
+  const byName = [JW_RULES[0], eng, ...JW_RULES.slice(1)].find(([, re]) => re.test(job.name));
+  if (byName) return byName[0];
+  const r = JW_RULES.find(([, re]) => re.test(`${job.ncs || ''} ${job.ind || ''}`));
+  return r ? r[0] : 'hardhat';
+}
+function jwSvg(kind, frame, blink) {
+  const A = JW_ACC[kind] || JW_ACC.hardhat, rows = JW_BODY.map(r => (blink ? r.replace(/2/g, '1') : r)).concat(JW_LEGS[frame % 2]);
+  let o = '';
+  rows.forEach((r, y) => [...r].forEach((c, x) => { const f = c === '1' ? '#5b86c5' : c === '2' ? '#1d2433' : c === '3' ? '#f3a3b0' : null; if (f) o += `<rect x="${x}" y="${y}" width="1" height="1" fill="${f}"${c === '3' ? ' opacity=".7"' : ''}/>`; }));
+  A.rows.forEach((r, y) => [...r].forEach((c, x) => { if (A.col[c]) o += `<rect x="${x}" y="${y}" width="1" height="1" fill="${A.col[c]}"/>`; }));
+  return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">${o}</svg>`;
+}
+/* 막대 위 무대: 왼쪽 끝에서 goal%까지 걸어간 뒤 말풍선·숨쉬기·눈 깜빡임. 움직임 줄이기면 처음부터 그 자리 */
+function jobWalker(el) {
+  if (!el || el.dataset.run) return; el.dataset.run = '1';
+  const kind = el.dataset.kind, goal = Math.max(0, Math.min(100, +el.dataset.goal || 0)), say = el.dataset.say || '';
+  const W = el.querySelector('.jw'), B = el.querySelector('.jw-b'), bub = el.querySelector('.jw-say');
+  /* 양 끝에서는 캐릭터·말풍선이 패널 밖으로 나가지 않게 기준점을 옮김 */
+  const place = v => { W.style.left = `${v}%`; bub.style.left = `${v}%`; const k = v < 6 ? 10 : v > 94 ? 90 : 50, kb = v < 12 ? 8 : v > 88 ? 92 : 50; W.style.transform = `translateX(-${k}%)`; bub.style.transform = `translateX(-${kb}%)`; };
+  const arrive = () => {
+    B.innerHTML = jwSvg(kind, 0); if (say) { bub.textContent = say; bub.classList.add('on'); }
+    if (goal >= 80 && !REDUCED_MOTION.matches && B.animate) B.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px)' }, { transform: 'translateY(0)' }], { duration: 420, easing: 'ease-out' });
+    const blink = () => { if (!document.body.contains(el)) return; B.innerHTML = jwSvg(kind, 0, true); setTimeout(() => { B.innerHTML = jwSvg(kind, 0); }, 140); setTimeout(blink, 2600 + Math.random() * 2400); };
+    setTimeout(blink, 1800);
+  };
+  if (REDUCED_MOTION.matches || goal === 0) { place(goal); arrive(); return; }
+  let v = 0, f = 0; place(0);
+  const t = setInterval(() => {
+    if (!document.body.contains(el)) { clearInterval(t); return; }
+    v = Math.min(goal, v + Math.max(0.6, goal / 90)); f++; place(v); B.innerHTML = jwSvg(kind, Math.floor(f / 4));
+    if (v >= goal) { clearInterval(t); arrive(); }
+  }, 40);
+}
+const jobStage = (kind, goal, say) => `<div class="jw-stage" data-kind="${kind}" data-goal="${goal}" data-say="${esc(say)}" role="img" aria-label="${esc(JW_ACC[kind].name)} 캐릭터가 준비도 ${goal}% 위치에 있습니다"><span class="jw-say"></span><span class="jw"><span class="jw-b">${jwSvg(kind, 0)}</span></span></div>`;
+const runJobWalkers = () => setTimeout(() => document.querySelectorAll('.jw-stage').forEach(jobWalker), 60);
 /* ---------- 목표 직무 준비도: 역량 50 + 직무 관련 교육 30 + 실천 20 ---------- */
 function jobReady() {
   const job = state.targetJob ? JOBS.find(j => j.id === state.targetJob) : null, H = state.history || [];
@@ -12718,11 +12785,12 @@ function readyHtml() {
   const H = state.history || [];
   if (!H.length) return '';
   const R = jobReady();
-  if (!R) return panelH('p-ready0', '목표 직무 준비도', '', `<p class="summary">목표 직무를 정하면 준비도를 계산해 드립니다.</p><p class="meta">진단 점수, 직무 관련 과목 이수, 비교과·재진단·자기주도 실천이 쌓일 때마다 준비도가 오르고, 다음에 무엇을 하면 몇 점 오르는지 알려 드립니다.</p><div class="actions"><button class="btn sm" data-go="career" type="button">목표 직무 정하기</button></div>`);
+  if (!R) return panelH('p-ready0', '목표 직무 준비도', '', `<div class="jw-intro"><span class="jw-b">${jwSvg('grad', 0)}</span><span class="jw-say on">목표 직무를 골라 보세요. 고른 직무에 맞는 모습으로 바뀌어요!</span></div><p class="summary">목표 직무를 정하면 준비도를 계산해 드립니다.</p><p class="meta">진단 점수, 직무 관련 과목 이수, 비교과·재진단·자기주도 실천이 쌓일 때마다 준비도가 오르고, 다음에 무엇을 하면 몇 점 오르는지 알려 드립니다.</p><div class="actions"><button class="btn sm" data-go="career" type="button">목표 직무 정하기</button></div>`);
   const prev = sGet('user', 'ready'), delta = prev && prev.job === R.job.id ? R.total - prev.v : null;
   if (!prev || prev.job !== R.job.id || prev.v !== R.total) setTimeout(() => sSet('user', 'ready', { job: R.job.id, v: R.total, at: localTime().slice(0, 10) }), 0);
   return `<section class="panel p-ready"><div class="rd-top"><div class="rd-num"><span class="eyebrow">목표 직무 준비도</span><b>${R.total}<small>%</small></b>
       <span class="meta">${esc(R.job.name)}${delta ? ` · <span class="${delta > 0 ? 'up' : 'down'}">지난 확인(${esc(prev.at)})보다 ${delta > 0 ? '+' : ''}${delta}</span>` : ''}</span></div>
+      ${(runJobWalkers(), jobStage(jobKind(R.job), R.total, delta > 0 ? `+${delta}% 올랐어요` : R.total >= 80 ? '거의 다 왔어요!' : `지금 ${R.total}%`))}
       <div class="rd-bar" role="img" aria-label="준비도 ${R.total}%: ${R.parts.map(p => `${p.k} ${Math.round(p.v)}/${p.max}`).join(', ')}">${R.parts.map((p, i) => `<span class="rdp rdp${i}" style="--w:${p.max}%"><i style="--f:${p.v / p.max * 100}%"></i></span>`).join('')}</div>
       <ul class="rd-parts">${R.parts.map((p, i) => `<li><button type="button" data-go="${p.go}"><i class="rdk rdp${i}"></i><b>${p.k} ${Math.round(p.v)}<small>/${p.max}</small></b><span class="meta">${esc(p.d)}</span></button></li>`).join('')}</ul></div>
     <div class="rd-next"><h3>다음에 하면 오르는 것</h3><ol>${R.next.map(x => `<li><button type="button" data-go="${x.go}"><span class="rd-gain">${fmtGain(x.gain)}</span><span><b>${esc(x.t)}</b><span class="meta">${esc(x.d)}</span></span></button></li>`).join('')}</ol>
