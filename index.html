@@ -77,6 +77,28 @@ p { margin: 0 0 14px; }
 .lede { font-size: 18px; max-width: 34em; }
 .facts { list-style: none; padding: 0; margin: 28px 0; max-width: 34em; }
 /* 3종 진단 소개 카드 */
+/* 문항 풀이: 왼쪽 현황판 | 문항 | (직업기초) 다이얼 */
+.qlayout { display: grid; grid-template-columns: 260px minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.qlayout:not(:has(.qdial)) { grid-template-columns: 260px minmax(0, 1fr); }
+.qmain { min-width: 0; } .qmain .qtext, .qmain .opts, .qmain .scale, .qmain .scale-ends { max-width: 40em; }
+.qdial { position: sticky; top: 84px; } .qdial .dial { width: 100%; }
+.qpal { position: sticky; top: 76px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; max-height: calc(100vh - 100px); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.qpal-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.qpal-tabs button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; text-align: center; padding: 6px 2px; border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px; line-height: 1.3; }
+.qpal-tabs button b { font-size: 13px; } .qpal-tabs button span { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.qpal-tabs button.on { border-color: var(--signal); background: var(--signal-soft); } .qpal-tabs button.ok span { color: var(--signal); font-weight: 700; }
+.qpal-tabs button:focus-visible { outline: 3px solid var(--signal); }
+.qpal-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-size: 12px; color: var(--muted); } .qpal-legend span { display: inline-flex; align-items: center; gap: 4px; } .qpal-legend .qn { width: 14px; height: 14px; min-width: 0; padding: 0; }
+.qpal-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 4px; align-content: start; padding: 2px; }
+.qpal-sec { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+.qn { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; height: 30px; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); font-size: 12.5px; font-variant-numeric: tabular-nums; cursor: pointer; color: var(--ink); }
+.qn.done { background: var(--signal); border-color: var(--signal); color: #fff; } .qn.cur { outline: 2.5px solid var(--amber); outline-offset: 1px; } .qn:hover { border-color: var(--signal); } .qn:focus-visible { outline: 3px solid var(--signal); }
+i.qn { display: inline-block; height: 14px; cursor: default; }
+.qpal-foot { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; } .qpal-foot .meta { margin: 0; font-size: 12.5px; }
+.dstep button { all: unset; box-sizing: border-box; cursor: pointer; display: block; } .dstep button:focus-visible { outline: 3px solid var(--signal); }
+.dcard-go { padding-top: 12px; }
+@media (max-width: 1180px) { .qlayout, .qlayout:not(:has(.qdial)) { grid-template-columns: 240px minmax(0, 1fr); } .qdial { display: none; } }
+@media (max-width: 820px) { .qlayout, .qlayout:not(:has(.qdial)) { grid-template-columns: 1fr; } .qpal { position: static; max-height: none; } .qpal-grid { max-height: 170px; } }
 /* 3종 진단 안내: 머리 줄(제목·버튼 | 레이더) + 카드 3장(행 높이를 subgrid로 맞춤) + 공통 안내 4개 */
 .ihero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 18px 40px; align-items: center; margin: 0 0 30px; }
 .ihero-main h1 { margin-bottom: 14px; }
@@ -87,8 +109,8 @@ p { margin: 0 0 14px; }
 .ihero-dial .dial { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
 .ihero-dial .dial .lab { font-size: 17px; } .ihero-dial .dial .tick { font-size: 12px; } .ihero-dial .dial .dot { r: 6px; }
 .ihero-dial figcaption { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; text-wrap: pretty; margin-top: 2px; }
-.dcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(6, auto); gap: 0 16px; margin: 0 0 22px; }
-.dcard { grid-row: span 6; display: grid; grid-template-rows: subgrid; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+.dcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(7, auto); gap: 0 16px; margin: 0 0 22px; }
+.dcard { grid-row: span 7; display: grid; grid-template-rows: subgrid; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
 .dcard-h { display: grid; grid-template-columns: 52px 1fr; gap: 14px; align-items: center; padding-bottom: 14px; }
 .dglyph { width: 52px; height: 54px; }
 .dglyph .g-line { fill: none; stroke: var(--signal); stroke-width: 2; stroke-linejoin: round; stroke-dasharray: 100; }
@@ -768,8 +790,8 @@ a.brand:hover .brand-text b { color: var(--signal); }
 
 /* v2: 3종 진단 단계 표시 */
 .dstep { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-.dstep div { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
-.dstep div.on { color: var(--ink); font-weight: 700; }
+.dstep div, .dstep button { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.dstep div.on, .dstep button.on { color: var(--ink); font-weight: 700; }
 .dstep i { display: block; height: 5px; border-radius: 3px; background: var(--line); position: relative; overflow: hidden; }
 .dstep i::after { content: ""; position: absolute; inset: 0; background: var(--signal); transform-origin: left; transform: scaleX(var(--p, 0)); }
 .qnote { margin: -14px 0 10px; }
@@ -4834,7 +4856,7 @@ const DGLYPH = {
   core: `<line class="g-soft" x1="6" y1="30" x2="50" y2="30"/>${[6, 17, 28, 39, 50].map((x, k) => `<circle class="${k === 3 ? 'g-dot on' : 'g-dot'}" cx="${x}" cy="30" r="${k === 3 ? 5.5 : 4}"/>`).join('')}`,
   basic: [['국', 10, 30], ['수', 26, 40], ['영', 42, 24]].map(([t, x, h]) => `<rect class="g-bar" x="${x - 5}" y="${48 - h}" width="10" height="${h}" rx="2"/><text class="g-t" x="${x}" y="56" text-anchor="middle">${t}</text>`).join('') + '<line class="g-line" pathLength="100" x1="2" y1="48.5" x2="54" y2="48.5"/>'
 };
-function diagCardsHtml(retest) {
+function diagCardsHtml(retest, go) {
   const sup = supInDiag(retest) ? supItems().length : 0;
   const mins = ms => Math.max(5, Math.round(ms / 60000 / 5) * 5);
   const tN = ITEMS.reduce((a, it) => a + TYP_T[it.t], 0), tC = (CORE_ITEMS.length + sup) * TYP_T.self, tB = BASIC_ITEMS.length * TYP_T.ach;
@@ -4842,7 +4864,7 @@ function diagCardsHtml(retest) {
     <header class="dcard-h"><svg class="dglyph" viewBox="0 0 56 58" aria-hidden="true">${DGLYPH[key]}</svg><div><p class="dcard-no">${no}</p><h2 class="dcard-t">${name}</h2><p class="dcard-sub">${sub}</p></div></header>
     <p class="dcard-facts"><span><b>${n}</b>문항</span><span>약 <b>${t}</b>분</span></p>
     ${rows.map(([k, v]) => `<div class="dcard-row"><p class="dcard-k">${k}</p><p class="dcard-v">${v}</p></div>`).join('')}
-    <p class="dcard-tip">${tip}</p></article>`;
+    <p class="dcard-tip">${tip}</p>${go ? `<div class="dcard-go no-print">${go(key)}</div>` : ''}</article>`;
   return `<section class="dcards" aria-label="3종 진단 소개">
     ${card('ncs', '진단 1', '직업기초역량진단', '일할 때 어디서나 필요한 기본 능력', ITEMS.length, mins(tN), [
       ['왜 받나요', '회사나 실습 현장에서 공통으로 쓰는 능력(말하고 쓰기, 숫자 다루기, 문제 해결, 자기 관리, 함께 일하기, 디지털·AI 활용, 직업윤리)이 지금 어느 정도인지 알아봅니다.'],
@@ -4892,7 +4914,8 @@ function renderIntro() {
       </div>
       <figure class="ihero-dial">${dial(last ? last.vals : AREAS.map(() => null), last ? { poly: true } : {})}<figcaption>${dialNote}</figcaption></figure>
     </div>
-    ${diagCardsHtml(retest)}
+    ${diagCardsHtml(retest, doneNow ? null : key => { const L = pg ? (key === 'ncs' ? pg.ans : key === 'core' ? [...pg.coreAns, ...(pg.supArr || [])] : pg.basicAns) : null, n = L ? L.filter(v => v !== null).length : 0, N = L ? L.length : 0;
+      return `<button class="btn ${n && n < N ? '' : 'ghost'} sm" data-dgo="${key}" type="button">${!L || !n ? '이 진단부터 시작' : n < N ? `이어서 풀기 (${n}/${N})` : '응답 완료 · 다시 보기'}</button>`; })}
     ${pgN ? `<div class="resume"><p><b>진행 중인 진단이 있습니다</b> ${pgN} / ${QSEQ.length || ITEMS.length + CORE_ITEMS.length + BASIC_ITEMS.length + (pg.supIds || []).length}문항 응답 · 마지막 저장 ${esc(pg.at || '')}${pg.form === 'B' ? ' · 학기말 B형' : ''}</p><div class="actions"><button class="btn" id="resume">이어서 응시</button><button class="linkbtn" id="discard">처음부터 다시</button></div></div>` : ''}
     `;
   setDial(last ? last.vals : AREAS.map(() => null), last ? { poly: true } : {}, last ? `${last.label} 결과입니다.` : '직업기초역량 7개 영역의 다이얼입니다. 영역을 마칠 때마다 눈금이 올라갑니다.');
@@ -4900,7 +4923,13 @@ function renderIntro() {
   if (document.getElementById('demo')) document.getElementById('demo').onclick = () => { fillDemo(false, retest); go(retest ? 'growth' : 'result'); if (retest) { state.pendingSnap = false; snapshot(); render(); } };
   document.getElementById('demo2').onclick = () => { fillDemo(true); go('result'); };
   const rs = document.getElementById('resume');
-  if (rs) rs.onclick = () => { useForm(pg.form || 'A'); state.supArr = pg.supArr || null; buildQseq(pg.supIds || null); Object.assign(state, { ans: pg.ans, coreAns: pg.coreAns, basicAns: pg.basicAns, times: { sup: [], ...pg.times }, order: pg.order, qi: Math.min(pg.qi, QSEQ.length - 1), relOverride: false, pendingSnap: true, step: 'quiz' }); render(); };
+  const resume = () => { useForm(pg.form || 'A'); state.supArr = pg.supArr || null; buildQseq(pg.supIds || null); Object.assign(state, { ans: pg.ans, coreAns: pg.coreAns, basicAns: pg.basicAns, times: { sup: [], ...pg.times }, order: pg.order, qi: Math.min(pg.qi, QSEQ.length - 1), relOverride: false, pendingSnap: true }); };
+  if (rs) rs.onclick = () => { resume(); state.step = 'quiz'; render(); };
+  /* 고른 진단부터: 진행 중이면 이어서(그 진단의 첫 미응답), 아니면 새로 시작 */
+  $view.querySelectorAll('[data-dgo]').forEach(b => b.onclick = () => {
+    if (pg) resume(); else { newOrder(); resetDiag(); useForm(retest ? 'B' : 'A'); buildQseq(supInDiag(retest) ? supItems().map(x => x.id) : null); }
+    const id = b.dataset.dgo, f = firstOpen(id); state.qi = f !== undefined ? f : diagIdx(id)[0]; state.step = 'quiz'; render(); window.scrollTo({ top: 0 });
+  });
   const dc = document.getElementById('discard');
   if (dc) dc.onclick = () => { sSet('user', 'progress', null); renderIntro(); };
 }
@@ -4913,6 +4942,11 @@ function buildQseq(ids) {
   state.supArr = state.supIds ? (state.supArr && state.supArr.length === state.supIds.length ? state.supArr : state.supIds.map(() => null)) : [];
   QSEQ = [...ITEMS.map((_, k) => ({ set: 'ncs', k })), ...CORE_ORDER.map(k => ({ set: 'core', k })), ...(state.supIds || []).map((_, k) => ({ set: 'sup', k })), ...BASIC_ITEMS.map((_, k) => ({ set: 'basic', k }))];
 }
+/* 자유 순서 풀이: 진단별 문항 위치(QSEQ 순번), 응답 여부, 첫 미응답 */
+const diagIdx = id => QSEQ.reduce((a, x, i) => (dGrp(x.set) === id ? (a.push(i), a) : a), []);
+const qAnswered = i => { const x = QSEQ[i], v = ansArr(x.set)[x.k]; return v !== null && v !== undefined; };
+const firstOpen = id => (id ? diagIdx(id) : QSEQ.map((_, i) => i)).find(i => !qAnswered(i));
+const diagDone = id => firstOpen(id) === undefined;
 /* 이번 응시에 보완 문항을 넣을지: 학기말 재진단이 아니고, 아직 보완 문항 응답이 없을 때 */
 const supInDiag = retest => !retest && !(state.history || []).some(h => h.end) && !(supSaved() && supSaved().v);
 const supItemById = id => supItems().find(x => x.id === id) || [...supBankItems(), ...SUP_RULE].find(x => x.id === id);
@@ -5038,11 +5072,29 @@ function renderQuiz() {
       `<li class="opt"><input type="radio" name="a" id="o${k}" value="${k}" ${cur === k ? 'checked' : ''}><label for="o${k}"><span class="mk">${mk[pos]}</span><span>${ops[k] ? (set === 'basic' ? esc(ops[k]) : ops[k]) : `<span class="meta">그림의 ${mk[pos]}</span>`}</span></label></li>`).join('') + `</ul>`;
   }
   const where = set === 'ncs' ? (it.kind === 'S' ? `선택형 ${it.no}` : it.kind === 'L' ? `척도형 ${it.no}번` : `[AI 신규] ${it.no} · ${it.s}`) : set === 'core' ? (it.no ? `${it.no}번` : '[AI 신규] AI 책임 활용') : set === 'sup' ? `6대 핵심역량 보완 · ${it.comp}` : `${it.sub} ${it.n}번${it.formB ? ' · B형' : ''}`;
-  const last = state.qi === QSEQ.length - 1;
+  const gid = dGrp(set), L = diagIdx(gid), pos = L.indexOf(state.qi), total = QSEQ.length, nDone = QSEQ.filter((_, i) => qAnswered(i)).length, allDone = nDone === total;
+  const open = QSEQ.map((_, i) => i).filter(i => !qAnswered(i)), openHere = L.filter(i => !qAnswered(i));
+  /* 왼쪽 문항 현황판: 진단 탭 + 번호판(푼 문항 음영, 지금 문항 테두리). 기초학습은 과목별, 핵심역량은 보완 문항을 따로 묶음 */
+  const secOf = i => { const x = QSEQ[i]; return x.set === 'basic' ? BASIC_ITEMS[x.k].sub : x.set === 'sup' ? '6대 핵심역량 보완' : ''; };
+  let sec0 = null;
+  const cells = L.map((i, n) => { const sc = secOf(i), h = sc !== sec0 && sc ? `<p class="qpal-sec">${esc(sc)}</p>` : ''; sec0 = sc;
+    return `${h}<button type="button" class="qn${qAnswered(i) ? ' done' : ''}${i === state.qi ? ' cur' : ''}" data-qj="${i}" aria-label="${n + 1}번${qAnswered(i) ? ' 응답함' : ' 안 푼 문항'}"${i === state.qi ? ' aria-current="true"' : ''}>${n + 1}</button>`; }).join('');
+  const pal = `<nav class="qpal no-print" aria-label="문항 현황판">
+      <div class="qpal-tabs" role="tablist">${DIAGS.map(d => { const I = diagIdx(d.id), k = I.filter(qAnswered).length; return `<button type="button" role="tab" aria-selected="${d.id === gid}" class="${d.id === gid ? 'on' : ''}${k === I.length ? ' ok' : ''}" data-dtab="${d.id}"><b>${d.name.replace('역량진단', '')}</b><span>${k}/${I.length}</span></button>`; }).join('')}</div>
+      <p class="qpal-legend"><span><i class="qn done"></i>푼 문항</span><span><i class="qn"></i>안 푼 문항</span><span><i class="qn cur"></i>지금</span></p>
+      <div class="qpal-grid">${cells}</div>
+      <div class="qpal-foot">
+        <p class="meta">전체 ${nDone} / ${total} 응답${open.length ? ` · 안 푼 문항 ${open.length}개` : ''}</p>
+        ${openHere.length && !(openHere.length === 1 && openHere[0] === state.qi) ? `<button type="button" class="btn ghost sm" id="qopen">안 푼 문항으로 (${openHere.length})</button>` : ''}
+        <button type="button" class="btn sm" id="qsubmit" ${allDone ? '' : 'disabled'}>${allDone ? '제출하고 결과 보기' : '모두 풀면 제출할 수 있어요'}</button>
+      </div></nav>`;
   $view.innerHTML = `
-    <div class="dstep" aria-hidden="true">${DIAGS.map((d, i) => `<div class="${i === di ? 'on' : ''}"><span>${i + 1}. ${d.name}</span><i style="--p:${prog[i]}"></i></div>`).join('')}</div>
-    <div class="where"><span>${DIAGS[di].name} · ${where}</span><span>${state.qi + 1} / ${QSEQ.length} · 남은 시간 약 ${Math.max(1, Math.ceil(QSEQ.slice(state.qi).reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000))}분</span></div>
-    <p class="meta autosave no-print">응답은 자동으로 저장됩니다. 중간에 나가도 '진단'에서 이어서 응시할 수 있습니다.</p>
+    <div class="qlayout">
+    ${pal}
+    <div class="qmain">
+    <div class="dstep" role="tablist" aria-label="진단 고르기">${DIAGS.map((d, i) => `<button type="button" class="${d.id === gid ? 'on' : ''}" data-dtab="${d.id}"><span>${i + 1}. ${d.name}</span><i style="--p:${prog[i]}"></i></button>`).join('')}</div>
+    <div class="where"><span>${DIAGS[di].name} · ${where}</span><span>${pos + 1} / ${L.length}번 · 남은 시간 약 ${Math.max(1, Math.ceil(open.reduce((a, i) => a + TYP_T[qType(QSEQ[i])], 0) / 60000))}분</span></div>
+    <p class="meta autosave no-print">순서와 관계없이 풀 수 있습니다. 모르는 문항은 건너뛰고 왼쪽 번호판에서 다시 고르세요. 응답은 자동으로 저장됩니다.</p>
     ${set === 'basic' ? `<p class="meta qnote">기존 기초학습능력진단 ${esc(it.sub)} ${it.n}번${it.formB ? '(후보 문항, B형)' : ''} · 모르면 ⑤ '모르겠다'를 고르세요.</p>` : ''}
     ${set === 'ncs' && it.kind === 'N' ? '<p class="meta qnote"><span class="badge ai-new">AI 신규</span> 2026 NCS 표준에 새로 들어간 하위능력을 재려고 AI가 설계한 문항입니다. 예비 시행과 전문가 검토 전 초안입니다.</p>' : ''}
     ${set === 'core' ? `<p class="meta qnote">${it.no ? `기존 참(眞)인성/리더십 핵심역량진단 ${it.no}번 문항` : '<span class="badge ai-new">AI 신규</span> AI 책임 활용 보조 문항입니다. 핵심역량 점수에는 넣지 않고 따로 보여 줍니다.'}</p>` : ''}
@@ -5050,25 +5102,48 @@ function renderQuiz() {
     ${set === 'basic' ? basicFig(it) : `<p class="qtext">${it.q.replace(/\n/g, '<br>')}</p>`}
     <form id="f">${optHtml}</form>
     <div class="actions">
-      <button class="btn ghost" id="prev" ${state.qi === 0 ? 'disabled' : ''}>이전</button>
-      <button class="btn" id="next" ${cur === null ? 'disabled' : ''}>${last ? '결과 보기' : '다음'}</button>
+      <button class="btn ghost" id="prev" ${pos === 0 ? 'disabled' : ''}>이전</button>
+      <button class="btn${cur === null ? ' ghost' : ''}" id="next">${cur === null ? '건너뛰기' : pos === L.length - 1 ? (openHere.length ? '안 푼 문항으로' : allDone ? '제출하고 결과 보기' : '다음 진단으로') : '다음'}</button>
+    </div>
+    </div>
+    ${set === 'ncs' ? `<aside class="qdial" aria-label="영역별 역량 다이얼"><div id="qdial"></div><p class="dial-note">답한 문항을 바탕으로 영역 눈금이 조금씩 채워집니다.</p></aside>` : ''}
     </div>`;
   state.qStart = performance.now();
-  const note = set === 'ncs' ? '진행 중입니다. 답한 문항을 바탕으로 영역 눈금이 조금씩 채워집니다.' : set === 'core' || set === 'sup' ? '직업기초역량진단을 마쳤습니다. 이어서 핵심역량을 진단합니다.' : '마지막으로 기초학습역량을 진단합니다.';
+  const note = set === 'ncs' ? '진행 중입니다. 답한 문항을 바탕으로 영역 눈금이 조금씩 채워집니다.' : set === 'core' || set === 'sup' ? '핵심역량을 진단합니다.' : '기초학습역량을 진단합니다.';
   const nowA = set === 'ncs' && it.a != null ? { now: it.a } : {};
-  setDial(areaScores(set === 'ncs'), nowA, note);
+  const qd = () => { const el = document.getElementById('qdial'); if (el) el.innerHTML = dial(areaScores(true), nowA); };
+  setDial(areaScores(set === 'ncs'), nowA, note); qd();
   const stamp = () => { const ta = state.times[set] = state.times[set] || []; ta[q.k] = (ta[q.k] || 0) + (performance.now() - state.qStart); };
   const keep = () => { if (state.user && state.user.role === 'student') sSet('user', 'progress', { qi: state.qi, ans: state.ans, coreAns: state.coreAns, basicAns: state.basicAns, supIds: state.supIds, supArr: state.supArr, times: state.times, order: state.order, form: state.form || 'A', at: localTime() }); };
+  const finish = () => { stamp(); saveSupFromDiag(); state.step = 'result'; (state.seen = state.seen || {}).result = true; if (state.user && state.user.role === 'student') sSet('user', 'progress', null); render(); window.scrollTo({ top: 0 }); };
+  /* 다른 문항으로: 보완 문항에서 나갈 때는 보완 응답을 저장 */
+  const jump = i => { stamp(); if (set === 'sup' && QSEQ[i] && QSEQ[i].set !== 'sup') saveSupFromDiag(); state.qi = i; keep(); render(); };
+  const toDiag = id => { const f = firstOpen(id); jump(f !== undefined ? f : diagIdx(id)[0]); window.scrollTo({ top: 0 }); };
+  /* 다음: 진단 안에서 차례로. 그 진단 끝이면 안 푼 문항 → (다 풀었으면) 쉬는 화면 후 다음 미완료 진단 → 모두 끝나면 제출 */
+  const next = () => {
+    if (pos < L.length - 1) { jump(L[pos + 1]); return; }
+    if (openHere.length) { const f = openHere.find(i => i !== state.qi); if (f !== undefined) { jump(f); return; } }
+    if (allDone || (open.length === 1 && open[0] === state.qi && qAnswered(state.qi))) { finish(); return; }
+    const nd = DIAGS.find(d => d.id !== gid && !diagDone(d.id));
+    if (!nd) { finish(); return; }
+    stamp(); if (set === 'sup') saveSupFromDiag(); state.dbFrom = gid; state.qi = firstOpen(nd.id); keep(); state.step = 'dbreak'; render(); window.scrollTo({ top: 0 });
+  };
   document.querySelectorAll('input[name=a]').forEach(inp => inp.addEventListener('change', e => {
     arr[q.k] = Number(e.target.value);
     keep();
-    document.getElementById('next').disabled = false;
-    if (set === 'ncs') setDial(areaScores(true), nowA, note);
+    const cell = document.querySelector(`.qn[data-qj="${state.qi}"]`); if (cell) cell.classList.add('done');
+    if (set === 'ncs') { setDial(areaScores(true), nowA, note); qd(); }
     /* 척도 문항은 고르면 잠시 뒤 다음 문항으로 넘어감(직접 '다음'을 누르면 그대로) */
-    if (t === 'self' && !last) { const qi0 = state.qi; setTimeout(() => { if (state.step === 'quiz' && state.qi === qi0 && document.getElementById('next')) document.getElementById('next').click(); }, 380); }
+    if (t === 'self') { const qi0 = state.qi; setTimeout(() => { if (state.step === 'quiz' && state.qi === qi0) next(); }, 380); }
+    else render();
   }));
-  document.getElementById('prev').onclick = () => { stamp(); state.qi--; keep(); render(); };
-  document.getElementById('next').onclick = () => { stamp(); if (set === 'sup' && QSEQ[state.qi + 1] && QSEQ[state.qi + 1].set !== 'sup') saveSupFromDiag(); if (last) { saveSupFromDiag(); state.step = 'result'; (state.seen = state.seen || {}).result = true; if (state.user && state.user.role === 'student') sSet('user', 'progress', null); } else { state.qi++; keep(); if (dGrp(QSEQ[state.qi].set) !== dGrp(set)) state.step = 'dbreak'; } render(); window.scrollTo({ top: 0 }); };
+  document.getElementById('prev').onclick = () => { if (pos > 0) jump(L[pos - 1]); };
+  document.getElementById('next').onclick = next;
+  $view.querySelectorAll('[data-qj]').forEach(b => b.onclick = () => jump(+b.dataset.qj));
+  $view.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => { if (b.dataset.dtab !== gid) toDiag(b.dataset.dtab); });
+  if (document.getElementById('qopen')) document.getElementById('qopen').onclick = () => jump(openHere.find(i => i !== state.qi));
+  document.getElementById('qsubmit').onclick = () => { if (QSEQ.every((_, i) => qAnswered(i))) finish(); };
+  const curCell = document.querySelector('.qn.cur'); if (curCell) curCell.scrollIntoView({ block: 'nearest' });
 }
 
 const POOL = '자유전공학부(공통)';
@@ -11607,6 +11682,23 @@ function acadSignals(no, gr, at) {
   }
   return out;
 }
+/* 가상 코호트의 학점·출결 예시(관리자가 이수 결과·출결을 올리기 전 시연용): 진단 수준이 낮을수록 평점이 낮고 결석이 많게, 학번 해시로 고정.
+   2026학년도 1학기 5과목. 행 형식은 업로드 자료와 같음(학점: [연도, 학기, 과목, 구분, 학점, 성적], 출결: [연도, 학기, 과목, 총 수업시간, 결석시간, 지각, 조퇴, 주당시수]) */
+const DEMO_ACAD = new Map();
+function demoAcad(st) {
+  if (DEMO_ACAD.has(st.no)) return DEMO_ACAD.get(st.no);
+  const base = st.traceArea[0].reduce((a, b) => a + b, 0) / st.traceArea[0].length, courses = (st.taken[0].length ? st.taken[0] : ['전공기초1', '전공기초2']).concat(['전공실습1', '전공이론1', '전공이론2']).slice(0, 5);
+  const LET = [['A+', 4.5], ['A0', 4], ['B+', 3.5], ['B0', 3], ['C+', 2.5], ['C0', 2], ['D+', 1.5], ['D0', 1], ['F', 0]];
+  const gr = [], at = [];
+  courses.forEach((n, i) => {
+    const h = hashStr(st.no + '|' + n), r1 = (h % 1000) / 1000, r2 = ((h >>> 10) % 1000) / 1000, r3 = ((h >>> 20) % 1000) / 1000;
+    const pt = Math.max(0, Math.min(4.5, 0.9 + base / 100 * 3.4 + (r1 - 0.5) * 2.2)), g = LET.find(([, v]) => pt >= v - 0.25) || LET[LET.length - 1];
+    const wk = i < 2 ? 2 : 3, T = wk * 15, rate = Math.max(0, (62 - base) / 220 + (r2 - 0.55) * 0.22), ab = Math.min(T, Math.round(T * rate));
+    gr.push([2026, '1', n, i < 2 ? '교양' : '전공', wk === 2 ? 2 : 3, ab / T >= 0.3 ? 'F' : g[0]]);
+    at.push([2026, '1', n, T, ab, Math.floor(r3 * 4), Math.floor(r3 * 7) % 2, wk]);
+  });
+  const o = { gr, at }; DEMO_ACAD.set(st.no, o); return o;
+}
 /* 이탈·부진 조기 경보: 신호별 가중치를 더해 0~100점. 사유를 함께 돌려 교원이 근거를 보고 판단 */
 function riskOfCohort(st) {
   const A = RISK_ACAD, why = [], keys = [];
@@ -11619,7 +11711,9 @@ function riskOfCohort(st) {
   if (st.basicLow && !st.suppDone) add(A.wBasic, '기초학습 낮음·보충 미이수', 'wBasic');
   if (!st.picks.length) add(A.wNoPlan, '이수 계획 없음', 'wNoPlan');
   if (!st.nc.length) add(A.wNoNc, '비교과 참여 없음', 'wNoNc');
-  acadSignals(st.no).forEach(([w, t, k]) => add(w, t, k));
+  /* 학점·출결: 올린 자료가 있으면 그 자료, 없으면 가상 예시 */
+  const GR = (sGet('org', 'grades') || {}).rows, AT = (sGet('org', 'attend') || {}).rows, D = !GR || !AT ? demoAcad(st) : null;
+  acadSignals(st.no, GR ? undefined : D.gr, AT ? undefined : D.at).forEach(([w, t, k]) => add(w, t, k));
   return { score: Math.min(100, s), why, keys };
 }
 function riskOfReal(x) {
@@ -11649,7 +11743,7 @@ function renderRisk() {
       <div class="rk-top"><div class="stats"><div class="stat"><b>${cnt(shown, '위험')}명</b><span>위험(${RISK_ACAD.lvBad}점 이상)</span></div><div class="stat"><b>${cnt(shown, '경고')}명</b><span>경고(${RISK_ACAD.lvWarn}~${RISK_ACAD.lvBad - 1}점)</span></div><div class="stat"><b>${cnt(shown, '주의')}명</b><span>주의(${RISK_ACAD.lvMild}~${RISK_ACAD.lvWarn - 1}점)</span></div></div>
       <div class="pick no-print"><label>학과<select id="rkdept">${['전체', ...depts].map(d => `<option ${d === state.rkDept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label></div></div>
       <p class="meta"><span class="badge amber">가상 예시 데이터</span> 실제 이용 학생의 경보는 교원 홈 '플랫폼 이용 학생' 표의 위험도 열에 나옵니다.</p>
-      <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '이수 결과 미반영')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결 미반영')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
+      <p class="meta rk-src">학업 신호 반영: ${(G => G ? `이수 결과 ${Object.keys(G.rows || {}).length}명(${esc(G.at || '')})` : '학점은 가상 예시(이수 결과를 올리면 그 자료로 바뀜)')(sGet('org', 'grades'))} · ${(A => A ? `출결 ${Object.keys(A.rows || {}).length}명(${esc(A.at || '')})` : '출결은 가상 예시(출결을 올리면 그 자료로 바뀜)')(sGet('org', 'attend'))} <button class="linkbtn" data-go="grades" type="button">이수 결과 올리기</button> <button class="linkbtn" data-go="attend" type="button">출결 올리기</button></p>
       <details class="tech"><summary>점수 계산 방법</summary><p class="meta">${RISK_SIGS.filter(([, , k]) => RISK_ACAD[k]).map(([, l, k, who]) => `${l.replace(/\{(\w+)\}/g, (_, x) => RISK_ACAD[x])} ${RISK_ACAD[k]}점${who === '실제' ? '(실제 이용 학생)' : who === '가상' ? '(가상 코호트)' : ''}`).join(', ')}을 더합니다(최대 100점). 지각·조퇴 ${RISK_ACAD.late}회는 결석 1시간으로 셉니다. 단계는 주의 ${RISK_ACAD.lvMild}점, 경고 ${RISK_ACAD.lvWarn}점, 위험 ${RISK_ACAD.lvBad}점부터입니다. <button class="linkbtn" type="button" onclick="state.setTab='risk';go('settings')">기준 바꾸기</button></p></details></section>
     ${panelH('p-rkdept', '학과별 경보 비율', `${MIN_GROUP}명 이상 학과 · 위험+경고 비율 높은 순`, `<div class="rkbars">${byDept.slice(0, 12).map(x => `<div class="rkbar"><span>${esc(x.d)}</span><div class="rktrack" aria-label="위험 ${x.bad}명, 경고 ${x.warn}명, 주의 ${x.mild}명"><i class="rk-bad" style="width:${x.bad / x.n * 100}%"></i><i class="rk-warn" style="width:${x.warn / x.n * 100}%"></i><i class="rk-mild" style="width:${x.mild / x.n * 100}%"></i></div><span class="meta">${Math.round((x.bad + x.warn) / x.n * 100)}%</span></div>`).join('')}</div>
       <div class="glegend meta"><span><i class="lg rk-bad"></i>위험</span><span><i class="lg rk-warn"></i>경고</span><span><i class="lg rk-mild"></i>주의</span></div>`)}
@@ -12497,15 +12591,15 @@ function openInbox() {
 
 /* ---------- 진단 나눠 받기: 한 진단을 마칠 때마다 쉬었다가 이어서 ---------- */
 function renderDBreak() {
-  const q = QSEQ[state.qi], di = DIAGS.findIndex(d => d.id === dGrp(q.set)), prev = DIAGS[di - 1];
-  const rest = QSEQ.filter(x => dGrp(x.set) === dGrp(q.set)), mins = Math.max(1, Math.ceil(rest.reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
-  const allMins = Math.max(1, Math.ceil(QSEQ.slice(state.qi).reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
+  const q = QSEQ[state.qi], di = DIAGS.findIndex(d => d.id === dGrp(q.set)), prev = DIAGS.find(d => d.id === state.dbFrom) || DIAGS[Math.max(0, di - 1)];
+  const restI = diagIdx(dGrp(q.set)).filter(i => !qAnswered(i)), rest = restI.map(i => QSEQ[i]), mins = Math.max(1, Math.ceil(rest.reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
+  const allMins = Math.max(1, Math.ceil(QSEQ.filter((_, i) => !qAnswered(i)).reduce((a, x) => a + TYP_T[qType(x)], 0) / 60000));
   const prog = diagProg();
   let peek = '';
   if (prev.id === 'ncs') { const v = areaScores(), o = v.map((x, k) => k).sort((a, b) => v[b] - v[a]); peek = `<p class="dbpeek"><b>직업기초 미리 보기</b> 강점 ${AREAS[o[0]].short} ${Math.round(v[o[0]])}점 · 보완 ${AREAS[o[o.length - 1]].short} ${Math.round(v[o[o.length - 1]])}점. 세 진단을 모두 마치면 전체 결과와 AI 분석이 나옵니다.</p>`; }
   $view.innerHTML = `
     <div class="dstep" aria-hidden="true">${DIAGS.map((d, i) => `<div class="${i === di ? 'on' : ''}"><span>${i + 1}. ${d.name}</span><i style="--p:${prog[i]}"></i></div>`).join('')}</div>
-    <p class="eyebrow">${di} / ${DIAGS.length} 완료</p>
+    <p class="eyebrow">${DIAGS.filter(d => diagDone(d.id)).length} / ${DIAGS.length} 완료</p>
     <h1>${prev.name}을 마쳤습니다</h1>
     <p class="lede">응답은 저장되었습니다. 지금 쉬었다가 나중에 '진단 받기'에서 이어서 받아도 됩니다. 남은 진단은 모두 약 ${allMins}분입니다.</p>
     ${peek}
@@ -13035,7 +13129,7 @@ function render() {
   const u = state.user;
   if (!u) state.step = 'login';
   else if (state.step === 'login' || !groupOf(state.step) && !['quiz', 'retake', 'needdiag', 'ncsurvey', 'supsurvey'].includes(state.step)) state.step = HOME[u.role];
-  document.body.classList.toggle('wide', !u || state.step !== 'quiz');
+  document.body.classList.toggle('wide', true);
   document.body.classList.toggle('authpage', !u);
   if (u && opsMode()) state.phase = phaseBySchedule();
   document.body.classList.toggle('no-demo', !demoOn());
