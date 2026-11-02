@@ -12555,10 +12555,34 @@ function render() {
   mountTerra($view);
   document.documentElement.lang = langEN() ? 'en' : 'ko';
   if (langEN()) { startI18n(); $view.insertAdjacentHTML('afterbegin', langNote()); translateTree(document.body); }
+  syncHistory();
 }
+/* 브라우저 뒤로·앞으로: 화면을 바꿀 때마다 방문 기록(#화면)을 남기고, 뒤로 가기는 플랫폼 안의 이전 화면으로.
+   같은 화면을 다시 그릴 때는 기록하지 않고, 로그인 화면과 뒤로 가기로 온 화면은 기록을 바꿔치기만 함 */
+let histStep = null, histPop = false;
+function syncHistory() {
+  const st = state.user ? state.step : 'login';
+  if (st === histStep) return;
+  const url = location.pathname + location.search + (st === 'login' ? '' : '#' + st);
+  try {
+    if (histStep === null || histPop || st === 'login' || histStep === 'login') history.replaceState({ step: st }, '', url);
+    else history.pushState({ step: st }, '', url);
+  } catch (e) { /* 파일로 연 화면 등 기록을 쓸 수 없는 환경 */ }
+  histStep = st; histPop = false;
+}
+window.addEventListener('popstate', e => {
+  const st = (e.state && e.state.step) || location.hash.slice(1);
+  if (!state.user || !st || st === 'login' || st === state.step) return;
+  if (state.tour) { history.pushState({ step: state.step }, '', location.pathname + location.search + '#' + state.step); return; }
+  histPop = true; closeHelp(); go(st);
+});
 pwaInit();
 document.getElementById('brandlink').addEventListener('click', e => { e.preventDefault(); closeHelp(); if (state.tour) return; if (state.user) go(HOME[state.user.role]); else { state.step = 'login'; render(); window.scrollTo({ top: 0 }); } });
-authInit().then(render);
+authInit().then(() => {
+  /* 새로 고침·주소 공유: 주소의 #화면이 로그인한 역할의 화면이면 그 화면으로 */
+  const h = location.hash.slice(1);
+  if (state.user && h && h !== state.step && groupOf(h) && roleOf(h) === state.user.role) { histPop = true; go(h); } else render();
+});
 </script>
 </body>
 </html>
