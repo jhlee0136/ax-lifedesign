@@ -951,7 +951,7 @@ body.no-demo .phase, body.no-demo .badge.amber, body.no-demo .resfoot, body.no-d
 .axbars .b1.neg { background: var(--amber); }
 .p-qabad { grid-column: span 12; } .p-qa-ncs { grid-column: span 12; } .p-qa-core, .p-qa-basic { grid-column: span 6; }
 @media print { body.printing #report .rdoc { border: 0; padding: 0; max-width: none; } }
-.p-set5, .p-set7 { grid-column: span 6; } .p-set6 { grid-column: span 12; } .p-aiuse { grid-column: span 12; }
+.p-set5, .p-set7 { grid-column: span 6; } .p-set6 { grid-column: span 12; } .p-set8 { grid-column: span 12; order: 9; } .p-aiuse { grid-column: span 12; }
 @media (max-width: 1000px) { .p-set5, .p-set6, .p-set7 { grid-column: 1 / -1; } }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 300; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: min(560px, calc(100vw - 32px)); transition: opacity .2s, transform .2s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -8529,12 +8529,12 @@ const SET_FIELDS = [
   ['등급 기준', '하위능력 점수로 상·중·하를 나누는 기준입니다.', [['grade.high', "'높음(상)' 최소 점수"], ['grade.mid', "'보통(중)' 최소 점수"]]],
   ['응답 신뢰성', '심각 1개 이상 또는 경고 2개 이상이면 재실시, 경고 1개면 주의입니다.', [['rel.speedWarn', '과속 응답 경고(%)'], ['rel.speedBad', '과속 응답 심각(%)'], ['rel.inconWarn', '불일치 응답 경고(%)'], ['rel.inconBad', '불일치 응답 심각(%)'], ['rel.runWarn', '일렬 응답 경고(연속 문항)'], ['rel.runBad', '일렬 응답 심각(연속 문항)'], ['rel.modeWarn', '같은 답 경고(%)'], ['rel.modeBad', '같은 답 심각(%)'], ['rel.totalWarn', '총 소요 시간 경고(기준 대비 % 미만)'], ['rel.totalBad', '총 소요 시간 심각(기준 대비 % 미만)']]],
   ['상담 알림', '조건을 만족하면 지도교수 화면과 학생 홈에 상담 알림이 뜹니다.', [['alert.drop', '향상도 기준(이 점수 미만이면 알림)'], ['alert.lowCount', "'하' 수준 2회 연속 능력 수(이상)"]]],
-  ['조기 경보 · 학점·출결', '이수 결과(학점 연계)와 출결 연계 자료로 이탈·부진 조기 경보 점수를 더하는 기준입니다. 점수는 그 신호가 있을 때 더하는 값이고, 0이면 그 신호를 쓰지 않습니다.', [['acad.gpa', '직전 학기 평점 기준(4.5 만점, 미만이면)'], ['acad.wGpa', '평점 미달 점수'], ['acad.wF', 'F 학점 과목 있음 점수'], ['acad.absent', '과목 결석 기준(학기 총 수업시간의 %, 이상이면)'], ['acad.wAbs', '출석 미달 위험 과목 점수'], ['acad.rate', '전체 결석률 기준(%, 이상이면)'], ['acad.wRate', '결석률 초과 점수'], ['acad.late', '지각·조퇴 몇 회를 결석 1시간으로']]],
   ['교육과정 효과성', '보정 효과 판정 기준입니다.', [['effect.min', '의미 있는 최소 효과(점)'], ['effect.minN', '판정에 필요한 최소 이수 인원']]],
   ['개인정보', '집계 화면에서 이 인원 미만 집단은 공개하지 않습니다.', [['privacy.minGroup', '집계 공개 최소 인원']]],
   ['6대 핵심역량 점수 비중', '3종 진단을 6대 핵심역량 점수로 합칠 때의 비중(%)입니다. 측정 근거가 없는 진단은 빼고 나머지 비중으로 다시 맞춥니다. 가산점은 학기말 재검사 점수에 더하는 최대 점수입니다(0이면 쓰지 않음).', [['six.ncs', '직업기초역량진단'], ['six.core', '핵심역량진단'], ['six.basic', '기초학습역량진단'], ['six.bonusPro', '재검사 가산점 최대: 전문성(전공 평점·직무 능력단위 이수율)'], ['six.bonusSelf', '재검사 가산점 최대: 자기주도성(자기주도 학습 실천률)']]],
   ['졸업 요건(학칙)', '학칙 제24조의3(졸업학점)과 제24조④(학기당 이수 학점) 값입니다. 수업연한 3년 학과는 학칙 제5조②로 정합니다. 직업기초 영역 학점과 3-IN 비교과 횟수는 규정에 없는 대학 자체 기준이라 0(선택)으로 둡니다.', [['grad.tot2', '졸업 최저 학점(2년제)'], ['grad.tot3', '졸업 최저 학점(3년제)'], ['grad.lib2', '교양 최저 학점(2년제)'], ['grad.lib3', '교양 최저 학점(3년제)'], ['grad.major2', '전공 최저 학점(2년제)'], ['grad.major3', '전공 최저 학점(3년제)'], ['grad.semMin', '학기당 최소 이수 학점'], ['grad.semMax', '학기당 최대 이수 학점'], ['grad.basicMin', '직업기초 영역 최소 학점(0이면 점검 안 함)'], ['grad.ncPerIn', '3-IN 단계별 비교과 최소 횟수(0이면 선택)']]],
-  ['AI 사용 한도', '넘으면 AI를 호출하지 않고 규칙 기반으로 동작합니다. 충전한 크레딧보다 월 예산을 낮게 두세요.', [['ai.budget', '월 예산(US$)'], ['ai.perUserDaily', '1인 하루 호출 수'], ['ai.dailyTotal', '하루 전체 호출 수']]]
+  ['AI 사용 한도', '넘으면 AI를 호출하지 않고 규칙 기반으로 동작합니다. 충전한 크레딧보다 월 예산을 낮게 두세요.', [['ai.budget', '월 예산(US$)'], ['ai.perUserDaily', '1인 하루 호출 수'], ['ai.dailyTotal', '하루 전체 호출 수']]],
+  ['조기 경보 · 학점·출결', '이수 결과(학점 연계)와 출결 연계 자료로 이탈·부진 조기 경보 점수를 더하는 기준입니다. 점수는 그 신호가 있을 때 더하는 값이고, 0이면 그 신호를 쓰지 않습니다.', [['acad.gpa', '직전 학기 평점 기준(4.5 만점, 미만이면)'], ['acad.wGpa', '평점 미달 점수'], ['acad.wF', 'F 학점 과목 있음 점수'], ['acad.absent', '과목 결석 기준(학기 총 수업시간의 %, 이상이면)'], ['acad.wAbs', '출석 미달 위험 과목 점수'], ['acad.rate', '전체 결석률 기준(%, 이상이면)'], ['acad.wRate', '결석률 초과 점수'], ['acad.late', '지각·조퇴 몇 회를 결석 1시간으로']]]
 ];
 const SCHED_FIELDS = [['diagStart', '진단 시작일'], ['diagEnd', '진단 종료일'], ['remind', '미응시 독려 발송일'], ['retestStart', '재진단 시작일'], ['retestEnd', '재진단 종료일']];
 const getPath = (o, p) => p.split('.').reduce((a, k) => a[k], o);
