@@ -78,9 +78,11 @@ p { margin: 0 0 14px; }
 .facts { list-style: none; padding: 0; margin: 28px 0; max-width: 34em; }
 /* 3종 진단 소개 카드 */
 /* 개인정보 동의 */
-.consent { max-width: 920px; } .consent h2 { font-size: 18px; margin: 22px 0 8px; }
+.consent { max-width: 1120px; } .consent .lede { max-width: none; } .consent h2 { font-size: 18px; margin: 22px 0 8px; }
 .cs-all { display: flex; gap: 8px; align-items: center; padding: 12px 14px; border: 1.5px solid var(--signal); border-radius: 12px; background: var(--signal-soft); margin: 14px 0 4px; font-size: 15.5px; }
-.cs-item { font-size: 15px; margin: 8px 0 2px; } .cs-tbl td { vertical-align: top; text-align: left !important; font-size: 14px; } .cs-tbl td:first-child { white-space: nowrap; }
+.cs-item { font-size: 15px; margin: 8px 0 2px; } .cs-tbl { table-layout: fixed; width: 100%; max-width: none; } .cs-tbl th, .cs-tbl td { vertical-align: top; text-align: left !important; white-space: normal !important; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.55; }
+.cs-tbl td { font-size: 14px; padding-top: 10px; padding-bottom: 10px; }
+@media (max-width: 700px) { .cs-tbl, .cs-tbl tbody, .cs-tbl tr, .cs-tbl td { display: block; width: auto !important; } .cs-tbl thead, .cs-tbl colgroup { display: none; } .cs-tbl tr { padding: 8px 0; border-bottom: 1px solid var(--line); } .cs-tbl td { padding: 2px 0; border: 0; } .cs-tbl td:nth-child(2)::before { content: '수집·이용: '; color: var(--muted); } .cs-tbl td:nth-child(3)::before { content: '목적: '; color: var(--muted); } .cs-tbl td:nth-child(4)::before { content: '보유 기간: '; color: var(--muted); } }
 .cs-opt { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; } .cs-opt li { padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); } .cs-opt .meta { margin: 2px 0 0 26px; }
 .adv-st { margin: -4px 0 8px; } .home-foot { grid-column: 1 / -1; margin: 0; text-align: right; }
 /* 목표 직무 캐릭터(준비도 막대 위) */
@@ -9966,7 +9968,7 @@ function renderConsent() {
     <p class="lede">인하공업전문대학 대학 생활 설계 플랫폼은 진단 결과와 학업 기록으로 나에게 맞는 공부와 활동을 추천합니다. 진단 결과는 성적이나 평가에 쓰지 않습니다.</p>
     <label class="chk cs-all"><input type="checkbox" id="csall" ${all ? 'checked' : ''}> <b>아래 내용에 모두 동의합니다</b> <span class="meta">(필수·선택 포함)</span></label>
     <h2>필수 동의</h2>
-    <div class="scrollx"><table class="tbl cs-tbl"><thead><tr><th>항목</th><th>수집·이용 정보</th><th>목적</th><th>보유 기간</th></tr></thead><tbody>${CONSENT_REQ.map(([t, a, b, d]) => `<tr><td><b>${t}</b></td><td>${a}</td><td>${b}</td><td>${d}</td></tr>`).join('')}</tbody></table></div>
+    <table class="tbl cs-tbl"><colgroup><col style="width:17%"><col style="width:33%"><col style="width:38%"><col style="width:12%"></colgroup><thead><tr><th>항목</th><th>수집·이용 정보</th><th>목적</th><th>보유 기간</th></tr></thead><tbody>${CONSENT_REQ.map(([t, a, b, d]) => `<tr><td><b>${t}</b></td><td>${a}</td><td>${b}</td><td>${d}</td></tr>`).join('')}</tbody></table>
     <label class="chk cs-item"><input type="checkbox" id="csreq" ${D.req ? 'checked' : ''}> <b>[필수]</b> 위 개인정보 수집·이용에 동의합니다.</label>
     <p class="meta">필수 항목에 동의하지 않으면 플랫폼을 이용할 수 없습니다. 동의를 거부할 권리가 있으며, 거부해도 학사상 불이익은 없습니다.</p>
     <h2>선택 동의</h2>
