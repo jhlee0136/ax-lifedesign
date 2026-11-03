@@ -7064,7 +7064,7 @@ function renderDiagOps() {
         <tr><td>과속 응답(%)</td><td>${R.speedWarn}</td><td>${R.speedBad}</td></tr><tr><td>불일치 응답(%)</td><td>${R.inconWarn}</td><td>${R.inconBad}</td></tr>
         <tr><td>일렬 응답(연속 문항 / 같은 답 %)</td><td>${R.runWarn} / ${R.modeWarn}</td><td>${R.runBad} / ${R.modeBad}</td></tr><tr><td>총 소요 시간(기준 대비 % 미만)</td><td>${R.totalWarn}</td><td>${R.totalBad}</td></tr><tr><td>타당도 문항(기대와 반대로 답한 수)</td><td>1</td><td>2</td></tr></tbody></table>
       <p class="meta">문항 유형별 최소 응답 시간: 자기보고 ${MIN_T.self / 1000}초, 상황판단·사례 ${MIN_T.sjt / 1000}초, 성취형 ${MIN_T.ach / 1000}초. 타당도 문항은 직업기초 28·54번(그렇다 기대)과 80·101번(아니다 기대)이며 기준은 고정입니다.</p>
-      <div class="actions no-print"><button class="btn ghost sm" data-go="settings">운영 설정에서 바꾸기</button></div>
+      <div class="actions no-print"><button class="btn ghost sm" data-go="settings" data-settab="diag">운영 설정에서 바꾸기</button></div>
       <h3 class="sub3">판정 후 처리</h3>
       <ol class="relflow">
         <li><span class="relv rel-정상">정상</span><span><b>경고 없음</b> 결과와 교과·비교과 추천을 바로 보여 줍니다.</span></li>
@@ -13464,7 +13464,7 @@ function go(step) {
   if (state.user && state.user.role === 'student') sSet('user', 'seen', state.seen);
   render(); window.scrollTo({ top: 0 });
 }
-document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); });
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (!g) return; if (g.dataset.settab) state.setTab = g.dataset.settab; go(g.dataset.go); });
 function renderNeedDiag() {
   $view.innerHTML = `<div class="empty-state"><h1>먼저 3종 진단을 받아 주세요</h1><p class="lede">진단 결과가 있어야 결과 분석, 맞춤 이수 계획, 상담을 이용할 수 있습니다. 진단은 20분 정도 걸립니다.</p>
     <div class="actions"><button class="btn" data-go="intro">진단하러 가기</button>${opsMode() ? '' : '<button class="linkbtn" id="nddemo">시연용 응답으로 채우기</button>'}</div></div>`;
