@@ -9112,6 +9112,7 @@ function tourMark(sel) {
   const el = sel && [...document.querySelectorAll(sel)].find(e => e.offsetParent !== null);
   if (el) { el.classList.add('tour-hl'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 }
+function tourSig() { try { return JSON.stringify([state, STORE.user, STORE.org], (k, v) => k === 'tour' ? undefined : v); } catch (e) { return String(Math.random()); } }
 async function tourShow(i) {
   const T = state.tour; if (!T) return;
   T.i = Math.max(0, Math.min(TOUR.length - 1, i));
@@ -9119,6 +9120,8 @@ async function tourShow(i) {
   const box = document.getElementById('tourbox') || document.body.appendChild(Object.assign(document.createElement('aside'), { id: 'tourbox', className: 'tour no-print' }));
   box.setAttribute('aria-live', 'polite');
   box.innerHTML = `<p class="tour-n">${T.i + 1} / ${TOUR.length}</p><h2>${s.title}</h2><p class="meta">준비 중…</p>`;
+  const u0 = state.user, before = { step: state.step, role: u0 ? u0.role : null, duty: u0 ? u0.duty : null, y: scrollY, sig: tourSig() };
+  T.hold = true; T.held = false;
   try {
     const seen = T.done[T.i];
     if (seen) {
@@ -9130,8 +9133,19 @@ async function tourShow(i) {
       if (seen.role) go(seen.step);
     } else if (s.prep) await s.prep();
     T.done[T.i] = { step: state.user ? state.step : 'login', role: state.user ? state.user.role : null, duty: state.user ? state.user.duty : null, phase: state.phase };
-  } catch (e) { box.innerHTML = `<h2>투어를 계속할 수 없습니다</h2><p class="meta">${esc(e.message)}</p><div class="actions"><button class="btn sm" id="tend">끝내기</button></div>`; document.getElementById('tend').onclick = tourEnd; return; }
-  await new Promise(r => setTimeout(r, 450));
+  } catch (e) { T.hold = false; box.innerHTML = `<h2>투어를 계속할 수 없습니다</h2><p class="meta">${esc(e.message)}</p><div class="actions"><button class="btn sm" id="tend">끝내기</button></div>`; document.getElementById('tend').onclick = tourEnd; return; }
+  T.hold = false;
+  /* 같은 화면의 다음 패널이면: 맨 위로 돌아가지 않고 직전 패널 위치에서 바로 이어서 이동 */
+  const u1 = state.user, same = !!u1 && before.role === u1.role && before.duty === u1.duty && before.step === state.step;
+  if (same) {
+    const changed = T.held && tourSig() !== before.sig;
+    if (changed) render();
+    window.scrollTo({ top: before.y, behavior: 'instant' });
+    await new Promise(r => setTimeout(r, changed ? 200 : 30));
+  } else {
+    if (T.held) render();
+    await new Promise(r => setTimeout(r, 450));
+  }
   tourMark(s.sel);
   box.innerHTML = `<p class="tour-n">${T.track && T.track !== 'overview' ? `${TOURS[T.track].t} · ` : ''}${T.i + 1} / ${TOUR.length} <span class="tour-bar"><i style="width:${(T.i + 1) / TOUR.length * 100}%"></i></span></p>${s.who ? `<p class="tour-who"><span class="tw tw-${{ 관리자: 'a', 학생: 's', 교원: 'f' }[s.who] || 'x'}">${s.who}</span>${s.when ? `<span class="meta">${s.when}</span>` : ''}</p>` : ''}<h2>${s.title}</h2><p>${s.text}</p>
     <div class="actions"><button class="btn ghost sm" id="tprev" ${T.i ? '' : 'disabled'}>이전</button><button class="btn sm" id="tnext">${T.i === TOUR.length - 1 ? '직접 둘러보기' : '다음'}</button><button class="linkbtn" id="tend">끝내기</button></div>`;
@@ -13442,6 +13456,8 @@ function go(step) {
   if (roleOf(step) !== state.user.role && !['quiz', 'retake', 'needdiag', 'login'].includes(step)) step = HOME[state.user.role];
   if (!stepAllowed(step)) { toast(`${DUTY_NAME[dutyOf()]} 계정에서는 열 수 없는 화면입니다.`); step = HOME[state.user.role]; }
   if (state.user.role === 'student' && NEEDS_DIAG.includes(step) && !hasDiag()) { state.needFor = step; step = 'needdiag'; }
+  /* 둘러보기 중 같은 화면으로 가면 다시 그리지 않음(바뀐 내용이 있으면 tourShow가 위치를 지킨 채 다시 그림) */
+  if (state.tour && state.tour.hold && state.step === step) { state.tour.held = true; return; }
   if (state.step === 'result') state.from = 'result';
   state.mega = null;
   state.step = step; state.seen = state.seen || {}; state.seen[step] = true;
