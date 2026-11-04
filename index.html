@@ -2402,6 +2402,15 @@ html[lang=en] #kbtn kbd { display: none; }
 .ttsteps li { display: flex; align-items: center; gap: 6px; } .ttsteps li b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; background: var(--paper); border: 1px solid var(--line-strong); color: var(--muted); }
 .ttsteps li.done { color: var(--ok-ink); } .ttsteps li.done b { background: var(--ok-soft); border-color: transparent; color: var(--ok-ink); }
 .ttsteps li.now { color: var(--ink); font-weight: 650; } .ttsteps li.now b { background: var(--signal); border-color: var(--signal); color: var(--panel); }
+
+.pflow.dflow ol { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pflow.sub { display: block; margin-top: -8px; padding: 12px 14px 14px; border-radius: 14px; background: color-mix(in srgb, var(--line) 35%, transparent); }
+.pflow-k { display: block; margin: 0 0 8px; font-size: 13px; font-weight: 650; color: var(--muted); }
+.pflow.sub .pf-step { padding: 10px 12px; } .pflow.sub .pf-t b { font-size: 14.5px; }
+@media (max-width: 1000px) { .pflow.dflow ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pflow.dflow li + li .pf-step::before { display: none; } }
+@media (max-width: 760px) { .pflow.dflow ol { grid-template-columns: minmax(0, 1fr); } .pflow .pf-t span { display: none; } }
+
+.pf-step.wait { background: var(--paper); } .pf-step.wait .pf-t b { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -11668,12 +11677,45 @@ function crumbHtml() {
   const path = [ROLE_NAME[u.role], gi.g.t, ...(parent ? [parent[1], st[1]] : st ? [st[1], hasKids ? st[3] : null] : [])].filter((x, i, a) => x && a.indexOf(x) === i);
   return `<nav class="crumb no-print" aria-label="현재 위치"><span>${path.map((x, i) => i === path.length - 1 ? `<b>${esc(x)}</b>` : esc(x)).join('<i aria-hidden="true">›</i>')}</span>${PAGE_JOB[cur] ? `<span class="meta">${PAGE_JOB[cur]}</span>` : ''}</nav>`;
 }
+/* 내 설계 흐름: ① 목표 직무 → ② 차이 분석 → ③ 추천 교육과정 → ④ 이수 계획·시간표. 각 단계의 목적과 진행 상태, 다음 할 일을 한 줄에 */
+function designFlowState() {
+  const v = (state.user && state.user.role === 'student' && sGet('user', 'dvisit')) || {}, pl = state.plan && state.plan.dept === state.dept ? state.plan : loadPlan(), tt = state.tt || ttLoad();
+  const job = state.targetJob ? JOBS.find(j => j.id === state.targetJob) : null;
+  const d1 = !!(job || state.designMode === 'undecided' || v.gap), d2 = !!v.gap, d3 = !!(pl && pl.design), d4 = !!(tt.applied && tt.applied === curTerm());
+  const st = [job ? `목표: ${job.name}` : d1 ? '직무 미정 · 진단 기반' : '시작 전', d2 ? '확인함' : d1 ? '할 차례' : '목표를 먼저', d3 ? `계획 만듦 · ${pl.design.at || ''}` : v.recs ? '고르는 중' : '시작 전', d4 ? '이번 학기 확정' : d3 ? '계획 있음 · 시간표 전' : '시작 전'];
+  const done = [d1, d2, d3, d4];
+  return { done, st, next: ['career', 'gap', 'recs', 'planmap'][done.indexOf(false)] || null };
+}
+function designFlowHtml(cur) {
+  const F = designFlowState();
+  const S = [['career', '목표 직무', '어떤 직무를 목표로 할지 정합니다'], ['gap', '차이 분석', '목표에 필요한 역량과 내 점수 차이를 봅니다'], ['recs', '추천 교육과정', '차이를 메울 교양·융합과정·비교과를 고릅니다'], ['planmap', '이수 계획·시간표', '학기별 계획과 이번 학기 시간표를 확정합니다']];
+  return `<nav class="pflow dflow no-print" aria-label="내 설계 단계"><ol>${S.map(([k, t, d], i) => {
+    const on = cur === k, nx = F.next === k && !on;
+    return `<li><button type="button" class="pf-step${on ? ' on' : ''}${F.done[i] ? ' done' : ''}" data-go="${k}" ${on ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${F.done[i] && !on ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : esc(F.st[i])}</span></button></li>`;
+  }).join('')}</ol></nav>`;
+}
 /* 한 화면 안의 보기 전환: steps의 세 번째 값이 같은 부모 화면으로 묶음 */
+/* 내 진단 흐름: ① 진단 받기 → ② 결과 확인 → ③ AI 분석 → ④ 성장 리포트(학기말 재진단 뒤). 내 설계와 같은 단계 카드 */
+function diagFlowHtml(cur) {
+  let v = sGet('user', 'dvisit') || {}; if (['result', 'analysis', 'growth'].includes(cur) && (state.history || []).length && !v[cur]) { v = { ...v, [cur]: todayISO() }; sSet('user', 'dvisit', v); }
+  const H = state.history || [], nDone = DIAGS.filter(d => diagDone(d.id)).length, last = H[H.length - 1];
+  const d1 = H.length > 0, d2 = d1 && !!v.result, d3 = d1 && !!v.analysis, end = H.some(x => x.end), d4 = end && !!v.growth;
+  const st = [d1 ? `응시 완료 · ${String(last.date || '').slice(0, 10)}` : nDone ? `진행 중 ${nDone}/${DIAGS.length}` : '시작 전 · 약 20분', d2 ? '확인함' : d1 ? '볼 차례' : '진단 뒤', d3 ? '확인함' : d1 ? '볼 차례' : '진단 뒤', d4 ? '확인함' : end ? '볼 차례' : '학기말 재진단 뒤'];
+  const done = [d1, d2, d3, d4], avail = [true, d1, d1, end];
+  const next = ['intro', 'result', 'analysis', 'growth'][done.findIndex((x, i) => !x && avail[i])] || null;
+  const S = [['intro', '진단 받기', '3종 진단(직업기초·핵심·기초학습)을 받습니다. 나눠 받아도 됩니다'], ['result', '결과 확인', '강점과 보완할 능력, 6대 핵심역량을 봅니다'], ['analysis', 'AI 분석', '3종 결과를 함께 읽고 먼저 할 일을 정리합니다'], ['growth', '성장 리포트', '학기말 재진단으로 얼마나 자랐는지 봅니다']];
+  return `<nav class="pflow dflow no-print" aria-label="내 진단 단계"><ol>${S.map(([k, t, d], i) => {
+    const on = cur === k, nx = next === k && !on;
+    return `<li><button type="button" class="pf-step${on ? ' on' : ''}${done[i] ? ' done' : ''}${avail[i] ? '' : ' wait'}" data-go="${k}" ${on ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done[i] && !on ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : esc(st[i])}</span></button></li>`;
+  }).join('')}</ol></nav>`;
+}
 function viewSwitchHtml() {
+  { const g0 = groupOf(state.step); if (g0 && g0.g.id === 'diag' && state.user && state.user.role === 'student' && ['intro', 'result', 'analysis', 'growth'].includes(STEP_ALIAS[state.step] || state.step)) return diagFlowHtml(STEP_ALIAS[state.step] || state.step); }
   const gi = groupOf(state.step); if (!gi) return '';
   const cur = STEP_ALIAS[state.step] || state.step, st = gi.g.steps.find(s => s[0] === cur); if (!st) return '';
   const root = st[2] || st[0], fam = gi.g.steps.filter(s => (s[0] === root || s[2] === root) && !s[4]);
   if (fam.length < 2) return '';
+  if (root === 'career') return designFlowHtml(st[2] && st[2] !== 'career' ? st[2] : st[4] || cur);
   return `<div class="vswitch no-print" role="tablist" aria-label="보기">${fam.map(([id, t, par, vt]) => `<button role="tab" class="vs${root === 'career' ? ' step' : ''}" data-go="${id}" aria-selected="${id === cur || st[4] === id}">${par ? t : vt || t}</button>`).join('')}</div>`;
 }
 
@@ -11926,7 +11968,7 @@ function planModeHtml(cur) {
     ['timetable', `이번 학기 시간표 확정 · ${termName(curTerm())}`, '전공 빈 시간에 교양을 배치하고 계획에 반영', F.s2 ? '확정함' : tt.res ? '추천 받음 · 반영 전' : tt.blocks && tt.blocks.length ? '전공 불러옴' : '시작 전'],
     ['plan', '계획 고치기', '필요할 때만: 학기 옮기기·과목 더하기·빼기', F.s3 ? '고친 적 있음' : '선택']
   ];
-  return `<nav class="pflow no-print" aria-label="이수 계획·시간표 단계"><ol>${steps.map(([k, t, d, st], i) => {
+  return `<nav class="pflow sub no-print" aria-label="이수 계획·시간표 단계"><p class="pflow-k">④ 이수 계획·시간표 안의 순서</p><ol>${steps.map(([k, t, d, st], i) => {
     const done = [F.s1, F.s2, F.s3][i], nx = F.next === k && cur !== k;
     return `<li><button type="button" class="pf-step${cur === k ? ' on' : ''}${done ? ' done' : ''}" data-go="${k}" ${cur === k ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : st}</span></button></li>`;
   }).join('')}</ol></nav>`;
@@ -14080,6 +14122,8 @@ const navTops = g => g.steps.filter(s => !s[2]);
 const navSingle = g => navTops(g).length === 1 && !g.steps.some(s => s[2]);
 /* 펼침 메뉴 안의 업무 분류: 같은 일끼리 한 줄로 묶음(분류가 없는 메뉴는 그대로 한 묶음) */
 const NAV_CAT = {
+  diag: [['진단하기 ①→③', ['intro', 'result']], ['학기말 확인 ④', ['growth']]],
+  plan: [['설계하기 ①→④', ['career']], ['설계 결과 활용', ['roadmap', 'jobkit', 'portfolio']]],
   dgn: [['문항', ['itembank']], ['진단 운영', ['diagops', 'partic']]],
   sup: [['학생 단위', ['stulookup', 'followup']], ['위험·상담', ['risk', 'counselstat']]],
   edu: [['교과 준비', ['specmap']], ['교과 시간표', ['majortt', 'electt']], ['비교과', ['ncopen', 'ncprepost']]],
@@ -14163,7 +14207,8 @@ addEventListener('resize', () => { clearTimeout(window.__fitNavT); window.__fitN
 const NEEDS_DIAG = ['portfolio', 'result', 'analysis', 'plan', 'planmap', 'timetable', 'career', 'gap', 'recs', 'roadmap', 'counsel'];
 function go(step) {
   if (!state.user) { state.step = 'login'; render(); return; }
-  if (step === 'timetable' && ['planmap', 'plan'].includes(state.step)) state.ttFromPlan = true; /* 이수 계획 → '이번 학기 시간표로 확정' */
+  if (step === 'timetable' && ['planmap', 'plan'].includes(state.step)) state.ttFromPlan = true;
+  if (state.user.role === 'student' && ['career', 'gap', 'recs', 'result', 'analysis', 'growth'].includes(step)) { const v = sGet('user', 'dvisit') || {}; if (!v[step]) sSet('user', 'dvisit', { ...v, [step]: todayISO() }); } /* 내 설계 단계 진행 표시용 */ /* 이수 계획 → '이번 학기 시간표로 확정' */
   if (roleOf(step) !== state.user.role && !['quiz', 'retake', 'needdiag', 'login'].includes(step)) step = HOME[state.user.role];
   if (!stepAllowed(step)) { toast(`${DUTY_NAME[dutyOf()]} 계정에서는 열 수 없는 화면입니다.`); step = HOME[state.user.role]; }
   if (state.user.role === 'student' && NEEDS_DIAG.includes(step) && !hasDiag()) { state.needFor = step; step = 'needdiag'; }
