@@ -2413,6 +2413,10 @@ html[lang=en] #kbtn kbd { display: none; }
 .pf-step.wait { background: var(--paper); } .pf-step.wait .pf-t b { color: var(--muted); }
 
 .pflow.fflow ol { grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); } .pflow.fflow ol:has(> li:nth-child(2):last-child) { --n: 2; }
+
+.pflow.aflow ol { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); } .pflow.aflow + .vswitch { margin-top: -6px; }
+@media (max-width: 1000px) { .pflow.aflow ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .pflow.aflow ol { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -11754,8 +11758,7 @@ const FAC_FLOW = {
   adv: [['fstulookup', '학생별 결과 조회', '지도 학생 한 명의 3종 진단 결과와 변화를 봅니다'], ['advisor', '지도 학생 상담', '상담이 필요한 학생을 보고 상담을 요청·기록합니다'], ['ffollowup', '후속조치 이행', '상담 뒤 처방을 실제로 했는지 확인합니다']]
 };
 function facFlowHtml(gid, cur) {
-  const v = sGet('user', 'fvisit') || {}, S = FAC_FLOW[gid], T = gid === 'sec' ? teachOf() : null;
-  if (!v[cur]) { v[cur] = todayISO(); sSet('user', 'fvisit', v); }
+  const v = staffVisit(cur), S = FAC_FLOW[gid], T = gid === 'sec' ? teachOf() : null;
   const done = S.map(([k]) => !!v[k]), next = (S.find(([k], i) => !done[i]) || [])[0];
   const st = k => k === 'classprof' ? (T.length ? `담당 ${new Set(T.map(r => r.n)).size}과목 · ${T.length}분반` : '담당 강좌 없음') : v[k] ? '확인함' : '볼 차례';
   return `<nav class="pflow dflow fflow no-print" aria-label="${gid === 'sec' ? '수업 운영' : '지도 학생'} 단계"><ol>${S.map(([k, t, d], i) => {
@@ -11763,7 +11766,38 @@ function facFlowHtml(gid, cur) {
     return `<li><button type="button" class="pf-step${on ? ' on' : ''}${done[i] ? ' done' : ''}" data-go="${k}" ${on ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done[i] && !on ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : esc(st(k))}</span></button></li>`;
   }).join('')}</ol></nav>`;
 }
+/* 교직원 화면 방문 기록(단계 카드의 '확인함'): 교직원은 학번이 없어 이 브라우저에 사람별로 둠. 학기가 바뀌면 다시 '볼 차례' */
+function staffVisit(cur) {
+  const key = 'svisit:' + teachKey(state.user) + ':' + curTerm(); let v = {}; try { v = lsGet(key) || {}; } catch (e) { v = {}; }
+  if (cur && !v[cur]) { v = { ...v, [cur]: todayISO() }; try { lsSet(key, v); } catch (e) { /* 저장 불가 */ } }
+  return v;
+}
+/* 같은 부모 화면에 묶인 하위 화면 탭(관리자 단계 카드 아래에 붙음) */
+function famTabsHtml(g, cur, root) {
+  const fam = g.steps.filter(x => (x[0] === root || x[2] === root) && !x[4] && stepAllowed(x[0])); if (fam.length < 2) return '';
+  return `<div class="vswitch no-print" role="tablist" aria-label="보기">${fam.map(([id, t, par, vt]) => `<button role="tab" class="vs" data-go="${id}" aria-selected="${id === cur}">${par ? t : vt || t}</button>`).join('')}</div>`;
+}
+/* 관리자 흐름: 메뉴마다 일하는 순서대로 단계 카드(목적 한 줄·이번 학기 확인 여부·다음 할 일). 하위 화면은 부모 단계에 묶음 */
+const ADM_FLOW = {
+  dgn: [['itembank', '문항 관리', '진단 문항과 B형 검사지를 준비합니다'], ['diagops', '진단 운영', '진단 기간을 열고 응시를 관리합니다'], ['partic', '참여율 현황', '학과·학년별 응시율을 보고 독려합니다']],
+  edu: [['specmap', '역량 매핑', '교과목 명세서로 연계 역량·NCS를 승인합니다'], ['majortt', '전공 시간표', '학과·학기·반별 전공 시간표를 등록합니다'], ['electt', '교양·융합 시간표', '교양·융합 분반을 배치합니다'], ['ncopen', '비교과 개설', '비교과를 개설하고 관심 학생에게 알립니다'], ['ncprepost', '비교과 사전·사후', '참여 전후 역량 변화를 봅니다']],
+  sup: [['risk', '조기 경보', '이탈·부진 위험 학생을 미리 찾습니다'], ['stulookup', '학생별 결과 조회', '학생 한 명의 진단 결과와 변화를 봅니다'], ['followup', '후속조치 이행', '처방을 실제로 했는지와 효과를 봅니다'], ['counselstat', '상담 현황', '지도교수 상담을 교원·학과별로 집계합니다']],
+  out: [['gain', '역량 향상도', '재진단으로 역량 변화와 과정별 효과를 봅니다'], ['evals', '강의평가 연계', '강의 만족도와 역량 효과를 함께 봅니다'], ['axkpi', 'AX 성과', '사업 성과지표 달성도를 봅니다']],
+  imp: [['deptdash', '학과별 개선', '학과별로 보완이 필요한 역량을 찾습니다'], ['coverage', '개선 설계', '교과과정 공백을 점검하고 개선안을 만듭니다'], ['committee', '위원회', '안건과 보고서를 위원회에 올립니다']],
+  cfg: [['settings', '기준값·일정', '판정 기준과 학기 일정을 정합니다'], ['users', '사용자·권한 관리', '관리 권한과 강의 배정, 학생 이용 현황'], ['integration', '학사·수강편람 연동', '학사·수강편람 자료를 불러옵니다'], ['grades', '이수 결과(학점 연계)', '이수 결과를 학점과 기록에 반영합니다'], ['attend', '출결 연계', '출결을 조기 경보에 반영합니다'], ['notify', '알림 발송', '일정에 맞춰 안내 메일을 보냅니다'], ['auditlog', '변경 이력', '누가 무엇을 바꿨는지 확인합니다']]
+};
+function admFlowHtml(gid, cur, root) {
+  const S = ADM_FLOW[gid].filter(([k]) => stepAllowed(k)); if (S.length < 2) return '';
+  const v = staffVisit(root), done = S.map(([k]) => !!v[k]), next = (S.find(([k], i) => !done[i]) || [])[0];
+  return `<nav class="pflow dflow aflow no-print" aria-label="${esc((navOf('admin').find(g => g.id === gid) || {}).t || '')} 단계" style="--n:${Math.min(S.length, 4)}"><ol>${S.map(([k, t, d], i) => {
+    const on = root === k, nx = next === k && !on;
+    return `<li><button type="button" class="pf-step${on ? ' on' : ''}${done[i] ? ' done' : ''}" data-go="${k}" ${on ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done[i] && !on ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : done[i] ? '이번 학기 확인함' : '이번 학기 볼 차례'}</span></button></li>`;
+  }).join('')}</ol></nav>`;
+}
 function viewSwitchHtml() {
+  { const g0 = groupOf(state.step), c0 = STEP_ALIAS[state.step] || state.step;
+    if (g0 && state.user && state.user.role === 'admin' && ADM_FLOW[g0.g.id]) { const st0 = g0.g.steps.find(x => x[0] === c0), root = st0 && st0[2] ? st0[2] : c0;
+      if (ADM_FLOW[g0.g.id].some(([k]) => k === root)) return admFlowHtml(g0.g.id, c0, root) + famTabsHtml(g0.g, c0, root); } }
   { const g0 = groupOf(state.step), c0 = STEP_ALIAS[state.step] || state.step; if (g0 && state.user && state.user.role === 'faculty' && FAC_FLOW[g0.g.id] && FAC_FLOW[g0.g.id].some(([k]) => k === c0)) return facFlowHtml(g0.g.id, c0); }
   { const g0 = groupOf(state.step); if (g0 && g0.g.id === 'diag' && state.user && state.user.role === 'student' && ['intro', 'result', 'analysis', 'growth'].includes(STEP_ALIAS[state.step] || state.step)) return diagFlowHtml(STEP_ALIAS[state.step] || state.step); }
   const gi = groupOf(state.step); if (!gi) return '';
@@ -14150,12 +14184,12 @@ const NAV = {
   faculty: [{ id: 'fhome', t: '홈', steps: [['fhome', '홈']] }, { id: 'sec', t: '수업 운영', steps: [['classprof', '수업 역량 프로필'], ['sections', '수준별 조편성']] }, { id: 'adv', t: '지도 학생', steps: [['fstulookup', '학생별 결과 조회'], ['advisor', '지도 학생 상담'], ['ffollowup', '후속조치 이행']] }, { id: 'fdp', t: '학과 현황', steps: [['fdept', '학과 개선 현황']] }],
   /* 관리자: 업무 흐름(진단 → 교과·비교과 운영 → 학생 지원 → 성과 분석 → 교육과정 개선) + 기반(운영 관리) */
   admin: [{ id: 'ahome', t: '홈', steps: [['ahome', '지금 할 일']] },
-    { id: 'dgn', t: '진단', steps: [['diagops', '진단 운영'], ['partic', '참여율 현황'], ['itembank', '문항 관리', null, '문항 은행·AI 고도화'], ['itemqa', '문항 분석', 'itembank'], ['forms', 'B형 검사지·동등화', 'itembank']] },
+    { id: 'dgn', t: '진단', steps: [['itembank', '문항 관리', null, '문항 은행·AI 고도화'], ['itemqa', '문항 분석', 'itembank'], ['forms', 'B형 검사지·동등화', 'itembank'], ['diagops', '진단 운영'], ['partic', '참여율 현황']] },
     { id: 'edu', t: '교과·비교과 운영', steps: [['specmap', '역량 매핑'], ['majortt', '전공 시간표'], ['electt', '교양·융합 시간표'], ['ncopen', '비교과 개설'], ['ncprepost', '비교과 사전·사후']] },
-    { id: 'sup', t: '학생 지원', steps: [['stulookup', '학생별 결과 조회'], ['followup', '후속조치 이행'], ['risk', '조기 경보'], ['counselstat', '상담 현황']] },
+    { id: 'sup', t: '학생 지원', steps: [['risk', '조기 경보'], ['stulookup', '학생별 결과 조회'], ['followup', '후속조치 이행'], ['counselstat', '상담 현황']] },
     { id: 'out', t: '성과 분석', steps: [['gain', '역량 향상도', null, '역량 향상도'], ['impact', '교육과정 효과성', 'gain'], ['ask', 'AI 데이터 비서', 'gain'], ['evals', '강의평가 연계'], ['axkpi', 'AX 성과']] },
     { id: 'imp', t: '교육과정 개선', steps: [['deptdash', '학과별 개선'], ['coverage', '개선 설계', null, '교과과정 점검'], ['studio', '개선안 설계', 'coverage'], ['committee', '위원회', null, '위원회 안건'], ['report', '위원회 보고서', 'committee']] },
-    { id: 'cfg', t: '운영 관리', steps: [['settings', '기준값·일정'], ['integration', '학사·수강편람 연동'], ['grades', '이수 결과(학점 연계)'], ['attend', '출결 연계'], ['notify', '알림 발송'], ['users', '사용자·권한 관리'], ['auditlog', '변경 이력']] }]
+    { id: 'cfg', t: '운영 관리', steps: [['settings', '기준값·일정'], ['users', '사용자·권한 관리'], ['integration', '학사·수강편람 연동'], ['grades', '이수 결과(학점 연계)'], ['attend', '출결 연계'], ['notify', '알림 발송'], ['auditlog', '변경 이력']] }]
 };
 const ROLE_NAME = { student: '학생', faculty: '교원', admin: '관리자' };
 const STEP_ALIAS = { quiz: 'intro', dbreak: 'intro', retake: 'result', needdiag: 'home' };
@@ -14179,12 +14213,12 @@ const navSingle = g => navTops(g).length === 1 && !g.steps.some(s => s[2]);
 const NAV_CAT = {
   diag: [['진단하기 ①→③', ['intro', 'result']], ['학기말 확인 ④', ['growth']]],
   plan: [['설계하기 ①→④', ['career']], ['설계 결과 활용', ['roadmap', 'jobkit', 'portfolio']]],
-  dgn: [['문항', ['itembank']], ['진단 운영', ['diagops', 'partic']]],
-  sup: [['학생 단위', ['stulookup', 'followup']], ['위험·상담', ['risk', 'counselstat']]],
-  edu: [['교과 준비', ['specmap']], ['교과 시간표', ['majortt', 'electt']], ['비교과', ['ncopen', 'ncprepost']]],
-  out: [['역량 성과', ['gain']], ['수업·운영 성과', ['evals', 'axkpi']]],
-  imp: [['진단·분석', ['deptdash']], ['개선 설계', ['coverage']], ['위원회', ['committee']]],
-  cfg: [['기준', ['settings']], ['자료 연동', ['integration', 'grades', 'attend']], ['사용자', ['users']], ['알림·기록', ['notify', 'auditlog']]]
+  dgn: [['① 준비', ['itembank']], ['② 운영', ['diagops', 'partic']]],
+  sup: [['① 찾기', ['risk']], ['② 학생 단위', ['stulookup', 'followup']], ['③ 집계', ['counselstat']]],
+  edu: [['① 교과 준비', ['specmap']], ['② 교과 시간표', ['majortt', 'electt']], ['③ 비교과', ['ncopen', 'ncprepost']]],
+  out: [['① 역량 성과', ['gain']], ['② 수업·운영 성과', ['evals', 'axkpi']]],
+  imp: [['① 진단·분석', ['deptdash']], ['② 개선 설계', ['coverage']], ['③ 위원회', ['committee']]],
+  cfg: [['① 기준·사용자', ['settings', 'users']], ['② 자료 연동', ['integration', 'grades', 'attend']], ['③ 알림·기록', ['notify', 'auditlog']]]
 };
 function megaHtml(role, gid) {
   const groups = navOf(role), g = groups.find(x => x.id === gid);
