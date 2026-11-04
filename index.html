@@ -2383,6 +2383,25 @@ html[lang=en] #kbtn kbd { display: none; }
 .tbl.tt-auto td.c-dash { color: var(--muted); }
 .scrollx > .tbl.tt-auto.tt-has-long { min-width: 640px; }
 @media (max-width: 700px) { .tbl.tt-auto { display: block; overflow-x: auto; } .tbl.tt-auto .c-long { min-width: 14em; } .scrollx > .tbl.tt-auto { display: table; } .scrollx > .tbl.tt-auto.tt-has-long { min-width: 560px; } }
+
+/* ④ 단계 흐름 */
+.pflow { margin: -6px 0 20px; } .pflow ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; counter-reset: none; }
+.pf-step { width: 100%; height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; gap: 2px 12px; align-items: center; text-align: left; font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; position: relative; }
+.pflow li + li .pf-step::before { content: ''; position: absolute; left: -11px; top: 50%; width: 10px; height: 1px; background: var(--line-strong); }
+.pf-step:hover { border-color: var(--line-strong); } .pf-step:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.pf-step.on { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
+.pf-n { grid-row: 1 / span 2; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--paper); color: var(--muted); border: 1px solid var(--line-strong); }
+.pf-step.on .pf-n { background: var(--signal); color: var(--panel); border-color: var(--signal); }
+.pf-step.done:not(.on) .pf-n { background: var(--ok-soft); color: var(--ok-ink); border-color: transparent; }
+.pf-t { display: grid; gap: 1px; min-width: 0; } .pf-t b { font-size: 15px; font-weight: 650; } .pf-t span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.pf-st { grid-column: 2; justify-self: start; font-size: 12px; color: var(--muted); padding: 1px 8px; border-radius: 999px; background: var(--paper); margin-top: 4px; }
+.pf-st.nx { background: var(--signal); color: var(--panel); font-weight: 650; }
+@media (max-width: 760px) { .pflow ol { grid-template-columns: minmax(0, 1fr); gap: 6px; } .pflow li + li .pf-step::before { display: none; } }
+/* 시간표 안 순서 */
+.ttsteps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--muted); }
+.ttsteps li { display: flex; align-items: center; gap: 6px; } .ttsteps li b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; background: var(--paper); border: 1px solid var(--line-strong); color: var(--muted); }
+.ttsteps li.done { color: var(--ok-ink); } .ttsteps li.done b { background: var(--ok-soft); border-color: transparent; color: var(--ok-ink); }
+.ttsteps li.now { color: var(--ink); font-weight: 650; } .ttsteps li.now b { background: var(--signal); border-color: var(--signal); color: var(--panel); }
 </style>
 </head>
 <body>
@@ -6485,7 +6504,7 @@ function renderPlan() {
   if (state.planSig && state.planSigDept === plan.dept && state.planSig !== sig) {
     if (!state.planUndoSkip) state.planUndo = state.planPrev;
     state.planUndoSkip = false;
-    savePlan(); const pm = document.getElementById('pmsg'); if (pm) pm.textContent = '바뀐 내용을 자동 저장했습니다.';
+    plan.edited = true; savePlan(); const pm = document.getElementById('pmsg'); if (pm) pm.textContent = '바뀐 내용을 자동 저장했습니다.';
   }
   state.planPrev = JSON.parse(JSON.stringify(plan)); state.planSig = sig; state.planSigDept = plan.dept;
   if (state.planUndo && !document.getElementById('pundo')) { const ps = document.getElementById('psave'); if (ps) ps.insertAdjacentHTML('beforebegin', '<button class="btn ghost" id="pundo" type="button">되돌리기</button>'); }
@@ -11108,7 +11127,7 @@ function ttRecommend(tt, aiOrder) {
     if (cr + ccr > P.cr) { if (skipped.length < 4 && c.score > .3) skipped.push({ c, why: `학점 목표(${P.cr}학점) 초과` }); continue; }
     const ai = aiOrder && aiOrder.find(x => x.name === c.n);
     if (put(c, ai ? [...c.why] : c.why)) { cr += placed[placed.length - 1].cr; if (ai) placed[placed.length - 1].ai = ai.reason; }
-    else if (skipped.length < 4) skipped.push({ c, why: !c.secs.length ? '이번 학기 내가 들을 수 있는 분반 없음' : c.secs.some(s => seatsLeft(s) > 0) ? '자리가 남은 분반이 모두 시간과 겹침' : '모든 분반 정원 마감' });
+    else if (skipped.length < 4 && c.secs.length) skipped.push({ c, why: !c.secs.length ? '이번 학기 내가 들을 수 있는 분반 없음' : c.secs.some(s => seatsLeft(s) > 0) ? '자리가 남은 분반이 모두 시간과 겹침' : '모든 분반 정원 마감' });
   }
   /* 3) 비교과: 목적에 맞는 순서로, 시간이 비는 프로그램 */
   const ncPicked = []; /* 비교과는 개설 시기가 해마다 달라 시간표에 넣지 않음(관심 등록 → 개설 알림) */
@@ -11181,12 +11200,13 @@ function ttGrid(tt, res) {
       ${b.kind === 'major' || b.kind === 'personal' ? `<button class="tt-x" data-delb="${b.id}" aria-label="${esc(b.n)} 지우기">×</button>` : b.kind === 'rec' ? `<button class="tt-x" data-excl="${esc(b.n)}" aria-label="${esc(b.n)} 빼고 다시 추천">×</button>` : ''}</div>`).join('')}
   </div>`;
 }
+const ttPlanSig = tt => (state.plan || loadPlan() || buildPlan()).items.filter(i => i.term === tt.term && ['rec', 'added', 'micro'].includes(i.kind)).map(i => i.n).sort().join('|');
 function renderTimetable() {
   const dd = diagData(), terms = planTerms(state.dept);
   const tt = state.tt = state.tt || ttLoad();
   if (tt.term !== curTerm()) { tt.term = curTerm(); tt.res = null; tt.ai = null; } /* 시간표는 이번 학기만(다음 학기 전공 시간·분반은 아직 정해지지 않음) */
   if (!tt.ban) tt.ban = (bansOf(state.dept, tt.term).includes(studentBan(state.user && state.user.no)) || !bansOf(state.dept, tt.term).length) ? studentBan(state.user && state.user.no) : bansOf(state.dept, tt.term)[0];
-  { const pl = state.plan || loadPlan() || buildPlan(), sig = pl.items.filter(i => i.term === tt.term && ['rec', 'added', 'micro'].includes(i.kind)).map(i => i.n).sort().join('|');
+  { const sig = ttPlanSig(tt);
     const fromPlan = state.ttFromPlan; state.ttFromPlan = false;
     if (tt.blocks.length && ((tt.res && tt.planSig !== sig) || (fromPlan && !tt.res))) { tt.res = ttRecommend(tt, tt.ai && tt.ai.picks); if (sig) state.ttMsg = `이수 계획의 ${termName(tt.term)} 과목을 시간표에 반영했습니다. 비는 학점은 추천 과목으로 채웠습니다.`; }
     else if (fromPlan && !tt.blocks.length) state.ttMsg = `먼저 '학사정보시스템에서 불러오기'로 전공 시간표를 불러오세요. 그러면 이수 계획의 ${termName(tt.term)} 과목이 빈 시간에 배치됩니다.`;
@@ -11204,6 +11224,7 @@ function renderTimetable() {
   <div class="dash-grid tt-grid">
     <section class="panel p-sum"><p class="eyebrow">${termName(tt.term)} · ${esc(state.dept)}</p>
       <p class="summary">이번 학기 계획을 전공 시간표의 빈 시간에 맞춰 확정합니다.</p>
+      ${(() => { const a = tt.blocks.length > 0, b = !!res, c = tt.applied === tt.term, now = !a ? 0 : !b ? 1 : !c ? 2 : 3; return `<ol class="ttsteps">${[['전공 시간표 불러오기', a], ['추천 받기', b], [`${termName(tt.term)} 이수 계획에 반영`, c]].map(([t, d], i) => `<li class="${d ? 'done' : i === now ? 'now' : ''}"><b>${d ? '✓' : i + 1}</b>${t}</li>`).join('')}</ol>`; })()}
       <p class="meta">전공 시간표는 학사정보시스템에서 불러오거나 직접 입력합니다. 이수 계획에서 이번 학기에 넣은 과목을 먼저 배치하고, 남는 시간은 목적·정원·학점 목표에 맞는 교양으로 채웁니다. 다음 학기 이후는 시간이 정해지지 않아 학기별 계획에서만 다룹니다.</p></section>
     <section class="panel p-ttg"><header class="phead"><h2>주간 시간표</h2><span class="meta">전공 ${majorH}시간 · ${majorCr}학점 · 출처: ${srcTxt}</span></header><div class="pbody">
       <div class="tt-tools no-print">
@@ -11305,7 +11326,7 @@ function renderTimetable() {
       pl.items.push(b.kind === 'nc' ? { n: b.n, cr: null, subs: b.subs, cat: '비교과', kind: 'nc', in: (NONCURR.find(p => p.n === b.n) || {}).in, term: tt.term } : { n: b.n, cr: b.cr, subs: b.subs, cat: '교양', kind: 'added', why: (b.why[0] || '').split(' ')[0], term: tt.term });
       n++;
     });
-    savePlan(); q('ttamsg').textContent = `${n}개를 ${termName(tt.term)} 계획에 넣었습니다. 이수 계획 화면에서 확인하세요.`;
+    savePlan(); tt.applied = tt.term; tt.planSig = ttPlanSig(tt); ttSave(tt); state.ttMsg = `${n ? `${n}개를 ` : ''}${termName(tt.term)} 계획에 반영해 이번 학기 시간표를 확정했습니다.`; renderTimetable();
   };
 }
 
@@ -11892,8 +11913,23 @@ function buildPlanFrom(T, R, S) {
   return plan;
 }
 /* ④ 이수 계획 ↔ 이번 학기 시간표 전환 */
+/* ④ 이수 계획·시간표: 처음 쓰는 사람도 따라갈 수 있게 1 로드맵 확인 → 2 이번 학기 시간표 확정 → 3 계획 고치기(필요할 때) */
+function planFlowState() {
+  const pl = state.plan && state.plan.dept === state.dept ? state.plan : loadPlan(), tt = state.tt || ttLoad();
+  const s1 = !!(pl && (pl.design || pl.items.some(i => i.kind !== 'base'))), s2 = !!(tt.applied && tt.applied === curTerm()), s3 = !!(pl && pl.edited);
+  return { s1, s2, s3, next: !s1 ? 'planmap' : !s2 ? 'timetable' : null, tt };
+}
 function planModeHtml(cur) {
-  return `<div class="pmode no-print" role="tablist" aria-label="이수 계획 보기"><button role="tab" class="pm" data-go="planmap" aria-selected="${cur === 'planmap'}">이수 로드맵</button><button role="tab" class="pm" data-go="plan" aria-selected="${cur === 'plan'}">계획 고치기</button><button role="tab" class="pm" data-go="timetable" aria-selected="${cur === 'timetable'}">이번 학기 시간표 · ${termName(curTerm())}</button></div>`;
+  const F = planFlowState(), tt = F.tt;
+  const steps = [
+    ['planmap', '학기별 로드맵 확인', '졸업까지 언제 무엇을 듣는지 한눈에', F.s1 ? '계획 있음' : '계획 만들기 전'],
+    ['timetable', `이번 학기 시간표 확정 · ${termName(curTerm())}`, '전공 빈 시간에 교양을 배치하고 계획에 반영', F.s2 ? '확정함' : tt.res ? '추천 받음 · 반영 전' : tt.blocks && tt.blocks.length ? '전공 불러옴' : '시작 전'],
+    ['plan', '계획 고치기', '필요할 때만: 학기 옮기기·과목 더하기·빼기', F.s3 ? '고친 적 있음' : '선택']
+  ];
+  return `<nav class="pflow no-print" aria-label="이수 계획·시간표 단계"><ol>${steps.map(([k, t, d, st], i) => {
+    const done = [F.s1, F.s2, F.s3][i], nx = F.next === k && cur !== k;
+    return `<li><button type="button" class="pf-step${cur === k ? ' on' : ''}${done ? ' done' : ''}" data-go="${k}" ${cur === k ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : st}</span></button></li>`;
+  }).join('')}</ol></nav>`;
 }
 
 /* ---------- 융합과정 현황: 수강 대상 과정 전체의 나노·마이크로디그리 진도 ---------- */
@@ -14012,7 +14048,7 @@ const NAV = {
   /* steps: [화면 id, 이름, 부모 화면(있으면 그 화면 안의 보기), 부모 화면의 첫 보기 이름] */
   student: [{ id: 'home', t: '홈', steps: [['home', '홈']] },
     { id: 'diag', t: '내 진단', steps: [['intro', '진단 받기'], ['result', '진단 결과', null, '결과 요약'], ['analysis', 'AI 분석', 'result'], ['growth', '성장 리포트']] },
-    { id: 'plan', t: '내 설계', steps: [['career', '설계하기', null, '① 목표 직무'], ['gap', '② 차이 분석', 'career'], ['recs', '③ 추천 교육과정', 'career'], ['planmap', '④ 이수 계획·시간표', 'career'], ['plan', '계획 고치기', 'career', null, 'planmap'], ['timetable', '이번 학기 시간표', 'career', null, 'planmap'], ['roadmap', '융합과정 현황'], ['jobkit', '입사지원서 꾸러미'], ['portfolio', '성장 포트폴리오']] },
+    { id: 'plan', t: '내 설계', steps: [['career', '설계하기', null, '① 목표 직무'], ['gap', '② 차이 분석', 'career'], ['recs', '③ 추천 교육과정', 'career'], ['planmap', '④ 이수 계획·시간표', 'career'], ['timetable', '이번 학기 시간표', 'career', null, 'planmap'], ['plan', '계획 고치기', 'career', null, 'planmap'], ['roadmap', '융합과정 현황'], ['jobkit', '입사지원서 꾸러미'], ['portfolio', '성장 포트폴리오']] },
     { id: 'cns', t: '상담', steps: [['counsel', 'AI 상담']] }],
   faculty: [{ id: 'fhome', t: '홈', steps: [['fhome', '홈']] }, { id: 'sec', t: '수업 운영', steps: [['sections', '수준별 조편성'], ['classprof', '수업 역량 프로필']] }, { id: 'adv', t: '지도 학생', steps: [['advisor', '지도 학생 상담'], ['ffollowup', '후속조치 이행'], ['fstulookup', '학생별 결과 조회']] }, { id: 'fdp', t: '학과 현황', steps: [['fdept', '학과 개선 현황']] }],
   /* 관리자: 업무 흐름(진단 → 교과·비교과 운영 → 학생 지원 → 성과 분석 → 교육과정 개선) + 기반(운영 관리) */
@@ -14279,9 +14315,9 @@ const NEXT = {
   analysis: [['career', '내 설계 시작하기']],
   career: [['gap', '② 차이 분석으로']],
   gap: [['recs', '③ 추천 교육과정 보기'], ['career', '목표 다시 정하기']],
-  planmap: [['timetable', '이번 학기 시간표로 확정'], ['roadmap', '융합과정 현황']],
-  plan: [['planmap', '이수 로드맵 보기'], ['timetable', '이번 학기 시간표로 확정']],
-  timetable: [['planmap', '이수 로드맵'], ['counsel', '상담하기']],
+  planmap: [['timetable', '2 이번 학기 시간표 확정하기'], ['plan', '3 계획 고치기']],
+  timetable: [['plan', '3 계획 고치기(필요할 때)'], ['planmap', '1 로드맵 다시 보기']],
+  plan: [['timetable', '2 이번 학기 시간표에 반영'], ['planmap', '1 로드맵에서 확인']],
   roadmap: [['planmap', '이수 로드맵']],
   growth: [['plan', '다음 학기 계획 세우기'], ['counsel', '상담하기']],
   sections: [['advisor', '지도 학생 상담']],
