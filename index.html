@@ -1981,8 +1981,17 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 @media (max-width: 1000px) { .p-ddarea .ddbars { grid-template-columns: 1fr; } .p-rklist, .p-rkdept, .p-pf, .p-badge, .p-evq, .p-evup, .p-ddarea, .p-ddjob { grid-column: 1 / -1; } .qgroups, .pf-cols, .evq { grid-template-columns: 1fr 1fr; } .evscale { grid-template-columns: 1fr 1fr; } }
 /* v28: 과정 보기 */
 .rinfo { margin: 4px 0 2px 28px; font-size: 13.5px; }
-.rinfo summary { cursor: pointer; color: var(--signal); font-size: 13px; width: max-content; }
-.rinfo-body { margin-top: 6px; padding: 10px 12px; background: var(--paper); border-radius: 10px; }
+.rinfo-btn { font: inherit; font-size: 13px; color: var(--signal); background: none; border: 0; padding: 2px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--signal) 40%, transparent); }
+.rinfo-btn:hover { color: var(--signal-deep); } .rinfo-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 4px; }
+.rinfo-body { font-size: 14px; line-height: 1.65; }
+.rdlg { width: min(680px, calc(100vw - 32px)); max-height: min(80vh, 760px); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); box-shadow: 0 18px 48px rgba(10, 20, 40, .25); overflow: hidden; }
+.rdlg[open] { display: flex; flex-direction: column; }
+.rdlg::backdrop { background: rgba(14, 20, 32, .45); }
+.rdlg header { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; border-bottom: 1px solid var(--line); }
+.rdlg header h2 { margin: 0; font-size: 18px; flex: 1; }
+.rdlg-x { font: inherit; font-size: 22px; line-height: 1; width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.rdlg-x:hover { background: var(--paper); color: var(--ink); }
+.rdlg-body { padding: 14px 20px 20px; overflow-y: auto; }
 .rinfo-body p { margin: 0 0 6px; } .rinfo-body ul { margin: 0 0 6px; padding-left: 1.2em; }
 .rinfo-dl { display: grid; grid-template-columns: 5.5em 1fr; gap: 3px 10px; margin: 6px 0; } .rinfo-dl dt { color: var(--muted); } .rinfo-dl dd { margin: 0; }
 .rinfo-courses li { margin-bottom: 2px; }
@@ -2320,6 +2329,19 @@ html[lang=en] #kbtn kbd { display: none; }
 .langsw button { font: inherit; font-size: 12.5px; font-weight: 600; min-width: 34px; padding: 4px 10px; border: 0; border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
 .langsw button[aria-pressed=true] { background: var(--signal); color: #fff; }
 .langsw button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+/* ---------- 버튼 크기·배치 체계(플랫폼 전역) ----------
+   기본 38px · 작게 32px 두 가지만. 같은 줄(.actions)에 섞이면 작은 버튼도 기본 크기로 맞추고,
+   간격은 8px, 링크 버튼은 본문보다 조금 작게. 첫 화면·빈 화면의 대표 버튼만 44px */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; min-height: 38px; padding: 6px 16px; font-size: 14.5px; line-height: 1.25; border-radius: 10px; vertical-align: middle; text-align: center; }
+.btn.ghost { border-width: 1px; }
+.btn.sm { min-height: 32px; padding: 5px 12px; font-size: 13.5px; border-radius: 8px; }
+.actions:has(> .btn:not(.sm)) > .btn.sm { min-height: 38px; padding: 6px 16px; font-size: 14.5px; border-radius: 10px; }
+.actions { gap: 8px; }
+.actions > .linkbtn { font-size: 14px; padding: 0 4px; }
+.ihero-main .btn, .empty-state .btn { min-height: 44px; padding: 8px 22px; font-size: 15.5px; }
+.tourbtn { align-items: center; }
+.tbl td .btn { white-space: nowrap; }
+.askf { align-items: stretch; } .askf input { height: 38px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
 </style>
 </head>
 <body>
@@ -11483,7 +11505,7 @@ function renderRecs() {
       <p class="summary">목표와의 차이를 메우는 교육과정을 추천합니다.</p>
       <p class="meta layer">이수 구조: <b>전공</b>·<b>학과 편성 교양</b>(학과가 정함, 자동 ${R.base.length}과목) → <span>추천 교양(선택)</span> → <span>융합과정(선택)</span> → <span>비교과(관심 등록 · 개설 시 알림)</span>. 아래에서 고른 것만 이수 계획에 더해집니다.</p></section>
     ${panelH('p-rlib', '교양 · 선택', `${S.lib.size}/${R.lib.length}과목 선택`, R.lib.length ? `<p class="meta">차이가 큰 능력을 다루는 교양입니다. 듣고 싶은 과목을 고르세요. <button class="linkbtn" id="rliball" type="button">${S.lib.size === R.lib.length ? '모두 해제' : '추천 모두 선택'}</button></p><ul class="rpick">${R.lib.map(x => `<li><label><input type="checkbox" data-rlib="${esc(x.c.n)}" ${S.lib.has(x.c.n) ? 'checked' : ''}><span><b>${esc(x.c.n)}</b><span class="meta">${esc(shortSub(x.sn))} 차이 ${x.gap}점 · ${esc(x.c.src)} · ${termText(x.c)}${unitHint(x.c.n)}</span></span></label>${infoBox('lib:' + x.c.n, libInfo(x.c.n))}</li>`).join('')}</ul>` : '<p class="meta">차이를 메울 추가 교양이 없습니다. 학과 편성 교양만으로 계획합니다.</p>')}
-    ${panelH('p-rmic', '융합과정 · 선택', S.mic ? '1개 선택' : '선택 안 함', `<p class="meta">목표와 연계된 융합과정입니다. 하나만 고를 수 있고, 이수 진도는 '융합과정 현황'에서 봅니다.</p><ul class="rpick"><li><label><input type="radio" name="rmic" value="" ${S.mic ? '' : 'checked'}><span><b>선택하지 않음</b><span class="meta">융합과정은 필수가 아닙니다.</span></span></label></li>${R.mics.map(({ m, hit }) => `<li><label><input type="radio" name="rmic" value="${m.id}" ${S.mic === m.id ? 'checked' : ''}><span><b>${esc(m.name)}</b><span class="meta">${esc(m.cert)}${hit.length ? ` · ${hit.map(shortSub).join('·')} 보완` : ''}${T.job && T.job.micro.includes(m.id) ? ' · 목표 직무 연계' : ''}</span></span></label>${infoBox('mic:' + m.id, micInfo(m))}</li>`).join('')}</ul>`)}
+    ${panelH('p-rmic', '융합과정 · 선택', S.mic ? '1개 선택' : '선택 안 함', `<p class="meta">목표와 연계된 융합과정입니다. 하나만 고를 수 있고, 이수 진도는 '융합과정 현황'에서 봅니다.</p><ul class="rpick"><li><label><input type="radio" name="rmic" value="" ${S.mic ? '' : 'checked'}><span><b>선택하지 않음</b><span class="meta">융합과정은 필수가 아닙니다.</span></span></label></li>${R.mics.map(({ m, hit }) => `<li><label><input type="radio" name="rmic" value="${m.id}" ${S.mic === m.id ? 'checked' : ''}><span><b>${esc(m.name)}</b><span class="meta">${esc(m.cert)}${hit.length ? ` · ${hit.map(shortSub).join('·')} 보완` : ''}${T.job && T.job.micro.includes(m.id) ? ' · 목표 직무 연계' : ''}</span></span></label>${infoBox('mic:' + m.id, micInfo(m), m.name)}</li>`).join('')}</ul>`)}
     ${panelH('p-rnc', '비교과 · 관심 등록', `${S.nc.size}개 등록`, `<p class="meta">진단과 연결된 비교과입니다. 개설 시기가 해마다 달라 계획에 넣지 않고, 개설되면 알려 드립니다.</p><ul class="rpick">${R.ncs.map(p => `<li><label><input type="checkbox" data-rnc="${esc(p.n)}" ${S.nc.has(p.n) ? 'checked' : ''}><span><b>${esc(p.n)}</b><span class="meta">${p.in}-IN ${IN_AXIS[p.in]} · ${esc(p.host)}${p.hit.length ? ` · ${p.hit.map(shortSub).join('·')} 보완` : ''}</span></span></label>${infoBox('nc:' + p.n, ncInfo(p))}</li>`).join('')}</ul>`)}
     ${panelH('p-rsen', '같은 목표 선배의 이수 경로', T.job ? esc(T.job.name) : '목표 직무를 정하면 표시', seniorHtml(T, R, S))}
     <section class="panel p-act"><div class="pbody"><div class="actions no-print"><button class="btn" id="rbuild">고른 교육과정으로 이수 계획 만들기</button><span class="meta" id="rmsg">기존 계획에서 직접 옮기거나 넣은 내용은 새 계획으로 바뀝니다.</span></div></div></section>
@@ -12713,8 +12735,19 @@ function renderDeptDash() {
 }
 
 /* 추천 교육과정의 '과정 보기': 교양은 교과목 명세서, 융합과정은 과정 정보, 비교과는 관리자가 등록한 과정 개요 */
-const rOpen = () => (state.rOpen = state.rOpen || new Set());
-const infoBox = (key, html) => `<details class="rinfo" data-rinfo="${esc(key)}" ${rOpen().has(key) ? 'open' : ''}><summary>과정 보기</summary><div class="rinfo-body">${html}</div></details>`;
+/* 버튼을 누르면 팝업(dialog)으로 내용을 띄움. 내용은 버튼 옆 template에 두고 열 때 복사 */
+const infoBox = (key, html, title) => `<div class="rinfo"><button type="button" class="rinfo-btn" data-rinfo="${esc(key)}" data-rtitle="${esc(title || key.replace(/^[^:]*:/, ''))}" aria-haspopup="dialog">과정 보기</button><template>${html}</template></div>`;
+function openInfo(title, html) {
+  let d = document.getElementById('rdlg');
+  if (!d) {
+    d = document.createElement('dialog'); d.id = 'rdlg'; d.className = 'rdlg'; d.setAttribute('aria-labelledby', 'rdlgt');
+    d.innerHTML = '<header><h2 id="rdlgt"></h2><button type="button" class="rdlg-x" aria-label="닫기">×</button></header><div class="rdlg-body rinfo-body"></div>';
+    d.querySelector('.rdlg-x').onclick = () => d.close();
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    document.body.appendChild(d);
+  }
+  d.querySelector('#rdlgt').textContent = title; d.querySelector('.rdlg-body').innerHTML = html; d.showModal(); d.querySelector('.rdlg-body').scrollTop = 0;
+}
 function libInfo(n) {
   const s = specsNow()[n], L = crsLink(n), link = `<p class="ncsixline"><span class="meta">연계 역량</span> ${sixTags(L.subs, L.facs)}</p>`;
   if (!s) return link + '<p class="meta">교과목 명세서를 준비하고 있습니다. 명세서가 등록되면 개요·학습목표·주요 내용이 여기에 나옵니다.</p>';
@@ -12729,7 +12762,7 @@ function ncInfo(p) {
   return `${sum ? `<p>${esc(sum)}</p>` : '<p class="meta">과정 개요가 아직 등록되지 않았습니다.</p>'}<dl class="rinfo-dl"><dt>단계</dt><dd>${p.in}-IN ${IN_AXIS[p.in]}</dd><dt>연계 역량</dt><dd>${(p.subs || []).map(shortSub).join(', ')}</dd><dt>주관</dt><dd>${esc(p.host || '-')}</dd>
     ${o ? `<dt>올해 개설</dt><dd>${esc(st.t || '')} · 신청 ${esc(o.applyFrom || '-')} ~ ${esc(o.applyTo || '-')} · 운영 ${esc(o.runFrom || '-')} ~ ${esc(o.runTo || '-')}${o.cap ? ` · 정원 ${o.cap}명` : ''}${o.mode ? ` · ${esc(o.mode)}` : ''}</dd>` : '<dt>올해 개설</dt><dd>아직 개설 전입니다. 관심 등록하면 개설될 때 알려 드립니다.</dd>'}</dl>`;
 }
-function bindInfo() { $view.querySelectorAll('[data-rinfo]').forEach(d => d.addEventListener('toggle', () => { d.open ? rOpen().add(d.dataset.rinfo) : rOpen().delete(d.dataset.rinfo); })); }
+function bindInfo() { $view.querySelectorAll('[data-rinfo]').forEach(b => { b.onclick = () => openInfo(b.dataset.rtitle, b.nextElementSibling.innerHTML); }); }
 
 /* ---------- 지도교수 상담 기록: 학생별 누적, 학기가 바뀌어도 보존, 메모는 기록한 교원 본인만 ---------- */
 /* 학년도·학기(3~8월 1학기, 9~2월 2학기) */
