@@ -1662,7 +1662,7 @@ body.no-demo .demostrip .phase { display: none !important; }
 .rfind { display: flex; gap: 6px; margin: 4px 0 6px; } .rfind input, .rfind select { font: inherit; font-size: 13.5px; height: 32px; box-sizing: border-box; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 8px; background: var(--panel); color: var(--ink); min-width: 0; }
 .rfind input { flex: 1 1 auto; } .rfind select { flex: 0 1 auto; max-width: 48%; }
 .rpick.rall { max-height: 560px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
-.rpick li[hidden] { display: none; }
+.rpick li[hidden] { display: none; } .rpick li.off b, .rpick li.off .meta { color: var(--muted); } .rpick li.off label { cursor: not-allowed; }
 .rpick { list-style: none; padding: 0; margin: 0; display: grid; }
 .rpick li + li { border-top: 1px solid var(--line); }
 .rpick label { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 9px 2px; cursor: pointer; align-items: start; }
@@ -11755,14 +11755,25 @@ function renderGap() {
   </div>`;
 }
 /* ③ 추천 교육과정: 교양 · 융합과정 · 비교과 모두 선택 — 고른 것만 계획에 */
+/* 이 과목을 내가 들을 수 있는 학기: 개설강좌내역(2026)에서 내 학과·학년(·반) 분반이 있는 학기. 해마다 비슷하게 열린다고 보고 학년-학기에 대입.
+   내역에 없는 과목: 교양이면 개설 안 함([]), 융합과정 과목(시연용 분반)이면 모든 학기 */
+function openTerms(n, dept = state.dept) {
+  const cat = catalogNow(), cc = cat && cat.courses && cat.courses[n], terms = planTerms(dept);
+  if (!cc) return LIB_SPECS[n] || libCourse(n) ? [] : terms;
+  const ban = (state.tt && state.tt.ban) || studentBan(state.user && state.user.no);
+  return terms.filter(t => { const [g, sem] = t.split('-'); return cc.some(x => secFits(x, dept, g, ban, sem)); });
+}
+const openText = n => { const T = openTerms(n); return T.length ? `개설 ${T.map(t => t.replace('-', '학년 ') + '학기').join('·')}` : '올해 우리 학과 분반 없음'; };
 function recsFor(T) {
   const dd = diagData(), list = offered(state.dept, 1), base = new Set((CURRICULUM.byDept[state.dept] || []).map(c => c.n));
-  const lib = []; T.gaps.filter(g => g.gap > 0).slice(0, 5).forEach(g => courseRecs(list.filter(c => !base.has(c.n)), g.sn).slice(0, 2).forEach(c => { if (!lib.some(x => x.c.n === c.n)) lib.push({ c, sn: g.sn, gap: g.gap }); }));
+  const cur = planTerms(state.dept).indexOf(curTerm()), ahead = t => planTerms(state.dept).indexOf(t) >= Math.max(0, cur);
+  const takeable = c => openTerms(c.n).some(ahead);
+  const lib = []; T.gaps.filter(g => g.gap > 0).slice(0, 5).forEach(g => courseRecs(list.filter(c => !base.has(c.n) && takeable(c)), g.sn).slice(0, 2).forEach(c => { if (!lib.some(x => x.c.n === c.n)) lib.push({ c, sn: g.sn, gap: g.gap }); }));
   const need = Object.fromEntries(T.gaps.map(g => [g.sn, g.gap / 100]));
   const micIds = [...new Set([...(T.job ? T.job.micro : []), ...microRecs(state.dept, Object.keys(need).length ? need : dd.need).map(r => r.m.id)])];
   const mics = micIds.map(id => CURRICULUM.micro.find(m => m.id === id)).filter(m => m && eligible(m, state.dept)).map(m => ({ m, hit: m.subs.filter(s => need[s] > 0) })).slice(0, 4);
   const ncs = ncRecs(dd).map(p => ({ ...p, hit: p.subs.filter(s => need[s] > 0) })).sort((a, b) => b.hit.length - a.hit.length || b.score - a.score).slice(0, 5);
-  const allLib = list.filter(c => !base.has(c.n));
+  const allLib = list.filter(c => !base.has(c.n)).map(c => ({ ...c, open: takeable(c) }));
   const allNc = [...NONCURR, ...ncOpenList().filter(o => !NONCURR.some(p => p.n === o.n)).map(o => ({ ...o, cat: '기타(올해 개설)', d: o.summary || '' }))].map(p => ({ ...p, subs: p.subs || [], facs: p.facs || [], hit: (p.subs || []).filter(s => need[s] > 0) }));
   return { lib, mics, ncs, base: [...base], allLib, allNc };
 }
@@ -11810,13 +11821,14 @@ const recSeg = (k, nRec, nAll) => { const all = !!(state.recAll || {})[k]; retur
 const recFind = (k, ph, sel) => (state.recAll || {})[k] ? `<div class="rfind"><input type="search" data-rq="${k}" placeholder="${ph}" aria-label="${ph}">${sel || ''}</div>` : '';
 function recLibPanel(R, S) {
   const all = !!(state.recAll || {}).lib, rec = new Map(R.lib.map(x => [x.c.n, x]));
-  const list = all ? [...R.allLib].sort((a, b) => (rec.has(b.n) - rec.has(a.n)) || (S.lib.has(b.n) - S.lib.has(a.n)) || a.n.localeCompare(b.n, 'ko'))
+  const list = all ? [...R.allLib].sort((a, b) => (rec.has(b.n) - rec.has(a.n)) || (S.lib.has(b.n) - S.lib.has(a.n)) || (b.open - a.open) || a.n.localeCompare(b.n, 'ko'))
     : [...R.lib.map(x => x.c), ...R.allLib.filter(c => S.lib.has(c.n) && !rec.has(c.n))];
   const row = c => { const r = rec.get(c.n), links = (c.subs || []).slice(0, 3).map(shortSub).join('·');
-    return `<li data-q="${esc((c.n + ' ' + (c.subs || []).join(' ')).toLowerCase())}"><label><input type="checkbox" data-rlib="${esc(c.n)}" ${S.lib.has(c.n) ? 'checked' : ''}><span><b>${esc(c.n)}${r && all ? ' <span class="badge">추천</span>' : ''}</b><span class="meta">${r ? `${esc(shortSub(r.sn))} 차이 ${r.gap}점` : links ? `연계 ${esc(links)}` : '연계 역량 검토 전'} · ${esc(c.src)} · ${termText(c)}${unitHint(c.n)}</span></span></label>${infoBox('lib:' + c.n, libInfo(c.n))}</li>`; };
+    const off = c.open === false && !S.lib.has(c.n);
+    return `<li data-q="${esc((c.n + ' ' + (c.subs || []).join(' ')).toLowerCase())}" class="${off ? 'off' : ''}"><label><input type="checkbox" data-rlib="${esc(c.n)}" ${S.lib.has(c.n) ? 'checked' : ''} ${off ? 'disabled' : ''}><span><b>${esc(c.n)}${r && all ? ' <span class="badge">추천</span>' : ''}</b><span class="meta">${r ? `${esc(shortSub(r.sn))} 차이 ${r.gap}점` : links ? `연계 ${esc(links)}` : '연계 역량 검토 전'} · ${esc(c.src)} · ${esc(openText(c.n))}${unitHint(c.n)}</span></span></label>${infoBox('lib:' + c.n, libInfo(c.n))}</li>`; };
   const nSel = R.allLib.filter(c => S.lib.has(c.n)).length;
   return panelH('p-rlib', '교양 · 선택', `${nSel}과목 선택`, `${recSeg('lib', R.lib.length, R.allLib.length)}
-    <p class="meta">${all ? `소속 학과와 교내 공통 선택 교양 ${R.allLib.length}과목입니다(학과 편성 교양은 계획에 자동으로 들어가 빠짐). 추천 과목이 위에 옵니다.` : R.lib.length ? `차이가 큰 능력을 다루는 교양입니다. 듣고 싶은 과목을 고르세요. <button class="linkbtn" id="rliball" type="button">${R.lib.every(x => S.lib.has(x.c.n)) ? '추천 모두 해제' : '추천 모두 선택'}</button>` : '차이를 메울 추가 교양이 없습니다. 전체 보기에서 직접 고를 수 있습니다.'}</p>
+    <p class="meta">${all ? `소속 학과와 교내 공통 선택 교양 ${R.allLib.length}과목입니다(학과 편성 교양은 계획에 자동으로 들어가 빠짐). 개설 학기는 2026 개설강좌내역에서 우리 학과가 들을 수 있는 분반 기준이고, 분반이 없는 과목은 고를 수 없습니다.` : R.lib.length ? `차이가 큰 능력을 다루는 교양입니다. 듣고 싶은 과목을 고르세요. <button class="linkbtn" id="rliball" type="button">${R.lib.every(x => S.lib.has(x.c.n)) ? '추천 모두 해제' : '추천 모두 선택'}</button>` : '차이를 메울 추가 교양이 없습니다. 전체 보기에서 직접 고를 수 있습니다.'}</p>
     ${recFind('lib', '과목명·역량 검색')}<ul class="rpick${all ? ' rall' : ''}" data-rlist="lib">${list.map(row).join('')}</ul><p class="meta rnone" hidden>찾는 과목이 없습니다.</p>`);
 }
 function recNcPanel(R, S) {
@@ -11873,7 +11885,7 @@ function buildPlanFrom(T, R, S) {
     const tm = terms.includes(term) ? term : terms[0];
     items.push({ n: c.n, cr: planCr(c.n, tm, t ? t.credit : 2), subs: c.subs, cat: c.c, kind: 'base', term: tm });
   });
-  (R.allLib || R.lib.map(x => x.c)).filter(c => S.lib.has(c.n)).forEach(c => { const r = R.lib.find(x => x.c.n === c.n), cr = c.t[0] ? c.t[0].credit : 2, term = firstFree(items, terms, cr) || terms[terms.length - 1]; items.push({ n: c.n, cr, subs: c.subs, cat: c.c, kind: 'rec', why: r ? r.sn : (c.subs || [])[0], term }); });
+  (R.allLib || R.lib.map(x => x.c)).filter(c => S.lib.has(c.n)).forEach(c => { const r = R.lib.find(x => x.c.n === c.n), cr = c.t[0] ? c.t[0].credit : 2, ot = terms.filter(t => openTerms(c.n).includes(t) && terms.indexOf(t) >= Math.max(0, terms.indexOf(curTerm()))), term = firstFree(items, ot.length ? ot : terms, cr) || (ot[0] || terms[terms.length - 1]); items.push({ n: c.n, cr, subs: c.subs, cat: c.c, kind: 'rec', why: r ? r.sn : (c.subs || [])[0], term }); });
   const plan = { dept, items, micro: null, job: T.job ? T.job.id : null, design: { mode: T.mode, at: new Date().toISOString().slice(0, 10) } };
   if (S.mic) setMicro(plan, S.mic);
   plan.ncWish = [...S.nc]; plan.ncSeen = (designPlan() || {}).ncSeen || {};
