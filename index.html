@@ -1755,12 +1755,12 @@ body.no-demo .demostrip .phase { display: none !important; }
 .smup > label:first-child { grid-column: 1 / -1; font-size: 13px; display: flex; gap: 8px; align-items: center; } .smup > label:first-child select { flex: 1; min-width: 0; }
 .smup .btn { width: 100%; min-width: 0; justify-content: center; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 8px; padding-right: 8px; }
 .p-smlist .smup .btn { display: flex; align-items: center; height: 32px; min-height: 0; padding: 0 8px; font-size: 13px; font-weight: 600; border-radius: 8px; }
+.p-smlist .smup .smupbtn { grid-column: 1 / -1; }
 .p-smlist .smup select, .p-smlist .smfilt select, .p-smlist .smfilt input { height: 32px; min-height: 0; padding: 0 8px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
 .p-smlist .smup > label:first-child { font-size: 13px; color: var(--muted); }
-.p-smlist .pbody { display: flex; flex-direction: column; } .p-smlist .smlist { flex: 1 1 0; min-height: 320px; max-height: none; contain: size; }
+.p-smlist .pbody { display: flex; flex-direction: column; } .p-smlist .smlist { flex: 1 1 0; min-height: 320px; max-height: none; contain: size; align-content: start; }
 @media (max-width: 1000px) { .p-smlist .smlist { flex: none; height: 60vh; } }
 .smfilt { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; margin: 6px 0; } .smfilt select, .smfilt input { font-size: 13px; min-width: 0; }
-.smplanf { display: grid; gap: 6px; margin: 0 0 8px; } .smplanf textarea { width: 100%; font: inherit; font-size: 13.5px; }
 .ncsixline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; } .ncsix { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: var(--signal-soft); color: var(--ink); } .ncsix.none { background: var(--paper); color: var(--muted); }
 .nctbl td.wrap { white-space: normal; min-width: 9em; font-size: 13px; }
 .ncst { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 6px; white-space: nowrap; }
@@ -9359,7 +9359,7 @@ const TOUR_NC = [
 const TOUR_CUR = [
   S_('교육과정 담당 · 홈', '이 계정은 역량 매핑, 학과별 개선, 교육과정 개선 설계, 위원회, 강의평가 메뉴를 봅니다. 역량 매핑은 교과·비교과 운영 메뉴 맨 앞(교과 준비)에 있습니다.', '.p-todo', adm('cur')),
   S_('역량 매핑 · 과목 목록과 상태', '교양·융합·전공 과목을 구분·상태(검토 대기·재검토·매핑 전·승인·직접 입력·명세서 없음)·이름으로 걸러 봅니다. 2026학년도 교양 교과목 프로파일·강의계획서 72과목(학점·시수·NCS 능력단위·주차별 내용)이 기본으로 들어 있고, 새 학기 명세서가 올라오면 승인한 과목도 재검토로 바뀝니다.', '.p-smlist', async () => go('specmap')),
-  S_('역량 매핑 · 학기별 명세서·강의계획서 올리기', "학년도-학기를 고르고 교과목 명세서(CSV)를 올리거나, 강의계획서 내용을 붙여 넣어(텍스트 파일 가능) 저장하면 AI가 바로 분석해 검토 대기 초안을 만듭니다. 분석이 안 된 과목은 '남은 과목 분석'으로 한꺼번에 다시 분석합니다.", '.smup', async () => go('specmap')),
+  S_('역량 매핑 · 학기별 명세서·강의계획서 올리기', "학년도-학기를 고르고 교과목 프로파일·강의계획서 PDF를 여러 개 한꺼번에 올리면(양식 CSV도 가능) 같은 과목끼리 합쳐 학점·시수·NCS 능력단위·학습목표·주차별 내용을 읽고, AI가 바로 분석해 검토 대기 초안을 만듭니다. PDF는 브라우저 안에서만 읽고 담당교수·연락처는 저장하지 않습니다.", '.smup', async () => go('specmap')),
   S_('역량 매핑 · AI 분석 제안', 'AI가 명세서 문장을 근거로 과목이 기르는 하위능력과 핵심역량 요인을 주·부와 근거 문장으로 제안합니다. 과목명만으로는 몰랐던 연결은 새로 찾음으로 표시됩니다. 초안은 서버에 승인 대기로 저장돼 다른 담당자도 이어서 검토합니다.', '.p-smed', async () => go('specmap')),
   S_('역량 매핑 · 연계 역량 확정', '제안 중 근거가 강한 것이 미리 골라져 있습니다. 대학 6대 핵심역량별로 묶은 목록에서 최대 4개를 확인해 승인하면, 영향을 주는 6대 핵심역량이 함께 보이고 학생 추천·분석에 바로 반영됩니다. 명세서가 없는 과목은 직접 입력합니다.', '.lpick', async () => go('specmap')),
   S_('역량 매핑 · NCS 능력단위 매칭', '같은 명세서로 과목이 가르치는 NCS 능력단위를 근거와 함께 찾습니다. 승인하면 학생 차이 분석에 교과로 채울 수 있는 능력단위로 표시됩니다.', '.p-smncs', async () => go('specmap')),
@@ -9609,7 +9609,134 @@ function specFacts(sp) {
   const r = [(sp.ncs || []).length && `<p><b>NCS 능력단위</b> ${sp.ncs.map(esc).join(', ')}${(sp.el || []).length ? ` <span class="meta">(능력단위요소: ${sp.el.map(esc).join(', ')})</span>` : ''}</p>`, (sp.method || []).length && `<p><b>교수학습</b> ${sp.method.map(esc).join(', ')}${(sp.eval || []).length ? ` · <b>평가</b> ${sp.eval.map(esc).join(', ')}` : ''}</p>`].filter(Boolean);
   return (f.length ? `<p class="meta">${f.join(' · ')}</p>` : '') + r.join('');
 }
+/* 교과목 명세서(프로파일)·강의계획서 PDF 읽기: 브라우저에서 글자만 뽑아 항목별로 나눔. 담당교수·연락처는 읽지 않음 */
+const SPDF_HEAD = {
+  overview: ['교과목개요', '교과목개요및특징'],
+  goal: ['교육목표', '학습목표', '교과목표', '교과목표(학습목표)'],
+  detail: ['세부교육목표', '학습내용'],
+  method: ['교수학습방법'],
+  eval: ['평가방법'],
+  stop: ['학급당', '학습기자재', '학생1인당', '학습소모품', '교육장소(시설)', '주교재(학습모듈)', '부교재', '참고교재', '관련NCS·현장중심정보', '2.주차별학습내용', '주차별학습내용', '학습성과물', '학습성과물(Learningoutcome)', '종류', '기준', '직무명및능력단위', '직무명및영역', '대분류중분류소분류세분류능력(역량)단위능력(역량)단위코드']
+};
+const spdfKey = s => s.replace(/\s+/g, '');
+let SPDF_VOCAB = null;
+function spdfVocab() {
+  if (SPDF_VOCAB) return SPDF_VOCAB;
+  const v = new Set();
+  Object.values(typeof specsNow === 'function' ? specsNow() : LIB_SPECS).forEach(s => [s.overview, ...(s.goals || []), s.weeks].join(' ').split(/[\s,.·()[\]:;/]+/).forEach(w => { if (/[가-힣]/.test(w)) v.add(w); }));
+  return (SPDF_VOCAB = v);
+}
+/* 줄이 바뀐 자리: 이미 있는 교과목 문장에서 본 낱말이면 그대로 판단, 아니면 어미·조사로 판단 */
+function spdfJoin(a, b) {
+  const wa = (a.match(/[가-힣]+$/) || [''])[0], wb = (b.match(/^[가-힣]+/) || [''])[0];
+  if (!wa || !wb) return a + ' ' + b;
+  const V = spdfVocab(), ta = (a.match(/\S+$/) || [''])[0], tb = (b.match(/^\S+/) || [''])[0];
+  if (V.has(wa + wb) || V.has((ta + tb).replace(/[,.·()[\]:;/]+$/, ''))) return a + b;
+  if (V.has(wa) && V.has(wb)) return a + ' ' + b;
+  const E = '써며고는을를은의에과와및서여면된할로도게지등든라니', S = '다록고며을를은는의에로서하한된되기지게도함적인이가과와들름려습해했할었았여으';
+  return E.includes(wa.slice(-1)) && !S.includes(wb[0]) ? a + ' ' + b : a + b;
+}
+function spdfUnwrap(lines) {
+  const ls = lines.map(l => l.trim()).filter(Boolean); if (!ls.length) return '';
+  const mx = Math.max(...ls.map(l => l.length)); let out = ls[0];
+  for (let i = 1; i < ls.length; i++) {
+    const p = ls[i - 1], l = ls[i];
+    if (/^([-•·○▪■□*]|\d+[.)]\s|\[)/.test(l)) out += '\n' + l;
+    else if (p.length >= mx * 0.7 && /[가-힣A-Za-z0-9,]$/.test(p)) out = /[가-힣]$/.test(p) && /^[가-힣]/.test(l) ? spdfJoin(out, l) : out + ' ' + l;
+    else out += /[.다]$/.test(p) ? '\n' + l : ' ' + l;
+  }
+  return out.replace(/[ \t]+/g, ' ').trim();
+}
+const spdfChecked = ls => (ls.join(' ').match(/■\s*([^□■]+)/g) || []).map(x => x.replace(/^■\s*/, '').trim()).filter(x => x && x !== '기타:');
+/* lines: PDF 한 줄씩. 돌려주는 값: { name, doc: '명세서'|'강의계획서', spec } */
+function parseSpecPdf(lines) {
+  lines = lines.map(l => l.replace(/\s+/g, ' ').trim()).filter(l => l && !/^\d+\s*\/\s*\d+$/.test(l));
+  const all = lines.join('\n'), doc = /강\s*의\s*계\s*획\s*서/.test(lines.slice(0, 3).join(' ')) ? '강의계획서' : '명세서';
+  const m = re => (all.match(re) || [])[1];
+  const top = lines.slice(0, 14).join(' ');
+  let name = ((top.match(/교과목명\s+(.+?)\s+(?:이수구분|학년도-학기)/) || [])[1] || '').trim(), eng = '';
+  if (/\)$/.test(name)) { let d = 0, k = name.length - 1; for (; k >= 0; k--) { if (name[k] === ')') d++; else if (name[k] === '(' && !--d) break; } if (k > 0) { eng = name.slice(k + 1, -1).trim(); name = name.slice(0, k).trim(); } }
+  const sp = { kind: doc === '강의계획서' ? '강의계획서' : '교과목 명세서' };
+  const y = all.match(/학년도-학기\s+(\d{4})\s*-\s*(\d)\s*학기/); if (y) sp.term = `${y[1]}-${y[2]}학기`;
+  const num = re => { const v = m(re); return v ? Number(v) : null; };
+  sp.cr = num(/학\s*점\s+(\d+)/); sp.hrs = num(/시\s*수\s+(\d+)/);
+  if (eng) sp.eng = eng;
+  const tp = m(/이론\/실습\s+(\d+\s*\/\s*\d+)/); if (tp) sp.tp = tp.replace(/\s/g, '');
+  const cat = m(/이수구분\s+(\S+)/); if (cat) sp.cat = cat;
+  const code = m(/교과목코드\s+([A-Z0-9]+)/); if (code) sp.code = code;
+  const on = all.match(/온라인구분[^\n]*?■\s*([^\s□■]+)/); if (on) sp.online = on[1];
+  const gr = m(/학년-학기\s+(\d-\d)/); if (gr) sp.grade = gr;
+  /* 머리글로 구역 나누기(세로로 쪼개진 머리글은 짧은 줄을 이어 붙여 맞춤) */
+  const sec = {}; let cur = null, i = 0;
+  const HRE = Object.entries(SPDF_HEAD).flatMap(([f, hs]) => hs.map(h => [f, h])).sort((a, b) => b[1].length - a[1].length)
+    .map(([f, h]) => [f, new RegExp('^' + [...h].map(c => c.replace(/[()]/g, '\\$&')).join('\\s*') + '(?:\\s+|$)(.*)$')]);
+  const headOf = j => {
+    for (let k = 0; k < 4 && j + k < lines.length; k++) {
+      if (k && spdfKey(lines[j + k - 1]).length > 8) break;
+      const c = lines.slice(j, j + k + 1).join(' ');
+      for (const [f, re] of HRE) { const x = c.match(re); if (x) return [f, k + 1, x[1].trim()]; }
+    }
+    return null;
+  };
+  const weeks = []; let wk = null, wsub = null;
+  for (i = 0; i < lines.length; i++) {
+    const l = lines[i], w = l.match(/^(\d+)\s*주차\s*학습내용/);
+    if (w) { wk = { w: +w[1], act: '', content: [], el: [] }; weeks.push(wk); cur = null; wsub = null; continue; }
+    if (wk) {
+      const lab = l.match(/^(세부\s*교육\s*목표|수업\s*활동|수업\s*내용|교수\s*학습\s*방법|능력\s*단위\s*요소|학습\s*모듈)\s*(.*)$/);
+      let t = l;
+      if (lab) { wsub = { 세부교육목표: 'goal', 수업활동: 'act', 수업내용: 'content', 교수학습방법: null, 능력단위요소: 'el', 학습모듈: 'el' }[spdfKey(lab[1])]; t = lab[2].trim(); if (!t) continue; }
+      if (wsub === 'act') { wk.act = t; wsub = null; } else if (wsub === 'content') wk.content.push(t); else if (wsub === 'el') wk.el.push(t);
+      continue;
+    }
+    const h = headOf(i);
+    if (h) { cur = h[0] === 'stop' ? null : h[0]; i += h[1] - 1; if (cur) { sec[cur] = sec[cur] || []; if (h[2]) sec[cur].push(h[2]); } continue; }
+    if (cur) sec[cur].push(l);
+  }
+  if (sec.overview) sp.overview = spdfUnwrap(sec.overview);
+  if (sec.goal) sp.goals = spdfUnwrap(sec.goal).replace(/^\(학습목표\)\s*/, '').split(/\n|(?<=다\.)\s+/).map(x => x.replace(/^[-•·○]\s*/, '').trim()).filter(Boolean).slice(0, 8);
+  if (sec.method) sp.method = spdfChecked(sec.method);
+  if (sec.eval) sp.eval = spdfChecked(sec.eval);
+  const bad = x => /(중간|기말)\s*(고사|평가)|^평가$|평가한다/.test(x);
+  let wl = weeks.map(x => [x.w, spdfUnwrap(x.content)]).filter(([, c]) => c && !bad(c));
+  if (!wl.length && sec.detail) wl = sec.detail.map((x, k) => { const n = x.match(/^(\d+)\s*[.)주]\s*(?:차)?\s*/); return [n ? +n[1] : k + 1, n ? x.slice(n[0].length) : x]; }).filter(([, c]) => c && !bad(c));
+  const grp = [];
+  wl.forEach(([a, c]) => { c = c.replace(/\s*\n\s*/g, ' '); const g = grp[grp.length - 1]; if (g && g[2] === c && a === g[1] + 1) g[1] = a; else grp.push([a, a, c]); });
+  if (grp.length) sp.weeks = grp.map(g => `${g[0]}${g[1] !== g[0] ? `~${g[1]}` : ''}주차 ${g[2]}`).join('\n');
+  /* NCS 능력단위(명세서 표·강의계획서 교재란)와 능력단위요소 */
+  const units = [];
+  lines.forEach(l => { const u = l.match(/(?:\d{2}\.[^\s]+\s+){2,4}(.+?)\s+([0-9]{8}[A-Z]?|\d{10}_\d+v\d+)$/); if (u && !units.includes(u[1])) units.push(u[1].trim()); });
+  (all.match(/능력단위명칭\s*:\s*([^)\n]+)/g) || []).forEach(x => { const u = x.replace(/^능력단위명칭\s*:\s*/, '').trim(); if (u && !units.includes(u)) units.push(u); });
+  if (units.length) { sp.ncs = units; sp.type = 'NCS'; } else if (doc === '명세서') sp.type = '일반';
+  const els = [];
+  weeks.forEach(x => x.el.forEach(e => { const t = e.replace(/\s*\(.*$/, '').trim(); if (t && !els.includes(t)) els.push(t); }));
+  if (els.length) sp.el = els;
+  return { name, doc, spec: sp };
+}
+/* 같은 과목의 명세서+강의계획서 합치기: 강의계획서 내용이 우선, 명세서는 영문명·NCS·교과 구분 등 보충 */
+function mergeSpecDocs(a, b) {
+  const [syl, prof] = a.kind === '강의계획서' ? [a, b] : [b, a];
+  const o = { ...prof, ...Object.fromEntries(Object.entries(syl).filter(([, v]) => v != null && v !== '' && !(Array.isArray(v) && !v.length))) };
+  ['eng', 'type', 'grade'].forEach(k => { if (prof[k]) o[k] = prof[k]; });
+  o.ncs = [...new Set([...(prof.ncs || []), ...(syl.ncs || [])])];
+  o.kind = '교과목 명세서·강의계획서';
+  return o;
+}
+/* pdf.js는 PDF를 올릴 때만 불러옴. 글자는 브라우저 안에서만 읽고 서버로 보내지 않음 */
+let PDFJS = null;
+async function pdfLines(file) {
+  if (!PDFJS) { PDFJS = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs'); PDFJS.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs'; }
+  const doc = await PDFJS.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise, L = []; let cur = '';
+  for (let i = 1; i <= doc.numPages; i++) { const tc = await (await doc.getPage(i)).getTextContent(); tc.items.forEach(it => { cur += it.str; if (it.hasEOL) { L.push(cur); cur = ''; } }); if (cur) { L.push(cur); cur = ''; } }
+  return L;
+}
 function renderSpecMap() {
+  /* 다시 그려도 과목 목록·화면 스크롤 위치 유지 */
+  const keepL = document.querySelector('.smlist'), keepY = keepL ? keepL.scrollTop : null, winY = scrollY;
+  renderSpecMap0();
+  if (keepY != null) { const l = document.querySelector('.smlist'); if (l) l.scrollTop = keepY; window.scrollTo({ top: winY, behavior: 'instant' }); }
+}
+function renderSpecMap0() {
   const specs = specsNow(), demo = !sGet('org', 'specs'), M = mapNow(), Dr = mapDraftNow(), idx = courseIndex();
   const all = smCourses(), stOf = n => (Dr[n] ? '검토 대기' : M[n] ? (specs[n] && specs[n].term && M[n].term && specs[n].term !== M[n].term ? '재검토' : M[n].src === '관리자 직접 입력' ? '직접 입력' : '승인') : specs[n] ? '매핑 전' : '명세서 없음');
   state.smKind = state.smKind || '전체'; state.smSt = state.smSt || '전체'; state.smQ = state.smQ || '';
@@ -9641,12 +9768,9 @@ function renderSpecMap() {
       <p class="meta" style="margin-top:8px"><span class="badge">2026학년도 자료</span> 교양 교과목 프로파일(교과목 명세서)·강의계획서 ${Object.keys(LIB_SPECS).length}과목이 기본으로 들어 있습니다. 새 학기 명세서·강의계획서를 올리면 그 과목은 올린 자료로 바뀝니다.</p></section>
     ${panelH('p-smlist', '과목 목록', `${shown.length}개`, `<div class="smup no-print">
         <label>학기<select id="smver">${opt(vers, ver)}</select></label>
-        <button class="btn ghost sm" id="smtpl" type="button">명세서 양식</button><label class="btn ghost sm filebtn">명세서 올리기(CSV)<input type="file" id="smfile" accept=".csv" hidden></label>
-        <button class="btn ghost sm" id="smplan" type="button" aria-expanded="${!!state.smPlanOpen}">강의계획서 올리기</button>
-        <button class="btn ghost sm" id="small" type="button" title="자동 분석이 안 된 과목(매핑 전·재검토)만 다시 분석합니다">남은 과목 분석</button></div>
-      ${state.smPlanOpen ? `<form class="smplanf" id="smpf"><label>과목<select id="smpn">${all.map(x => `<option ${x.n === sel ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}</select></label>
-        <label class="full">강의계획서 내용<textarea id="smpt" rows="6" placeholder="수업 개요, 학습목표, 주차별 내용, 평가 방법을 붙여 넣거나 텍스트 파일을 고르세요."></textarea></label>
-        <div class="actions full"><label class="btn ghost sm filebtn">텍스트 파일<input type="file" id="smptf" accept=".txt,.md" hidden></label><button class="btn sm" type="submit">${esc(ver)} 강의계획서로 저장하고 분석</button></div></form>` : ''}
+        <button class="btn ghost sm" id="smtpl" type="button" title="교과목 프로파일·강의계획서와 같은 항목의 CSV 양식(지금 자료가 예시로 들어 있음)">양식 내려받기</button>
+        <button class="btn ghost sm" id="small" type="button" title="자동 분석이 안 된 과목(매핑 전·재검토)만 다시 분석합니다">남은 과목 분석</button>
+        <label class="btn sm filebtn smupbtn" title="교과목 프로파일·강의계획서 PDF 여러 개(같은 과목은 합쳐짐) 또는 양식 CSV">명세서·강의계획서 올리기 (PDF·CSV)<input type="file" id="smfile" accept=".pdf,.csv" multiple hidden></label></div>
       <span class="meta" id="smmsg" aria-live="polite">${state.smMsg || ''}</span>
       <div class="smfilt"><select id="smkind" aria-label="구분">${opt(['전체', '교양', '융합', '전공'], state.smKind)}</select><select id="smst" aria-label="상태">${opt(['전체', '검토 대기', '재검토', '매핑 전', '승인', '직접 입력', '명세서 없음'], state.smSt)}</select><input id="smq" placeholder="과목명 검색" value="${esc(state.smQ)}"></div>
       <ul class="smlist">${shown.slice(0, 120).map(x => `<li><button class="${x.n === sel ? 'on' : ''}" data-sm="${esc(x.n)}"><b>${esc(x.n)}</b><span class="meta">${x.kind}${x.depts ? ` · ${x.depts}개 학과 편성` : ''}${specs[x.n] && specs[x.n].term ? ` · ${esc(specs[x.n].term)}` : ''}</span>${stHtml(x.n)}</button></li>`).join('')}${shown.length > 120 ? `<li class="meta">${shown.length - 120}개 더 있음 · 검색으로 좁히세요</li>` : ''}</ul>`)}
@@ -9683,35 +9807,48 @@ function renderSpecMap() {
     say(`${todo.length}개 과목 분석 중…`); for (const n of todo) await gen(n);
     state.smSt = '검토 대기'; say(`${todo.length}개 과목의 초안을 만들었습니다. 상태 '검토 대기'에서 하나씩 확인해 승인하세요.`);
   };
-  q('smtpl').onclick = () => download('교과목명세서_양식.csv', [['교과목명', '이수구분', '학점', '교과목 개요', '학습목표(| 구분)', '주요 내용'], ...Object.entries(specs).map(([n, s]) => [n, s.cat, s.cr, s.overview, (s.goals || []).join('|'), s.weeks])]);
-  q('smfile').onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const rd = new FileReader();
-    rd.onload = () => {
-      const rows = parseCSV(String(rd.result)).slice(1).filter(r => r[0]);
-      if (!rows.length) { say('읽을 수 있는 행이 없습니다. 양식을 확인하세요.'); return; }
-      const out = { ...(sGet('org', 'specs') || {}) }, at = todayISO();
-      rows.forEach(r => { out[r[0].trim()] = { cat: r[1], cr: Number(r[2]) || null, overview: r[3] || '', goals: String(r[4] || '').split('|').map(x => x.trim()).filter(Boolean), weeks: r[5] || '', kind: '교과목 명세서', term: ver, at }; });
-      sSet('org', 'specs', out, `${ver} 명세서 ${rows.length}개`);
-      /* 올리면 바로 AI 분석 → 초안은 '검토 대기' */
-      const ns = [...new Set(rows.map(r => r[0].trim()))];
-      (async () => {
-        let k = 0; for (const n of ns) { say(`${ver} 명세서 ${ns.length}개를 올렸습니다. AI 분석 중… (${++k}/${ns.length})`); await gen(n); }
-        state.smSt = '검토 대기'; say(`${ver} 명세서 ${ns.length}개를 올리고 AI로 분석했습니다. 상태 '검토 대기'에서 확인해 승인하세요.`);
-      })();
-    };
-    rd.readAsText(f, 'utf-8');
+  /* 양식: 교과목 프로파일·강의계획서와 같은 항목. 지금 들어 있는 명세서를 예시로 채움 */
+  const SPEC_COLS = ['교과목명', '영문명', '이수구분', '학점', '시수', '이론/실습', '교과구분(NCS/일반)', '수업방식', '교과목코드', 'NCS 능력단위(; 구분)', '교수학습방법(; 구분)', '평가방법(; 구분)', '교과목 개요', '학습목표(| 구분)', '주차별 내용(| 구분, 예: 1주차 …)'];
+  q('smtpl').onclick = () => download('교과목명세서_강의계획서_양식.csv', [SPEC_COLS, ...Object.entries(specs).map(([n, s]) => [n, s.eng || '', s.cat || '', s.cr ?? '', s.hrs ?? '', s.tp || '', s.type || '', s.online || '', s.code || '', (s.ncs || []).join('; '), (s.method || []).join('; '), (s.eval || []).join('; '), s.overview || '', (s.goals || []).join('|'), String(s.weeks || '').split('\n').join('|')])]);
+  /* 올린 이름을 지금 과목에 맞춤(띄어쓰기·대소문자 무시, 하나만 맞으면 앞부분 일치도 인정) */
+  const nameOf = raw => {
+    const k = x => x.replace(/\s+/g, '').toLowerCase(), r = k(raw), names = [...new Set([...all.map(x => x.n), ...Object.keys(specs)])];
+    const hit = names.find(x => k(x) === r); if (hit) return hit;
+    const pre = names.filter(x => k(x).startsWith(r) || r.startsWith(k(x))); return pre.length === 1 ? pre[0] : raw.trim();
   };
-  q('smplan').onclick = () => { state.smPlanOpen = !state.smPlanOpen; renderSpecMap(); };
-  if (q('smptf')) q('smptf').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { q('smpt').value = String(rd.result).slice(0, 12000); }; rd.readAsText(f, 'utf-8'); };
-  if (q('smpf')) q('smpf').onsubmit = async e => {
-    e.preventDefault();
-    const n = q('smpn').value, t = q('smpt').value.trim();
-    if (t.length < 40) { q('smmsg').textContent = '강의계획서 내용이 너무 짧습니다. 학습목표와 주차별 내용을 함께 넣으세요.'; return; }
-    const c = all.find(x => x.n === n);
-    sSet('org', 'specs', { ...(sGet('org', 'specs') || {}), [n]: { cat: c ? c.kind : '', cr: c ? c.cr : null, overview: t.slice(0, 12000), goals: [], weeks: '', kind: '강의계획서', term: ver, at: todayISO() } }, `${n}: ${ver} 강의계획서`);
-    state.smSel = n; state.smPlanOpen = false; state.smPend = true; say(`${n} 강의계획서를 분석 중…`);
-    await gen(n); state.smPend = false; say(`${n} ${ver} 강의계획서를 저장하고 분석했습니다. 확인하고 승인하세요.`);
+  const csvSpecs = text => {
+    const rows = parseCSV(text).filter(r => r.some(c => String(c).trim())); if (rows.length < 2) return [];
+    const H = rows[0].map(h => String(h).replace(/\(.*$/, '').trim()), col = (r, h) => { const i = H.indexOf(h); return i < 0 ? '' : String(r[i] ?? '').trim(); };
+    const list = s => s ? s.split(/[;|]/).map(x => x.trim()).filter(Boolean) : [];
+    return rows.slice(1).filter(r => col(r, '교과목명')).map(r => ({ name: col(r, '교과목명'), spec: {
+      kind: '교과목 명세서', eng: col(r, '영문명'), cat: col(r, '이수구분'), cr: Number(col(r, '학점')) || null, hrs: Number(col(r, '시수')) || null, tp: col(r, '이론/실습'), type: col(r, '교과구분'), online: col(r, '수업방식'), code: col(r, '교과목코드'),
+      ncs: list(col(r, 'NCS 능력단위')), method: list(col(r, '교수학습방법')), eval: list(col(r, '평가방법')), overview: col(r, '교과목 개요'), goals: list(col(r, '학습목표')),
+      weeks: (col(r, '주차별 내용') || col(r, '주요 내용')).split('|').map(x => x.trim()).filter(Boolean).join('\n') } }));
+  };
+  q('smfile').onchange = async e => {
+    const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+    const got = {}, fail = [];
+    for (const [k, f] of files.entries()) {
+      say(`파일 읽는 중… (${k + 1}/${files.length}) ${f.name}`);
+      try {
+        const docs = /\.pdf$/i.test(f.name) ? [parseSpecPdf(await pdfLines(f))] : csvSpecs(await f.text());
+        docs.forEach(d => { if (!d.name) { fail.push(f.name); return; } const n = nameOf(d.name); got[n] = got[n] ? mergeSpecDocs(got[n], d.spec) : d.spec; });
+        if (!docs.length) fail.push(f.name);
+      } catch (err) { fail.push(f.name); }
+    }
+    const ns = Object.keys(got);
+    if (!ns.length) { say(`읽을 수 있는 교과목이 없습니다. 교과목 프로파일·강의계획서 PDF나 양식 CSV인지 확인하세요.${fail.length ? ` (읽지 못한 파일: ${fail.join(', ')})` : ''}`); return; }
+    const out = { ...(sGet('org', 'specs') || {}) }, at = todayISO();
+    ns.forEach(n => {
+      const s = got[n], term = s.term || ver, prev = out[n] && out[n].term === term ? out[n] : null;
+      const c = all.find(x => x.n === n), merged = prev ? mergeSpecDocs(prev, s) : s;
+      out[n] = { ...merged, cat: merged.cat || (c ? c.kind : ''), cr: merged.cr ?? (c ? c.cr : null), goals: merged.goals || [], weeks: merged.weeks || '', overview: merged.overview || '', term, at };
+    });
+    sSet('org', 'specs', out, `명세서·강의계획서 ${ns.length}과목`); SPDF_VOCAB = null;
+    const newN = ns.filter(n => !all.some(x => x.n === n)), note = `${newN.length ? ` 새 과목 ${newN.length}개(${newN.slice(0, 3).join(', ')}${newN.length > 3 ? ' 등' : ''})가 목록에 추가됐습니다.` : ''}${fail.length ? ` 읽지 못한 파일 ${fail.length}개: ${fail.slice(0, 3).join(', ')}` : ''}`;
+    /* 올리면 바로 AI 분석 → 초안은 '검토 대기' */
+    let k = 0; for (const n of ns) { say(`${ns.length}과목을 올렸습니다. AI 분석 중… (${++k}/${ns.length})${note}`); await gen(n); }
+    state.smSt = '검토 대기'; say(`${ns.length}과목의 명세서·강의계획서를 올리고 AI로 분석했습니다. 상태 '검토 대기'에서 확인해 승인하세요.${note}`);
   };
   const read = bindLinkPick($view.querySelector('.p-smed'), 'cl', CRS_MAX, o => { q('clsix').innerHTML = `<span class="meta">영향을 주는 대학 6대 핵심역량</span> ${sixTags(o.subs, o.facs)}`; }, () => { q('smmsg').textContent = `연계 역량은 최대 ${CRS_MAX}개까지 고를 수 있습니다.`; });
   q('smok').onclick = () => {
