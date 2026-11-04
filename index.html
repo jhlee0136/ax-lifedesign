@@ -2417,6 +2417,11 @@ html[lang=en] #kbtn kbd { display: none; }
 .pflow.aflow ol { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); } .pflow.aflow + .vswitch { margin-top: -6px; }
 @media (max-width: 1000px) { .pflow.aflow ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .pflow.aflow ol { grid-template-columns: minmax(0, 1fr); } }
+
+.pflow.hflow { margin: 0 0 18px; } .pflow.hflow ol { grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); }
+.pflow.hflow .pf-step.wait { cursor: default; }
+@media (max-width: 1100px) { .pflow.hflow ol { grid-template-columns: repeat(3, minmax(0, 1fr)); } .pflow.hflow li + li .pf-step::before { display: none; } }
+@media (max-width: 760px) { .pflow.hflow ol { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -9573,7 +9578,7 @@ const S_ = (title, text, sel, prep) => ({ title, text, sel, prep });
 const TOUR_STUDENT = [
   S_('학생 · 처음 들어오면', "홈 맨 위에 '처음 오셨다면 이 순서로 쓰세요' 안내가 있습니다. 내 진단 → 내 설계 → 홈 순서로 쓰면 되고, 닫아도 오른쪽 위 '도움말'에서 다시 볼 수 있습니다.", '.p-onb', async () => { await tourLogin('student', '20261001'); state.phase = 'start'; await tourStudentReady(); go('home'); }),
   S_('개인정보 수집·이용·활용 동의', "처음 로그인하면 플랫폼을 쓰기 전에 동의를 받습니다. 필수(학사 기본정보, 진단·설계 기록, 학점·출결 연계)는 항목마다 수집 정보·목적·보유 기간을 표로 보여 주고, 선택(지도교수 공유, AI 분석 이용, 알림 수신)은 따로 고릅니다. 필수에 동의하지 않으면 이용할 수 없고, 동의 내용은 언제든 '동의 관리'에서 바꿉니다. 둘러보기에서는 동의한 상태의 '동의 관리' 화면으로 보여 드립니다.", '.consent', async () => go('consent')),
-  S_('홈 · 진행 단계', '한 학기 흐름(3종 진단 → 결과·AI 분석 → 이수 계획 → 수강·이수 → 학기말 재진단 → 성장 확인) 중 어디까지 왔는지 보여 줍니다. 단계를 누르면 그 화면으로 갑니다.', '.stepper', async () => go('home')),
+  S_('홈 · 이번 학기 흐름', '한 학기 흐름(내 진단 → 내 설계 → 이번 학기 시간표 → 수강·실천 → 재진단·성장)을 단계 카드로 보여 줍니다. 끝낸 단계는 ✓, 지금 할 단계는 ‘다음 할 일’로 표시되고, 누르면 그 화면으로 갑니다.', '.hflow', async () => go('home')),
   S_('홈 · 목표 직무 준비도', '목표 직무 준비도는 역량(진단 점수)·직무 관련 교육(이수 과목)·실천(비교과·재진단·자기주도)을 더한 점수입니다. 무엇을 하면 몇 점 오르는지 함께 보여 줍니다.', '.p-ready', async () => { if (!state.targetJob) state.targetJob = (JOBS.find(j => j.id === 'k1513') || JOBS[0]).id; go('home'); }),
   S_('홈 · 목표 직무 캐릭터', "고른 직무 계열(공학·IT·디자인·항공·화학·건축·서비스·경영)에 맞는 모자와 소품을 쓴 캐릭터가 준비도 막대 위를 걸어 지금 준비도 위치까지 갑니다. 도착하면 '지금 50%', 지난번보다 오르면 '+7.5% 올랐어요'를 말하고, 몇 초마다 점프·뒤돌아 걷기·손 흔들기·한 바퀴·두리번·춤을 무작위로 합니다. 누르면 바로 움직이고, 움직임 줄이기 설정이면 서 있기만 합니다.", '.jw-stage', async () => go('home')),
   S_('홈 · 준비도 구성과 다음에 하면 오르는 것', "준비도는 역량 50·직무 관련 교육 30·실천 20점으로 나뉘어 막대와 세 칸에 보입니다. 아래 '다음에 하면 오르는 것'은 과목 이수, 비교과 참여, 자기주도 학습처럼 무엇을 하면 몇 점 오르는지 순서대로 알려 주고, 누르면 그 화면으로 갑니다.", '.rd-next', async () => go('home')),
@@ -11638,7 +11643,7 @@ const dday = iso => { if (!iso) return ''; const d = Math.round((new Date(iso + 
 function studentTodos() {
   const H = state.history || [], last = H[H.length - 1], { next } = stepStatus(), out = [];
   const tt = state.tt || (state.tt = ttLoad()), plan = loadPlan();
-  const DO = { '3종 진단': '3종 진단 받기', '결과·AI 분석': '진단 결과와 AI 분석 확인하기', '이수 계획': '이수 계획 세우고 저장하기', '수강·이수': '계획한 과목 수강하기', '학기말 재진단': '학기말 재진단 받기', '성장 확인': '성장 리포트 확인하기' };
+  const DO = { '내 진단': '진단 결과와 AI 분석 확인하기', '내 설계': '내 설계 이어서 하기', '이번 학기 시간표': '이번 학기 시간표 확정하기', '수강·실천': '계획한 과목 수강하기', '재진단·성장': '학기말 재진단 받고 성장 확인하기', '3종 진단': '3종 진단 받기', '성장 확인': '성장 리포트 확인하기' };
   if (next) out.push({ t: DO[next.k] || next.k, d: next.d, due: '다음 단계', go: next.go, lv: 'high' });
   if (last && last.verdict === '재실시') out.push({ t: '진단 다시 받기', d: '응답 신뢰성 점검에서 재실시 판정을 받았습니다.', due: '재실시', go: 'intro', lv: 'high' });
   if (state.phase === 'end' && H.length && !H.some(h => h.end)) out.push({ t: '학기말 재진단', d: '같은 3종 진단을 다시 받아 이번 학기 성장을 확인합니다.', due: dday(settingsNow().schedule.retestEnd) || '재진단 기간', go: 'intro', lv: 'high' });
@@ -14297,6 +14302,7 @@ const NEEDS_DIAG = ['portfolio', 'result', 'analysis', 'plan', 'planmap', 'timet
 function go(step) {
   if (!state.user) { state.step = 'login'; render(); return; }
   if (step === 'timetable' && ['planmap', 'plan'].includes(state.step)) state.ttFromPlan = true;
+  if (state.user.role !== 'student' && typeof staffVisit === 'function') staffVisit(step); /* 교직원 단계 카드의 '이번 학기 확인함' */
   if (state.user.role === 'student' && ['career', 'gap', 'recs', 'result', 'analysis', 'growth'].includes(step)) { const v = sGet('user', 'dvisit') || {}; if (!v[step]) sSet('user', 'dvisit', { ...v, [step]: todayISO() }); } /* 내 설계 단계 진행 표시용 */ /* 이수 계획 → '이번 학기 시간표로 확정' */
   if (roleOf(step) !== state.user.role && !['quiz', 'retake', 'needdiag', 'login'].includes(step)) step = HOME[state.user.role];
   if (!stepAllowed(step)) { toast(`${DUTY_NAME[dutyOf()]} 계정에서는 열 수 없는 화면입니다.`); step = HOME[state.user.role]; }
@@ -14329,17 +14335,24 @@ function snapshot() {
   sSet('user', 'hist', H);
 }
 function stepStatus() {
-  const H = state.history || [], p = state.phase, planSaved = !!loadPlan();
+  const H = state.history || [], p = state.phase, v = sGet('user', 'dvisit') || {}, D = designFlowState(), tt = state.tt || ttLoad(), end = H.some(h => h.end);
+  const nd = DIAGS.filter(d => diagDone(d.id)).length;
   const steps = [
-    { k: '3종 진단', d: '직업기초·핵심·기초학습', done: H.length > 0, go: 'intro' },
-    { k: '결과·AI 분석', d: '강점·보완점·신뢰성 확인', done: H.length > 0 && !!(state.seen && (state.seen.result || state.seen.analysis)), go: 'result' },
-    { k: '이수 계획', d: '목표 → 차이 분석 → 추천 → 계획', done: planSaved, go: planSaved ? 'planmap' : 'career' },
-    { k: '수강·이수', d: '수업 안 수준별 조 학습, 학점 반영', done: p === 'end', active: p === 'mid', go: 'plan' },
-    { k: '학기말 재진단', d: '같은 3종 진단을 다시', done: H.some(h => h.end), locked: p !== 'end', go: 'intro' },
-    { k: '성장 확인', d: '향상도·다음 학기 계획', done: H.some(h => h.end) && !!(state.seen && state.seen.growth), locked: !H.some(h => h.end), go: 'growth' }
+    { k: '내 진단', d: '3종 진단을 받고 결과와 AI 분석을 봅니다', done: H.length > 0 && !!v.result, st: H.length ? (v.result ? '결과 확인함' : '결과 볼 차례') : nd ? `진행 중 ${nd}/${DIAGS.length}` : '시작 전 · 약 20분', go: H.length ? 'result' : 'intro' },
+    { k: '내 설계', d: '목표 → 차이 분석 → 추천 교육과정 → 이수 계획', done: D.done[2], st: D.done[2] ? '계획 만듦' : `${D.done.filter(Boolean).length}/4단계`, go: D.next && D.next !== 'planmap' ? D.next : 'planmap', locked: !H.length },
+    { k: '이번 학기 시간표', d: '전공 빈 시간에 교양을 배치하고 확정합니다', done: tt.applied === curTerm(), st: tt.applied === curTerm() ? '확정함' : tt.res ? '추천 받음 · 반영 전' : '시작 전', go: 'timetable', locked: !H.length },
+    { k: '수강·실천', d: '수업 안 수준별 조 학습과 자기주도 학습', done: p === 'end', active: p === 'mid', st: p === 'end' ? '학기 마침' : p === 'mid' ? '학기 중' : '개강 뒤', go: 'home', locked: p === 'start' },
+    { k: '재진단·성장', d: '학기말 재진단으로 성장을 확인합니다', done: end && !!v.growth, st: end ? (v.growth ? '확인함' : '성장 볼 차례') : p === 'end' ? '재진단 기간' : '학기말', go: end ? 'growth' : 'intro', locked: p !== 'end' && !end }
   ];
-  const next = steps.find(s => !s.done && !s.locked);
+  const next = steps.find(s => !s.done && !s.locked && s.go !== 'home');
   return { steps, next };
+}
+/* 홈 맨 위 흐름 카드(학생·교원·관리자 공통 모양) */
+function homeFlowHtml(label, S, next) {
+  return `<nav class="pflow dflow hflow no-print" aria-label="${label}" style="--n:${S.length}"><ol>${S.map((x, i) => {
+    const nx = next === x;
+    return `<li><button type="button" class="pf-step${x.done ? ' done' : ''}${x.locked ? ' wait' : ''}${nx ? ' on' : ''}" ${x.locked ? 'disabled' : `data-go="${x.go}"`}><span class="pf-n" aria-hidden="true">${x.done ? '✓' : i + 1}</span><span class="pf-t"><b>${x.k}</b><span>${x.d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : esc(x.st || '')}</span></button></li>`;
+  }).join('')}</ol></nav>`;
 }
 function renderHome() {
   if (hasDiag()) scoreBasicServer();
@@ -14354,6 +14367,7 @@ function renderHome() {
   const termCr = plan ? plan.items.filter(i => i.term === planTerms(state.dept)[0]).reduce((a, i) => a + (i.cr || 0), 0) : 0;
   if (!H.length) { renderFirstHome(); return; }
   $view.innerHTML = `
+  ${homeFlowHtml('이번 학기 흐름', steps, next)}
   <div class="dash-grid home-grid">${onbHtml()}${creqHtml()}${readyHtml()}
     <section class="panel p-sum has-terra">
       ${last ? terraHtml({ axes: SIX_NAMES, avgVals: sixAvg(0), frames: H.length > 1 ? [sixVals(H[0]), sixVals(last)] : [sixVals(last)], labels: H.length > 1 ? [H[0].label, last.label] : [last.label], avg: true, cap: `대학 6대 핵심역량 · 3종 진단 종합 · ${last.label} <span class="nowrap">${last.date}</span>. 깜박이는 점이 먼저 보완할 역량입니다.` }) : terraHtml({ axes: SIX_NAMES, avgVals: sixAvg(0), frames: [SIX_NAMES.map(() => 0)], empty: true, avg: true, cap: '진단을 마치면 학교 평균(회색 점선) 위에 내 6대 핵심역량 점수가 그려집니다.' })}
@@ -14361,7 +14375,6 @@ function renderHome() {
       <p class="summary">${langEN() ? `<span>${esc(u.name)}</span>, ${next ? `your next step: <b>${next.k}</b>` : 'you have finished this term.'}` : `${esc(u.name)}님, ${next ? `다음 할 일은 <b>${next.k}</b>입니다.` : '이번 학기 과정을 모두 마쳤습니다.'}`}</p>
       ${next ? `<div class="actions"><button class="btn" data-go="${next.go}">${next.k} ${next.done ? '보기' : '하러 가기'}</button></div>` : ''}
       <div class="hero-todo"><h2 class="sub3">지금 할 일 <span class="meta">${studentTodos().length}건 · 누르면 해당 화면으로</span></h2>${todoHtml(studentTodos(), '지금 처리할 일이 없습니다. 이번 학기 계획대로 진행하세요.')}</div>
-      <ol class="stepper">${steps.map((s, i) => `<li class="${s.done ? 'done' : s === next ? 'now' : s.locked ? 'lock' : ''}"><button data-go="${s.go}" ${s.locked ? 'disabled' : ''}><span class="sn">${s.done ? '✓' : i + 1}</span><b>${s.k}</b><span class="meta">${s.locked ? '학기말에 열림' : s.d}</span></button></li>`).join('')}</ol>
     </section>
     <!-- 홈 배치: 첫 화면(다음 할 일·지금 할 일 | 6대 핵심역량) → 나의 역량 | 진단 후속조치 → 이수 계획 | 학사일정 → 자기주도 학습 | 진단 기록 -->
     ${panelH('p-hme', '나의 역량', last ? `${last.label} · ${last.date}` : '', last ? `<div class="stats stats-sm"><div class="stat"><b>${Math.round(mean(last.vals))}</b><span>직업기초 평균</span></div><div class="stat"><b>${CORE_AXES[last.core.indexOf(Math.min(...last.core))]}</b><span>핵심역량 보완 축</span></div><div class="stat"><b>${(last.basic.every(v => v == null) ? '정답 대기' : BASIC_SUBJ.filter((_, k) => last.basic[k] != null && last.basic[k] < MID).join('·') || '없음')}</b><span>${last.basic.every(v => v == null) ? '기초학습' : '기초학습 낮음'}</span></div></div>
@@ -14385,7 +14398,8 @@ function acadUpcomingHtml() {
   return panelH('p-hacad', '다가오는 학사일정', '6주 안', all.length ? `<ul class="acad-up">${all.map(x => `<li class="${x.s <= today ? 'now' : ''}"><span class="acd">${md(x.s)}${x.e !== x.s ? '~' + md(x.e) : ''}</span><span>${esc(x.t)}${x.k === '진단' ? ' <span class="badge">진단</span>' : x.s <= today ? ' <span class="meta">진행 중</span>' : ''}</span></li>`).join('')}</ul>` : '<p class="meta">6주 안에 예정된 학사일정이 없습니다.</p>');
 }
 function renderFirstHome() {
-  $view.innerHTML = `<div class="dash-grid">${onbHtml()}${creqHtml()}
+  const { steps, next } = stepStatus();
+  $view.innerHTML = `${homeFlowHtml('이번 학기 흐름', steps, next)}<div class="dash-grid">${onbHtml()}${creqHtml()}
     <section class="panel p-sum p-first"><p class="eyebrow">시작하기</p>
       <p class="summary">${esc(state.user.name)}님, 3종 진단부터 시작합니다.</p>
       <dl class="firstfacts">
@@ -14402,12 +14416,17 @@ function renderFHome() {
   ensureLogs(() => { if (state.step === 'fhome') renderFHome(); });
   const al = advisorAlerts(), log = counselMap(termLabel());
   const doneN = al.filter(a => log[a.st.no]).length;
-  const courses = offered(state.dept, 1).filter(c => c.src === '소속 학과 교과과정').slice(0, 6);
-  $view.innerHTML = `
+  const courses = [...new Set(teachOf().map(r => r.n))], sv = staffVisit();
+  const FS = [
+    { k: '수업 운영', d: '담당 분반 역량 프로필을 보고 수준별 조를 나눕니다', done: !!(sv.classprof && sv.sections), st: courses.length ? `담당 ${courses.length}과목${sv.sections ? ' · 조편성 확인함' : ''}` : '담당 강좌 없음', go: sv.classprof ? 'sections' : 'classprof', locked: !courses.length },
+    { k: '지도 학생', d: '결과 조회 → 상담 → 후속조치', done: al.length > 0 && doneN >= al.length, st: al.length ? `상담 ${doneN}/${al.length}명` : '상담 알림 없음', go: 'advisor' },
+    { k: '학과 현황', d: '우리 학과 학생들의 역량과 개선 현황을 봅니다', done: !!sv.fdept, st: sv.fdept ? '이번 학기 확인함' : '볼 차례', go: 'fdept' }
+  ], fnext = FS.find(x => !x.done && !x.locked);
+  $view.innerHTML = `${homeFlowHtml('교원 업무 흐름', FS, fnext)}
   <div class="dash-grid">${onbHtml()}
     <section class="panel p-sum"><p class="eyebrow">${PHASES.find(x => x[0] === state.phase)[1]}</p>
       <p class="summary">${esc(state.user.name)}님, 지도 학생 상담 알림 ${al.length}건 중 ${al.length - doneN}건이 남아 있습니다.</p>
-      <div class="stats"><div class="stat"><b>${al.length}명</b><span>상담 알림(${esc(state.dept)})</span></div><div class="stat"><b>${doneN}명</b><span>상담 완료</span></div><div class="stat"><b>${courses.length}개</b><span>수준별 조편성 대상 교양</span></div></div>
+      <div class="stats"><div class="stat"><b>${al.length}명</b><span>상담 알림(${esc(state.dept)})</span></div><div class="stat"><b>${doneN}명</b><span>상담 완료</span></div><div class="stat"><b>${courses.length}개</b><span>내 담당 강좌</span></div></div>
       <div class="actions"><button class="btn" data-go="advisor">지도 학생 상담</button><button class="btn ghost" data-go="sections">수준별 조편성</button></div></section>
     ${opsMode() ? '' : panelH('p-fa', `상담 알림 미리 보기${demoOn() ? ' <span class="badge amber">가상 예시 데이터</span>' : ''}`, `${al.length - doneN}건 남음`, al.length ? `<ul class="alerts">${al.slice(0, 5).map(a => `<li><b>${a.st.alias}</b><span>${a.why.join(' · ')}</span>${log[a.st.no] ? '<span class="okc">완료</span>' : ''}</li>`).join('')}</ul><div class="actions"><button class="btn ghost sm" data-go="advisor">전체 보기</button></div>` : '<p class="meta">알림이 없습니다.</p>')}
     ${panelH('p-fw', '지금 할 일', '', todoHtml(facultyTodos(al, log)))}
@@ -14425,7 +14444,10 @@ function renderAHome() {
   const allAlerts = p === 'mid' || p === 'end' ? co.filter(st => st.relCount >= 2 || (st.basicLow && !st.suppDone)).length + (G ? G.below : 0) : 0;
   const box = (no, t, who, val, sub, go, state_) => `<li class="pstep ${state_}"><span class="sn">${no}</span><div><b>${t}</b><span class="meta">${who}</span><p class="pv">${val}</p><p class="meta">${sub}</p>${go ? `<button class="linkbtn" data-go="${go}">열기</button>` : ''}</div></li>`;
   const st = (on, done) => (done ? 'done' : on ? 'now' : 'wait');
-  $view.innerHTML = `
+  const AS = ['dgn', 'edu', 'sup', 'out', 'imp'].map(g => { const L = (ADM_FLOW[g] || []).filter(([k]) => stepAllowed(k)), sv = staffVisit(), nv = L.filter(([k]) => sv[k]).length, G = navOf('admin').find(x => x.id === g) || {};
+    return { k: G.t, d: L.map(x => x[1]).join(' → '), done: L.length > 0 && nv === L.length, st: L.length ? `이번 학기 ${nv}/${L.length}단계 확인` : '담당 아님', go: (L.find(([k]) => !sv[k]) || L[0] || ['ahome'])[0], locked: !L.length }; });
+  const anext = AS.find(x => !x.done && !x.locked);
+  $view.innerHTML = `${homeFlowHtml('관리자 업무 흐름', AS, anext)}
   <div class="dash-grid">${onbHtml()}
     <section class="panel p-sum has-terra ahero"><p class="eyebrow">${PHASES.find(x => x[0] === p)[1]} · 2026학년도 1학기</p>
       <p class="summary">신입생 ${n}명의 대학 생활 설계 운영 현황입니다.</p>
