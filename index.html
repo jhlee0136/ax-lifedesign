@@ -11078,7 +11078,7 @@ function ttCandidates(tt, dd) {
     if (job) c.subs.filter(s => job.core[s] && sub[s] < job.core[s]).slice(0, 1).forEach(s => why.push(`${job.name} 핵심 능력`));
     if (inMicro) why.push('융합과정 구성 과목');
     if (inPlan.has(c.n)) why.unshift('내 이수 계획');
-    return { ...c, score: score + (inPlan.has(c.n) ? 5 : 0), why, level: courseLevel(c, sub), secs: sections(c) };
+    return { ...c, inPlan: inPlan.has(c.n), score: score + (inPlan.has(c.n) ? 5 : 0), why, level: courseLevel(c, sub), secs: sections(c) };
   });
 }
 function ttRecommend(tt, aiOrder) {
@@ -11094,11 +11094,14 @@ function ttRecommend(tt, aiOrder) {
   const put = (c, why) => { const s = pickSec(c); if (!s) return false; const b = { id: 'r' + placed.length, n: c.n, kind: c.kind === 'base' ? 'base' : 'rec', d: s.d, s: s.s, len: s.len, sec: s.sec || '', lv: '', grp: c.level.lv, seats: seatsLeft(s), cap: s.cap || 40, scopeTxt: s.scope === '학과' ? secScope(s) : '', cr: secCr(s, c), subs: c.subs, why: why || c.why, avg: c.level.avg, prefMiss: !prefOk(s) }; placed.push(b); for (let p = b.s; p < b.s + b.len; p++) occ[b.d][p] = b; return true; };
   /* 1) 학과 편성 교양은 먼저 배치(시간이 겹치면 다른 분반, 그래도 안 되면 충돌로 표시) */
   cands.filter(c => c.kind === 'base').forEach(c => { if (!put(c, ['학과 편성 교양'])) conflicts.push(c); });
+  /* 1-1) 이수 계획에서 이번 학기에 넣은 과목은 학생이 정한 것이라 학점 목표와 관계없이 먼저 배치(겹치면 따로 알림) */
+  const planMiss = [];
+  cands.filter(c => c.inPlan && c.kind !== 'base' && !tt.excl.includes(c.n)).forEach(c => { if (!put(c, ['내 이수 계획', ...c.why.filter(w => w !== '내 이수 계획')])) planMiss.push(c); });
   /* 2) 추천 과목: AI 순서가 있으면 먼저 따르고, 나머지는 규칙 점수 순 */
   let cr = placed.reduce((a, b) => a + (b.cr || 0), 0);
   const rest = cands.filter(c => c.kind !== 'base' && !tt.excl.includes(c.n));
   const ordered = [...(aiOrder || []).map(x => rest.find(c => c.n === x.name)).filter(Boolean), ...rest.filter(c => c.score > 0).sort((a, b) => b.score - a.score)];
-  const seen = new Set();
+  const seen = new Set(placed.map(b => b.n));
   for (const c of ordered) {
     if (seen.has(c.n)) continue; seen.add(c.n);
     const s0 = pickSec(c), ccr = s0 ? secCr(s0, c) : c.cr; /* 분반마다 학점이 다를 수 있어 배치될 분반의 학점으로 셈 */
@@ -11119,13 +11122,43 @@ function ttRecommend(tt, aiOrder) {
       if (!occ[d][p] && p !== 4) { const len = !occ[d][p + 1] && p + 1 < Math.max(...busy) && p + 1 !== 4 ? 2 : 1; const t = weakAreas[study.length % weakAreas.length]; const tip = STUDY_TIP[t.a.key]; const b = { id: 's' + study.length, n: tip[0], kind: 'study', d, s: p, len, why: [`${t.a.short} ${t.v}점`], tip: tip[1] }; study.push(b); for (let q = p; q < p + len; q++) occ[d][q] = b; p += len; }
     }
   });
-  return { placed, conflicts, skipped, nc: ncPicked, study, cr, cands, at: new Date().toISOString() };
+  return { placed, conflicts, planMiss, skipped, nc: ncPicked, study, cr, cands, at: new Date().toISOString() };
+}
+/* 요일별 실제 일정(전공·개인·학과 편성 교양·추천 교양). AI 입력과 AI 제안 문장 검사에 같이 씀 */
+function ttDays(tt, res) {
+  const kindName = { major: '전공', personal: '개인 일정', base: '학과 편성 교양', rec: '추천 교양' };
+  const B = [...tt.blocks, ...((res && res.placed) || []).filter(b => b.d != null)];
+  const sched = Object.fromEntries(DAYS.map((d, i) => [d, B.filter(b => b.d === i).sort((a, b) => a.s - b.s).map(b => `${pStart(b.s)}~${pEnd(b.s, b.len)} ${b.n}(${kindName[b.kind] || b.kind})`)]));
+  const hours = DAYS.map((d, i) => B.filter(b => b.d === i && b.kind !== 'personal').reduce((a, b) => a + b.len, 0));
+  const mx = Math.max(...hours);
+  return { sched, hours, free: DAYS.filter((d, i) => !hours[i]), busiest: mx ? DAYS.filter((d, i) => hours[i] === mx) : [] };
+}
+/* AI 제안 문장 중 요일 사실과 어긋나는 것(수업 없는 요일을 바쁘다고, 수업 있는 요일을 비었다고)은 버림 */
+function ttTipsChecked(tt, res, tips) {
+  const D = ttDays(tt, res), avg = D.hours.reduce((a, b) => a + b, 0) / DAYS.length;
+  const bad = t => DAYS.some((d, i) => {
+    const h = D.hours[i], seg = (t.split(/(?<=[.!?다요])\s/).find(x => x.includes(d + '요일')) || '');
+    if (!seg) return false;
+    if (/(수업|강의|일정)[이가은는]?\s*(없|비어|비는)/.test(seg) && h > 0) return true;
+    if (/(수업|강의|일정)[이가은는]?\s*적/.test(seg) && h > avg) return true;
+    if (/(수업|강의|일정)[^.]*?(많|몰려|빽빽|꽉|바쁘)/.test(seg) && h < Math.max(1, avg)) return true;
+    return false;
+  });
+  const ok = (tips || []).filter(t => !bad(t));
+  if (ok.length < (tips || []).length) {
+    if (D.free.length && !ok.some(t => t.includes(D.free[0] + '요일'))) ok.push(`${D.free.join('·')}요일은 수업이 없어 복습이나 과제 정리를 규칙적으로 넣기 좋은 날입니다.`);
+    if (D.busiest.length && !ok.some(t => t.includes(D.busiest[0] + '요일'))) ok.push(`${D.busiest.join('·')}요일이 ${Math.max(...D.hours)}시간으로 가장 바쁘니, 그날은 과제 마감이 몰리지 않게 미리 나눠 두세요.`);
+    { const lo = Math.min(...D.hours.filter(h => h > 0)), ld = DAYS.filter((d, k) => D.hours[k] === lo); if (!D.free.length && ok.length < 2 && ld.length && !ok.some(t => t.includes(ld[0] + '요일'))) ok.push(`${ld.join('·')}요일은 수업이 ${lo}시간으로 가장 적어 복습이나 과제 정리 시간으로 쓰기 좋습니다.`); }
+  }
+  return ok;
 }
 function ttPayload(tt, res) {
   const dd = diagData(), job = state.targetJob ? JOBS.find(j => j.id === state.targetJob) : null;
   const occ = occMap([...tt.blocks, ...res.placed.filter(b => b.kind === 'base')]);
   return {
     profile: { group: CURRICULUM.deptGroup[state.dept] || '미분류', area_scores: Object.fromEntries(AREAS.map((a, k) => [a.short, dd.vals[k]])), weak_subs: dd.subs.filter(x => x.v < MID).map(x => `${x.s} ${x.v}점`), strong_subs: dd.subs.filter(x => x.v >= HIGH).map(x => `${x.s} ${x.v}점`), purpose: `${tt.prefs.purpose}(${PURPOSES.find(x => x[0] === tt.prefs.purpose)[1]})`, target_job: job ? { name: job.name, required: job.core } : null, credit_target: Math.max(0, tt.prefs.cr - res.placed.filter(b => b.kind === 'base').reduce((a, b) => a + (b.cr || 0), 0)), credit_note: `학기 교양 목표 ${tt.prefs.cr}학점 중 학과 편성 교양(fixed)을 뺀 나머지`, nc_count: tt.prefs.nc },
+    /* 요일 언급은 이 사실로만(시간표 검사 ttTipsChecked가 어긋난 문장을 거름) */
+    schedule_by_day: ttDays(tt, res).sched, free_days: ttDays(tt, res).free, busiest_day: ttDays(tt, res).busiest, note_days: '요일·시각을 말할 때는 schedule_by_day·free_days·busiest_day에 있는 사실만 쓰세요. 일정이 없는 요일을 바쁘다고, 일정이 있는 요일을 비었다고 하지 마세요.',
     busy: { major_hours: tt.blocks.filter(b => b.kind === 'major').reduce((a, b) => a + b.len, 0), personal_hours: tt.blocks.filter(b => b.kind === 'personal').reduce((a, b) => a + b.len, 0), hours_by_day: Object.fromEntries(DAYS.map((d, i) => [d, tt.blocks.filter(b => b.d === i).reduce((a, b) => a + b.len, 0)])), avoid_day_for_new_classes: tt.prefs.freeDay >= 0 ? `${DAYS[tt.prefs.freeDay]}요일(학생이 교양을 넣지 않기를 원함. 전공 수업은 있을 수 있음)` : null },
     candidates: res.cands.filter(c => c.kind !== 'base' && !tt.excl.includes(c.n)).sort((a, b) => b.score - a.score).slice(0, 16).map(c => {
       const ok = s => seatsLeft(s) > 0 && fits(occ, s), sec = c.secs.find(ok), feasible = !!sec;
@@ -11153,6 +11186,11 @@ function renderTimetable() {
   const tt = state.tt = state.tt || ttLoad();
   if (tt.term !== curTerm()) { tt.term = curTerm(); tt.res = null; tt.ai = null; } /* 시간표는 이번 학기만(다음 학기 전공 시간·분반은 아직 정해지지 않음) */
   if (!tt.ban) tt.ban = (bansOf(state.dept, tt.term).includes(studentBan(state.user && state.user.no)) || !bansOf(state.dept, tt.term).length) ? studentBan(state.user && state.user.no) : bansOf(state.dept, tt.term)[0];
+  { const pl = state.plan || loadPlan() || buildPlan(), sig = pl.items.filter(i => i.term === tt.term && ['rec', 'added', 'micro'].includes(i.kind)).map(i => i.n).sort().join('|');
+    const fromPlan = state.ttFromPlan; state.ttFromPlan = false;
+    if (tt.blocks.length && ((tt.res && tt.planSig !== sig) || (fromPlan && !tt.res))) { tt.res = ttRecommend(tt, tt.ai && tt.ai.picks); if (sig) state.ttMsg = `이수 계획의 ${termName(tt.term)} 과목을 시간표에 반영했습니다. 비는 학점은 추천 과목으로 채웠습니다.`; }
+    else if (fromPlan && !tt.blocks.length) state.ttMsg = `먼저 '학사정보시스템에서 불러오기'로 전공 시간표를 불러오세요. 그러면 이수 계획의 ${termName(tt.term)} 과목이 빈 시간에 배치됩니다.`;
+    if (tt.planSig !== sig) { tt.planSig = sig; ttSave(tt); } }
   if (!tt.res && tt.ran && tt.blocks.length) tt.res = ttRecommend(tt, tt.ai && tt.ai.picks);
   const res = tt.res, P = tt.prefs, job = state.targetJob ? JOBS.find(j => j.id === state.targetJob) : null;
   const plan = state.plan || loadPlan() || buildPlan();
@@ -11203,10 +11241,10 @@ function renderTimetable() {
       ${tt.ai && tt.ai.summary ? `<p class="ai-sum">${esc(tt.ai.summary)}</p>` : `<p class="ai-sum">${PURPOSES.find(p => p[0] === P.purpose)[1]} 목적으로 ${res.placed.filter(b => b.kind === 'rec').length}과목을 빈 시간에 넣었습니다. 분반은 과목과 연결된 능력의 내 점수로 골랐습니다.</p>`}
       <ul class="rlist">${[...res.placed, ...res.nc].map(row).join('')}</ul>
       <p class="meta">비교과는 해마다 개설 시기가 달라 시간표에 넣지 않습니다. '③ 추천 교육과정'에서 관심 등록하면 개설될 때 알려 드립니다.</p>
-      ${res.conflicts.length ? `<p class="meta gap">학과 편성 교양 중 ${res.conflicts.map(c => esc(c.n)).join(', ')}은(는) 전공 시간과 모든 분반이 겹칩니다. 학과 사무실에 분반 조정을 문의하세요.</p>` : ''}
+      ${(res.planMiss || []).length ? `<p class="meta gap">이수 계획의 ${esc(res.planMiss.map(c => c.n).join(', '))}은(는) 이번 학기에 들을 수 있는 분반이 없거나 모두 전공 시간과 겹쳐 넣지 못했습니다. '계획 고치기'에서 다른 학기로 옮겨 보세요.</p>` : ''}${res.conflicts.length ? `<p class="meta gap">학과 편성 교양 중 ${res.conflicts.map(c => esc(c.n)).join(', ')}은(는) 전공 시간과 모든 분반이 겹칩니다. 학과 사무실에 분반 조정을 문의하세요.</p>` : ''}
       ${res.skipped.length ? `<h3 class="sub3">넣지 못한 후보</h3><ul class="skips">${res.skipped.map(x => `<li><b>${esc(x.c.n)}</b> <span class="meta">${x.why} · ${x.c.why.slice(0, 2).join(', ') || '연계 능력 ' + x.c.subs.map(shortSub).join('·')}</span></li>`).join('')}</ul>` : ''}
       ${res.study.length ? `<h3 class="sub3">빈 시간 활용 제안</h3><ul class="skips">${res.study.map(b => `<li><b>${DAYS[b.d]} ${pStart(b.s)} ${esc(b.n)}</b> <span class="meta">${b.why[0]} · ${esc(b.tip)}</span></li>`).join('')}</ul>` : ''}
-      ${tt.ai && tt.ai.tips && tt.ai.tips.length ? `<h3 class="sub3">AI 학기 설계 제안</h3><ul class="tips">${tt.ai.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${tt.ai && tt.ai.tips && tt.ai.tips.length ? `<h3 class="sub3">AI 학기 설계 제안</h3><ul class="tips">${ttTipsChecked(tt, res, tt.ai.tips).map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
       <div class="actions no-print"><button class="btn" id="ttapply" type="button">${termName(tt.term)} 이수 계획에 반영</button><button class="btn ghost" id="ttprint" type="button">시간표 인쇄</button><span class="meta" id="ttamsg" aria-live="polite"></span></div>
       ${dataPeek(ttPayload(tt, res), 'AI에 보내는 추천 근거 보기')}`) : ''}
   </div>`;
@@ -11235,10 +11273,10 @@ function renderTimetable() {
   $view.querySelectorAll('[data-cell]').forEach(c => c.onclick = () => {
     const [d, p] = c.dataset.cell.split(',').map(Number);
     if (occMap(tt.blocks)[d][p]) return;
-    tt.blocks.push({ id: 'u' + Date.now().toString(36), n: '개인 일정', kind: 'personal', d, s: p, len: 1 }); tt.src = tt.src || 'manual';
+    tt.blocks.push({ id: 'u' + Date.now().toString(36), n: '개인 일정', kind: 'personal', d, s: p, len: 1 }); tt.src = tt.src || 'manual'; tt.ai = null;
     state.ttMsg = `${DAYS[d]} ${pStart(p)}을(를) 개인 일정으로 막았습니다.`; rerun();
   });
-  $view.querySelectorAll('[data-delb]').forEach(x => x.onclick = e => { e.stopPropagation(); tt.blocks = tt.blocks.filter(b => b.id !== x.dataset.delb); state.ttMsg = ''; rerun(); });
+  $view.querySelectorAll('[data-delb]').forEach(x => x.onclick = e => { e.stopPropagation(); tt.blocks = tt.blocks.filter(b => b.id !== x.dataset.delb); tt.ai = null; state.ttMsg = ''; rerun(); });
   $view.querySelectorAll('[data-excl]').forEach(x => x.onclick = e => { e.stopPropagation(); tt.excl.push(x.dataset.excl); state.ttMsg = `${x.dataset.excl}을(를) 빼고 다시 추천했습니다.`; rerun(); });
   $view.querySelectorAll('[data-unexcl]').forEach(x => x.onclick = () => { tt.excl = tt.excl.filter(n => n !== x.dataset.unexcl); rerun(); });
   $view.querySelectorAll('input[name=ttp]').forEach(r => r.onchange = () => { P.purpose = r.value; tt.ai = null; rerun(); });
@@ -11950,7 +11988,7 @@ function renderPlanMap() {
         <p class="pn-cr"><b>${lib}</b>학점 교양<span class="pn-bar"><i style="width:${Math.min(100, lib / CAP * 100)}%" class="${lib > CAP ? 'over' : ''}"></i></span></p>
         ${LAYERS.map(([ly, name]) => { const xs = its.filter(i => layerOf(i) === ly); return xs.length ? `<div class="pn-layer ly-${ly}"><span class="pn-ln">${name}</span><ul>${xs.map(i => `<li>${esc(i.n)}${i.cr ? ` <span class="meta">${i.cr}</span>` : ''}</li>`).join('')}</ul></div>` : ''; }).join('') || '<p class="meta">이 학기에 계획한 과목이 없습니다.</p>'}
         <ul class="pn-ms">${marks.join('')}</ul>
-        ${state_ === 'now' ? '<button class="btn sm" data-go="timetable">이번 학기 시간표로 확정</button>' : ''}
+        ${state_ === 'now' ? '<button class="btn sm" data-ttfromplan="1" type="button">이번 학기 시간표로 확정</button>' : ''}
       </div></li>`;
   }).join('');
   const libTot = plan.items.filter(i => ['base', 'rec', 'added'].includes(i.kind)).reduce((a, i) => a + (i.cr || 0), 0);
@@ -13101,6 +13139,7 @@ function tuneTables(root) {
 { let tq = 0; const mo = new MutationObserver(() => { if (tq) return; tq = requestAnimationFrame(() => { tq = 0; tuneTables(document.getElementById('view')); }); });
   const on = () => { const v = document.getElementById('view'); if (v) { mo.observe(v, { childList: true, subtree: true }); tuneTables(v); } };
   document.getElementById('view') ? on() : addEventListener('DOMContentLoaded', on); }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ttfromplan]'); if (b) go('timetable'); });
 function bindInfo() { $view.querySelectorAll('[data-rinfo]').forEach(b => { b.onclick = () => openInfo(b.dataset.rtitle, b.nextElementSibling.innerHTML); }); }
 
 /* ---------- 지도교수 상담 기록: 학생별 누적, 학기가 바뀌어도 보존, 메모는 기록한 교원 본인만 ---------- */
@@ -14076,6 +14115,7 @@ addEventListener('resize', () => { clearTimeout(window.__fitNavT); window.__fitN
 const NEEDS_DIAG = ['portfolio', 'result', 'analysis', 'plan', 'planmap', 'timetable', 'career', 'gap', 'recs', 'roadmap', 'counsel'];
 function go(step) {
   if (!state.user) { state.step = 'login'; render(); return; }
+  if (step === 'timetable' && ['planmap', 'plan'].includes(state.step)) state.ttFromPlan = true; /* 이수 계획 → '이번 학기 시간표로 확정' */
   if (roleOf(step) !== state.user.role && !['quiz', 'retake', 'needdiag', 'login'].includes(step)) step = HOME[state.user.role];
   if (!stepAllowed(step)) { toast(`${DUTY_NAME[dutyOf()]} 계정에서는 열 수 없는 화면입니다.`); step = HOME[state.user.role]; }
   if (state.user.role === 'student' && NEEDS_DIAG.includes(step) && !hasDiag()) { state.needFor = step; step = 'needdiag'; }
