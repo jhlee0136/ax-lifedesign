@@ -1759,6 +1759,7 @@ body.no-demo .demostrip .phase { display: none !important; }
 .tt-term select { font: inherit; font-size: 14px; padding: 3px 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); color: var(--ink); }
 .p-rlib .pbody > .meta:first-child, .p-rmic .pbody > .meta:first-child, .p-rnc .pbody > .meta:first-child { min-height: 3.2em; margin-bottom: 6px; }
 /* v19: 비교과 개설·알림 */
+.p-ustaff, .p-ustu, .p-ulog { grid-column: 1 / -1; } .ulist { max-height: 460px; overflow: auto; } .utbl select, .utbl input[type=date] { font: inherit; font-size: 13px; height: 30px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); color: var(--ink); padding: 0 6px; } .utbl tr[hidden], .ulist tr[hidden] { display: none; }
 .p-ncform { grid-column: span 5; } .p-nclist { grid-column: span 7; } .p-ncal { grid-column: span 12; }
 .ncform { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; min-width: 0; }
 .ncform > *, .ncform fieldset { min-width: 0; } .ncform input, .ncform select, .ncform textarea { width: 100%; min-width: 0; box-sizing: border-box; }
@@ -2366,6 +2367,22 @@ html[lang=en] #kbtn kbd { display: none; }
 .tourbtn { align-items: center; }
 .tbl td .btn { white-space: nowrap; }
 .askf { align-items: stretch; } .askf input { height: 38px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
+
+/* 표 가독성: 열 내용을 보고 자동 분류(tuneTables). 숫자 열은 오른쪽 정렬·고정폭 숫자, 짧은 열은 줄바꿈 없이 좁게, 긴 글 열이 남은 폭을 씀 */
+.tbl td, .tbl th { word-break: keep-all; overflow-wrap: anywhere; line-height: 1.5; }
+.tbl th, .tbl td { padding: 8px 14px 8px 0; } .tbl th:last-child, .tbl td:last-child { padding-right: 0; }
+.tbl.tt-auto { display: table; width: 100%; max-width: none; }
+.tbl.tt-auto th, .tbl.tt-auto td { white-space: normal; }
+.tbl.tt-auto .c-nw { white-space: nowrap; }
+.tbl.tt-auto.tt-has-long .c-nw, .tbl.tt-auto.tt-has-long .c-num { width: 1%; }
+.tbl.tt-auto .c-num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbl.tt-auto .c-long { min-width: 18em; }
+.tbl.tt-auto .c-mid { min-width: 9em; }
+.tbl.tt-fit { width: auto; min-width: min(100%, 36em); }
+.tbl.tt-fit th, .tbl.tt-fit td { padding-right: 32px; } .tbl.tt-fit th:last-child, .tbl.tt-fit td:last-child { padding-right: 0; }
+.tbl.tt-auto td.c-dash { color: var(--muted); }
+.scrollx > .tbl.tt-auto { min-width: 640px; }
+@media (max-width: 700px) { .tbl.tt-auto { display: block; overflow-x: auto; } .tbl.tt-auto .c-long { min-width: 14em; } .scrollx > .tbl.tt-auto { display: table; min-width: 560px; } }
 </style>
 </head>
 <body>
@@ -9171,6 +9188,119 @@ async function renderNotify() {
     renderNotify();
   };
 }
+/* ---------- 사용자·권한 관리(총괄 전용) ----------
+   사람 목록은 학사·인사가 기준(지금은 학생 명단·교직원 CSV, SSO 연동 후 자동 동기화). 플랫폼은 권한만 부여:
+   교원은 명단의 소속 학과로 교원 권한 자동, 관리 담당(총괄·진단·시간표·비교과·교육과정)만 총괄이 부여. 총괄은 늘 1명 이상(권장 2명) */
+const STAFF_COLS = ['번호(사번)', '이름', '이메일', '구분(교원/직원)', '소속', '상태(재직/휴직/퇴직)'];
+const staffEffOf = s => { if (s.status !== '재직') return null; if (s.duty && (!s.expires || s.expires >= todayISO())) return { role: 'admin', duty: s.duty, dept: s.dept || '' }; if (s.kind === '교원') return { role: 'faculty', dept: s.dept || '' }; return null; };
+const effText = e => (!e ? '권한 없음' : e.role === 'admin' ? `관리자 · ${DUTY_NAME[e.duty]}` : `교원 · ${e.dept || '소속 미정'}`);
+/* 시연 명단: 실존 인물과 무관한 가명, 시연용 주소 */
+function demoStaffRows() {
+  const fam = '김이박최정강조윤장임한오서신권황안송류홍', giv = ['민수', '지현', '서윤', '도윤', '하은', '준호', '수빈', '예린', '태호', '은지', '현우', '가영'];
+  const rows = [['S0001', STAFF_NAMES.all, '직원', '교육혁신원'], ['S0002', STAFF_NAMES.diag, '직원', '교육혁신원'], ['S0003', STAFF_NAMES.tt, '직원', '학사지원팀'], ['S0004', STAFF_NAMES.nc, '직원', '학생성공팀'], ['S0005', STAFF_NAMES.cur, '교원', '교육과정혁신센터'], ['S0006', STAFF_NAMES.faculty, '교원', DEMO_DEPTS[0]]];
+  CURRICULUM.depts.filter(d => CURRICULUM.deptGroup[d]).slice(0, 12).forEach((d, i) => rows.push([`S${String(101 + i).padStart(4, '0')}`, fam[(i * 7) % fam.length] + giv[i % giv.length], '교원', d]));
+  rows.push(['S0201', '홍길순', '직원', '총무팀'], ['S0202', '문재영', '교원', DEMO_DEPTS[0], '휴직']);
+  return rows.map(([id, name, kind, dept, status]) => ({ id, name, email: `${id.toLowerCase()}@demo.lifedesign.test`, kind, dept, status: status || '재직' }));
+}
+/* 시연(이 브라우저) 저장소에서 같은 규칙으로 처리 */
+function localUsers(action, b) {
+  const ok = d => ({ status: 200, data: d }), bad = (s, e) => ({ status: s, data: { error: e } });
+  if (!state.user || state.user.role !== 'admin' || (state.user.duty || 'all') !== 'all') return bad(403, '총괄관리자만 쓸 수 있습니다.');
+  const L = sGet('org', 'staffdir') || [], save = (x, note) => sSet('org', 'staffdir', x, note);
+  const chiefs = X => X.filter(s => (e => e && e.role === 'admin' && e.duty === 'all')(staffEffOf(s))).length;
+  const row = s => ({ ...s, email: maskEmail(s.email || ''), eff: staffEffOf(s) });
+  if (action === 'staff-list') return ok({ rows: L.map(row), chiefs: chiefs(L), sources: [...new Set(L.map(s => s.source))], today: todayISO() });
+  if (action === 'staff-import') {
+    const badRows = [], got = [];
+    (b.rows || []).forEach((r, i) => { const id = String(r.id || '').trim(), name = String(r.name || '').trim(), email = String(r.email || '').trim().toLowerCase(), kind = String(r.kind || '교원').trim(), status = String(r.status || '재직').trim();
+      if (!id || !name) return badRows.push(`${i + 2}행: 번호·이름 없음`); if (email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) return badRows.push(`${i + 2}행: 이메일 형식`);
+      if (!['교원', '직원'].includes(kind)) return badRows.push(`${i + 2}행: 구분은 교원·직원`); if (!['재직', '휴직', '퇴직'].includes(status)) return badRows.push(`${i + 2}행: 상태는 재직·휴직·퇴직`);
+      got.push({ id, name, email, kind, dept: String(r.dept || '').trim(), status }); });
+    const src = b.source === 'demo' ? 'demo' : 'csv', M = new Map(L.map(s => [s.id, s]));
+    got.forEach(x => M.set(x.id, { ...(M.get(x.id) || {}), ...x, source: src }));
+    let retired = 0; if (b.retireMissing && got.length) M.forEach(s => { if (s.source === src && s.status !== '퇴직' && !got.some(x => x.id === s.id)) { s.status = '퇴직'; retired++; } });
+    const out = [...M.values()]; if (b.retireMissing && retired && chiefs(out) === 0 && chiefs(L) > 0) return bad(400, '명단에 없는 사람을 퇴직 처리하면 총괄관리자가 한 명도 남지 않습니다. 명단을 확인하세요.');
+    save(out, `교직원 명단 ${got.length}명`); logLocal('교직원 명단 가져오기', src === 'demo' ? '시연 명단' : 'CSV', `${got.length}명 반영 · 오류 ${badRows.length}행${retired ? ` · 퇴직 처리 ${retired}명` : ''}`);
+    return ok({ added: got.length, bad: badRows, retired });
+  }
+  if (action === 'grant') {
+    const s = L.find(x => x.id === b.id); if (!s) return bad(404, '명단에서 찾을 수 없습니다.');
+    const duty = b.duty || null, expires = b.expires || null;
+    if (duty && s.status !== '재직') return bad(400, '재직 중인 사람에게만 권한을 줄 수 있습니다.');
+    if (duty && expires && expires < todayISO()) return bad(400, '만료일이 오늘보다 앞섭니다.');
+    const next = L.map(x => (x.id === s.id ? { ...x, duty, expires: duty ? expires : null, grantedBy: duty ? state.user.name : null } : x));
+    if (chiefs(L) >= 1 && chiefs(next) === 0) return bad(400, '총괄관리자가 한 명도 남지 않게 됩니다. 다른 사람을 먼저 총괄로 지정하세요.');
+    save(next, '관리 권한'); logLocal(duty ? '관리 권한 부여' : '관리 권한 회수', `${s.name}(${s.dept || s.kind})`, duty ? `${DUTY_NAME[duty]}${expires ? ` · ${expires}까지` : ' · 기한 없음'}` : `이전 ${s.duty ? DUTY_NAME[s.duty] : '-'}`);
+    return ok({ ok: true, chiefs: chiefs(next) });
+  }
+  if (action === 'students') {
+    const users = lsGet('platform_users_demo') || {};
+    return ok({ rows: demoRoster().map(r => { const h = lsGet(`store:u:${r.no}:hist`) || [], p = (lsGet(`store:u:${r.no}:plan`) || {})[r.dept]; return { no: r.no, name: r.name, dept: r.dept, reg: !!users[r.no], registered: users[r.no] ? users[r.no].registered : null, last: users[r.no] ? users[r.no].last || users[r.no].registered : null, diag: h.length, plan: !!p }; }) });
+  }
+  if (action === 'student-reset') {
+    const users = lsGet('platform_users_demo') || {}; if (!users[b.no]) return bad(404, '이메일을 등록하지 않은 학생입니다.');
+    delete users[b.no]; lsSet('platform_users_demo', users); logLocal('학생 이메일 등록 초기화', `${b.no.slice(0, 4)}****`, '학생이 학번·생년월일로 다시 등록');
+    return ok({ ok: true });
+  }
+  return bad(404, 'not found');
+}
+const usersApi = (action, body) => (AUTH.mode === 'supa' ? fnCall('users', { action, ...(body || {}) }) : Promise.resolve(localUsers(action, body || {})));
+async function renderUsers() {
+  if (!state.user || state.user.role !== 'admin' || (state.user.duty || 'all') !== 'all') { $view.innerHTML = `<div class="empty-state"><h1>총괄관리자만 볼 수 있습니다</h1><p class="lede">사용자와 권한은 총괄관리자가 관리합니다.</p></div>`; return; }
+  $view.innerHTML = '<p class="meta">불러오는 중…</p>';
+  const [S, T, A] = await Promise.all([usersApi('staff-list'), usersApi('students'), api('/api/audit')]);
+  if (S.status !== 200) { $view.innerHTML = `<div class="empty-state"><h1>사용자 목록을 불러오지 못했습니다</h1><p class="lede">${esc(S.data.error || '')}</p></div>`; return; }
+  const L = S.data.rows || [], stu = (T.data && T.data.rows) || [], U = state.uf = state.uf || { q: '', kind: '', eff: '', sq: '' };
+  const nAdmin = L.filter(s => s.eff && s.eff.role === 'admin').length, nFac = L.filter(s => s.eff && s.eff.role === 'faculty').length, chiefs = S.data.chiefs;
+  const reg = stu.filter(x => x.reg).length, d30 = Date.now() - 30 * 864e5;
+  const dutyOpt = s => `<select data-ugd="${esc(s.id)}" aria-label="${esc(s.name)} 관리 권한" ${s.status !== '재직' ? 'disabled' : ''}><option value="">없음${s.kind === '교원' ? '(교원 기본)' : ''}</option>${Object.entries(DUTY_NAME).map(([k, v]) => `<option value="${k}" ${s.duty === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+  const srow = s => `<tr data-uq="${esc((s.name + ' ' + s.id + ' ' + (s.dept || '')).toLowerCase())}" data-ukind="${s.kind}" data-ueff="${s.eff ? s.eff.role : 'none'}"><td><b>${esc(s.name)}</b><br><span class="meta">${esc(s.id)} · ${esc(s.email || '이메일 없음')}</span></td><td>${s.kind}</td><td>${esc(s.dept || '-')}</td><td>${s.status === '재직' ? '재직' : `<span class="gap">${s.status}</span>`}</td>
+    <td>${s.eff ? esc(effText(s.eff)) : '<span class="meta">권한 없음</span>'}</td><td>${dutyOpt(s)}</td><td><input type="date" data-uge="${esc(s.id)}" value="${esc(s.expires || '')}" aria-label="${esc(s.name)} 권한 만료일" ${s.status !== '재직' ? 'disabled' : ''}></td><td>${s.last ? esc(fmtTime ? fmtTime(s.last) : String(s.last).slice(0, 16)) : '<span class="meta">-</span>'}</td><td><button class="btn ghost sm" data-ugs="${esc(s.id)}" type="button">저장</button></td></tr>`;
+  const byDept = {}; stu.forEach(x => { const d = byDept[x.dept] = byDept[x.dept] || { n: 0, reg: 0, diag: 0, plan: 0, act: 0 }; d.n++; d.reg += x.reg; d.diag += x.diag > 0; d.plan += x.plan; d.act += x.last && new Date(x.last).getTime() > d30; });
+  const pct = (a, b) => (b ? Math.round(a / b * 100) + '%' : '-');
+  const deptRows = Object.entries(byDept).sort((a, b) => b[1].n - a[1].n).map(([d, x]) => `<tr><td>${esc(d)}</td><td>${x.n}명</td><td>${x.reg}명</td><td>${pct(x.reg, x.n)}</td><td>${x.diag}명</td><td>${x.plan}명</td><td>${x.act}명</td></tr>`).join('');
+  const stuRows = stu.map(x => `<tr data-usq="${esc((x.no + ' ' + x.name + ' ' + x.dept).toLowerCase())}"><td>${esc(x.no)}</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td>${x.reg ? '가입' : '<span class="meta">미가입</span>'}</td><td>${x.diag ? x.diag + '회' : '-'}</td><td>${x.plan ? '있음' : '-'}</td><td>${x.last ? esc(String(fmtTime ? fmtTime(x.last) : x.last).slice(0, 16)) : '-'}</td><td>${x.reg ? `<button class="linkbtn" data-ureset="${esc(x.no)}" type="button">이메일 등록 초기화</button>` : ''}</td></tr>`).join('');
+  const LOG = ((A.data && A.data.rows) || []).filter(r => /관리 권한|교직원 명단|이메일 등록 초기화|교직원 로그인/.test(r.action)).slice(0, 30);
+  $view.innerHTML = `
+  <div class="dash-grid">
+    <section class="panel p-sum"><p class="eyebrow">운영 관리 · 사용자·권한 관리</p>
+      <p class="summary">교직원 ${L.length}명 중 관리자 ${nAdmin}명(총괄 ${chiefs}명), 교원 ${nFac}명이 플랫폼을 씁니다. 학생은 ${stu.length}명 중 ${reg}명이 가입했습니다.</p>
+      <p class="meta">사람 목록은 학사·인사 자료가 기준입니다. 지금은 학생 명단과 교직원 명단(CSV)을 쓰고, SSO가 연동되면 자동으로 동기화됩니다. 교원은 명단의 소속 학과로 교원 권한이 정해지고, 관리 담당만 여기서 부여합니다. 퇴직·휴직으로 바뀌면 권한이 자동으로 회수됩니다.</p>
+      ${chiefs < 2 ? `<p class="gap">총괄관리자가 ${chiefs}명입니다. 한 사람이 자리를 비워도 운영이 멈추지 않도록 2명 이상을 권합니다.</p>` : ''}
+      <div class="stats"><div class="stat"><b>${chiefs}명</b><span>총괄관리자</span></div><div class="stat"><b>${nAdmin - chiefs}명</b><span>담당 관리자</span></div><div class="stat"><b>${nFac}명</b><span>교원(학과 자동)</span></div><div class="stat"><b>${pct(reg, stu.length)}</b><span>학생 가입률</span></div></div></section>
+    ${panelH('p-ustaff', '교직원 권한', `${L.length}명 · 출처 ${(S.data.sources || []).map(x => ({ csv: 'CSV', demo: '시연 명단', sso: 'SSO' }[x] || x)).join('·') || '없음'}`, `
+      <div class="actions"><label class="btn sm filebtn">교직원 명단 올리기(CSV)<input type="file" id="ufile" accept=".csv" hidden></label><button class="btn ghost sm" id="utpl" type="button">양식 내려받기</button>${AUTH.demo !== false ? '<button class="btn ghost sm" id="udemo" type="button">시연용 명단 채우기</button>' : ''}<label class="chk meta"><input type="checkbox" id="uretire"> 올린 명단에 없는 사람은 퇴직 처리</label></div>
+      <p class="meta" id="umsg" role="status" aria-live="polite">${esc(state.umsg || '')}</p>
+      ${L.length ? `<div class="rfind"><input type="search" id="uq" placeholder="이름·번호·소속 검색" value="${esc(U.q)}"><select id="ukind"><option value="">구분 전체</option><option ${U.kind === '교원' ? 'selected' : ''}>교원</option><option ${U.kind === '직원' ? 'selected' : ''}>직원</option></select><select id="ueff"><option value="">권한 전체</option><option value="admin" ${U.eff === 'admin' ? 'selected' : ''}>관리자</option><option value="faculty" ${U.eff === 'faculty' ? 'selected' : ''}>교원</option><option value="none" ${U.eff === 'none' ? 'selected' : ''}>권한 없음</option></select></div>
+      <div class="scrollx"><table class="tbl utbl"><thead><tr><th>이름</th><th>구분</th><th>소속</th><th>상태</th><th>지금 권한</th><th>관리 권한</th><th>만료일</th><th>최근 로그인</th><th></th></tr></thead><tbody>${L.map(srow).join('')}</tbody></table></div>
+      <p class="meta">관리 권한을 주면 교원 기본 권한보다 우선합니다. 만료일을 비우면 기한 없이 유지되며, 학기마다 다시 확인하기를 권합니다. 마지막 총괄관리자는 해제할 수 없습니다.</p>` : '<p class="meta">교직원 명단이 없습니다. 양식에 맞춘 CSV를 올리세요. 명단에 있는 재직자만 이메일 인증번호로 로그인할 수 있습니다.</p>'}`)}
+    ${panelH('p-ustu', '학생 이용 현황', `학생 명단 ${stu.length}명 기준`, `
+      <div class="scrollx"><table class="tbl"><thead><tr><th>학과</th><th>명단</th><th>가입</th><th>가입률</th><th>진단 응시</th><th>이수 계획</th><th>최근 30일 접속</th></tr></thead><tbody>${deptRows || '<tr><td colspan="7">학생 명단이 없습니다.</td></tr>'}</tbody></table></div>
+      <h3 class="sub3">학생별</h3><div class="rfind"><input type="search" id="usq" placeholder="학번·이름·학과 검색" value="${esc(U.sq)}"></div>
+      <div class="scrollx ulist"><table class="tbl"><thead><tr><th>학번</th><th>이름</th><th>학과</th><th>가입</th><th>진단</th><th>계획</th><th>최근 접속</th><th></th></tr></thead><tbody>${stuRows}</tbody></table></div>
+      <p class="meta">학생 계정은 학번·생년월일 확인 뒤 본인 이메일 인증으로 만들어집니다. 이메일을 잃어버린 학생은 '이메일 등록 초기화'로 다시 등록하게 할 수 있습니다(진단·계획 기록은 학번 기준이라 그대로 남음). 학적 상태(재학·휴학·졸업)는 학사 연동 후 함께 표시됩니다.</p>`)}
+    ${panelH('p-ulog', '권한 변경 기록', `최근 ${LOG.length}건`, LOG.length ? `<div class="scrollx"><table class="tbl"><thead><tr><th>시각</th><th>한 사람</th><th>내용</th><th>대상</th><th>세부</th></tr></thead><tbody>${LOG.map(r => `<tr><td>${esc(r.at)}</td><td>${esc(r.who)}</td><td>${esc(r.action)}</td><td>${esc(r.target)}</td><td>${esc(r.detail || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="meta">아직 기록이 없습니다.</p>')}
+  </div>`;
+  const q = id => document.getElementById(id), msg = t => { state.umsg = t; const m = q('umsg'); if (m) m.textContent = t; };
+  const filt = () => { U.q = (q('uq') || {}).value || ''; U.kind = (q('ukind') || {}).value || ''; U.eff = (q('ueff') || {}).value || ''; const t = U.q.trim().toLowerCase();
+    $view.querySelectorAll('[data-uq]').forEach(tr => { tr.hidden = (t && !tr.dataset.uq.includes(t)) || (U.kind && tr.dataset.ukind !== U.kind) || (U.eff && tr.dataset.ueff !== U.eff); }); };
+  ['uq', 'ukind', 'ueff'].forEach(id => { const e = q(id); if (e) e[id === 'uq' ? 'oninput' : 'onchange'] = filt; }); filt();
+  const sf = () => { U.sq = q('usq').value; const t = U.sq.trim().toLowerCase(); $view.querySelectorAll('[data-usq]').forEach(tr => { tr.hidden = !!t && !tr.dataset.usq.includes(t); }); };
+  q('usq').oninput = sf; sf();
+  const imp = async (rows, source) => { msg('반영하는 중…'); const r = await usersApi('staff-import', { rows, source, retireMissing: q('uretire').checked });
+    state.umsg = r.status === 200 ? `${r.data.added}명을 반영했습니다.${r.data.retired ? ` 명단에 없는 ${r.data.retired}명은 퇴직 처리했습니다.` : ''}${r.data.bad && r.data.bad.length ? ` 읽지 못한 행: ${r.data.bad.slice(0, 3).join(', ')}` : ''}` : (r.data.error || '반영하지 못했습니다.'); renderUsers(); };
+  q('utpl').onclick = () => download('교직원명단_양식.csv', [STAFF_COLS, ['S1001', '홍길동', 'hong@example.ac.kr', '교원', '기계공학과', '재직']]);
+  if (q('udemo')) q('udemo').onclick = () => imp(demoStaffRows(), 'demo');
+  q('ufile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const rows = parseCSV(await f.text()).filter(r => r.some(c => String(c).trim())); if (rows.length < 2) { msg('CSV에 사람이 없습니다. 양식을 확인하세요.'); return; }
+    const H = rows[0].map(h => String(h).replace(/\(.*$/, '').trim()), col = (r, h) => { const i = H.indexOf(h); return i < 0 ? '' : String(r[i] ?? '').trim(); };
+    imp(rows.slice(1).map(r => ({ id: col(r, '번호'), name: col(r, '이름'), email: col(r, '이메일'), kind: col(r, '구분') || '교원', dept: col(r, '소속'), status: col(r, '상태') || '재직' })), 'csv'); };
+  $view.querySelectorAll('[data-ugs]').forEach(b => b.onclick = async () => { const id = b.dataset.ugs, duty = $view.querySelector(`[data-ugd="${CSS.escape(id)}"]`).value, expires = $view.querySelector(`[data-uge="${CSS.escape(id)}"]`).value;
+    const s = L.find(x => x.id === id); if (duty === 'all' && s.duty !== 'all' && !confirm(`${s.name}님에게 총괄관리자 권한을 줄까요? 총괄은 사용자·권한을 포함한 모든 메뉴를 씁니다.`)) return;
+    const r = await usersApi('grant', { id, duty: duty || null, expires: expires || null }); state.umsg = r.status === 200 ? `${s.name}: ${duty ? DUTY_NAME[duty] + ' 권한을 저장했습니다' : '관리 권한을 회수했습니다'}.` : (r.data.error || '저장하지 못했습니다.'); renderUsers(); });
+  $view.querySelectorAll('[data-ureset]').forEach(b => b.onclick = async () => { if (!confirm(`${b.dataset.ureset} 학생의 이메일 등록을 초기화할까요? 학생은 학번·생년월일로 다시 등록해야 합니다.`)) return;
+    const r = await usersApi('student-reset', { no: b.dataset.ureset }); state.umsg = r.status === 200 ? '이메일 등록을 초기화했습니다.' : (r.data.error || '처리하지 못했습니다.'); renderUsers(); });
+}
 async function renderAudit() {
   const r = await api('/api/audit');
   if (state.step !== 'auditlog') return;
@@ -10390,8 +10520,9 @@ function localAuth(path, b) {
     if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(b.email)) return bad(400, '이메일 주소 형식이 올바르지 않습니다.');
     const no = Object.keys(users).find(k => users[k].email.toLowerCase() === b.email.toLowerCase());
     const msg = { masked: maskEmail(b.email), note: '등록된 이메일이면 인증번호를 보냈습니다.' };
-    if (!no) return ok(msg);
-    const code = issue(b.email, 'login', no);
+    const st = no ? null : (lsGet(localKey('org', 'staffdir')) || []).find(x => (x.email || '').toLowerCase() === b.email.toLowerCase() && staffEffOf(x));
+    if (!no && !st) return ok(msg);
+    const code = st ? issue(b.email, 'staff', st.id) : issue(b.email, 'login', no);
     return code ? ok({ ...msg, demo_code: code }) : bad(429, '인증번호는 60초에 한 번 보낼 수 있습니다.');
   }
   if (path === '/api/auth/otp-verify') {
@@ -10400,6 +10531,13 @@ function localAuth(path, b) {
     o.tries++;
     if (o.code !== String(b.code).replace(/\D/g, '')) { if (o.tries >= 5) { delete LOCAL.otp[key]; return bad(400, '인증번호를 여러 번 틀렸습니다. 다시 받아 주세요.'); } return bad(400, `인증번호가 맞지 않습니다. (${5 - o.tries}회 남음)`); }
     delete LOCAL.otp[key];
+    if (o.purpose === 'staff') {
+      const D = lsGet(localKey('org', 'staffdir')) || [], st = D.find(x => x.id === o.no), e = st && staffEffOf(st);
+      if (!e) return bad(403, '플랫폼 권한이 없습니다. 총괄관리자에게 문의하세요.');
+      lsSet(localKey('org', 'staffdir'), D.map(x => (x.id === st.id ? { ...x, last: localTime() } : x)));
+      const user = { role: e.role, name: st.name, dept: e.dept, staff: st.id, email: maskEmail(key), ...(e.role === 'admin' ? { duty: e.duty } : {}) };
+      lsSet('platform_session', user); return ok({ user });
+    }
     if (o.purpose === 'register') { users[o.no] = { email: key, registered: new Date().toISOString().slice(0, 16) }; lsSet('platform_users_demo', users); LOCAL.pre = null; }
     const r = demoRoster().find(x => x.no === o.no);
     const user = { role: 'student', no: r.no, name: r.name, dept: r.dept, email: maskEmail(key) };
@@ -10559,8 +10697,10 @@ function renderLogin() {
   const msg = L.msg ? `<p class="lmsg ${L.err ? 'err' : ''}" role="status">${esc(L.msg)}</p>` : '';
   const demoCode = L.demo_code ? `<p class="democode">시연 모드: 메일 대신 인증번호를 화면에 표시합니다 <b>${L.demo_code}</b></p>` : '';
   let body = '';
-  if (L.tab === 'staff') {
-    body = `<p class="meta">교원·관리자는 교직원 통합인증(SSO) 연동 후 로그인합니다. 시제품에서는 시연 계정으로 들어갑니다.</p>
+  if (L.tab === 'staff' && L.mode !== 'otp') {
+    body = `<p class="meta">교직원 통합인증(SSO)이 연동되면 SSO로 로그인합니다. 그 전까지는 총괄관리자가 교직원 명단에 올린 재직자가 학교 이메일 인증번호로 로그인합니다.</p>
+      <p class="lswitch"><button class="btn ghost" id="tostaffotp" type="button">학교 이메일 인증번호로 로그인</button></p>
+      <p class="meta">시연에서는 아래 시연 계정으로 들어갈 수 있습니다.</p>
       <div class="lform"><label>구분<select id="lrole"><option value="faculty">교원(지도교수·교과 담당)</option><option value="admin">관리자 · 총괄(모든 메뉴)</option><option value="admin:diag">관리자 · 진단·성과 담당</option><option value="admin:tt">관리자 · 시간표·학사 담당</option><option value="admin:nc">관리자 · 비교과 담당</option><option value="admin:cur">관리자 · 교육과정 담당</option></select></label>
       <button class="btn" id="lstaff" ${AUTH.demo ? '' : 'disabled'}>시연 계정으로 로그인</button></div>`;
   } else if (L.mode === 'first' && L.stage === 'id') {
@@ -10578,7 +10718,7 @@ function renderLogin() {
     body = `<p class="meta">등록한 이메일로 인증번호(OTP)를 보내 드립니다.</p>
       <form class="lform" id="lf"><label>이메일<input id="lemail" type="email" autocomplete="email" required value="${esc(L.email || '')}"></label>
       <button class="btn" type="submit">인증번호 받기</button></form>
-      <p class="lswitch">처음 로그인인가요? <button class="linkbtn" id="tofirst">학번·생년월일로 시작</button></p>`;
+      ${L.tab === 'staff' ? '<p class="lswitch"><button class="linkbtn" id="tostaff">시연 계정으로 돌아가기</button></p>' : '<p class="lswitch">처음 로그인인가요? <button class="linkbtn" id="tofirst">학번·생년월일로 시작</button></p>'}`;
   } else {
     body = `<p class="meta">${esc(L.masked || '')}(으)로 보낸 6자리 인증번호를 5분 안에 입력하세요.</p>${demoCode}
       <form class="lform" id="lf"><label>인증번호<input id="lcode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
@@ -10605,7 +10745,9 @@ function renderLogin() {
   </div>`;
   const set = o => { Object.assign(L, o); renderLogin(); };
   const done = async u => { state.login = null; await enterUser(u); state.step = HOME[u.role]; render(); window.scrollTo({ top: 0 }); };
-  $view.querySelectorAll('[data-lt]').forEach(b => b.onclick = () => set({ tab: b.dataset.lt, msg: '', err: false }));
+  $view.querySelectorAll('[data-lt]').forEach(b => b.onclick = () => set({ tab: b.dataset.lt, mode: b.dataset.lt === 'staff' ? 'staff' : 'first', stage: b.dataset.lt === 'staff' ? 'email' : 'id', msg: '', err: false, demo_code: null }));
+  if (document.getElementById('tostaffotp')) document.getElementById('tostaffotp').onclick = () => set({ mode: 'otp', stage: 'email', msg: '', err: false });
+  if (document.getElementById('tostaff')) document.getElementById('tostaff').onclick = () => set({ mode: 'staff', stage: 'email', msg: '', err: false });
   document.getElementById('tourgo').onclick = tourPick;
   const q = id => document.getElementById(id);
   if (q('tootp')) q('tootp').onclick = () => set({ mode: 'otp', stage: 'email', msg: '', err: false });
@@ -11455,7 +11597,7 @@ const PAGE_JOB = {
   fhome: '상담 알림과 이번 학기 할 일을 봅니다.', sections: '담당 교양 분반 수업 안에서 진단 점수로 수준별 조를 편성합니다.', advisor: '상담 알림 학생의 준비 카드를 보고 상담을 기록합니다.',
   ahome: '이번 학기 운영 할 일과 프로세스 현황을 봅니다.', axkpi: '도입 전후 업무 시간을 비교해 AX 성과를 계산합니다.', diagops: '진단 일정과 응답 신뢰성 기준을 운영합니다.',
   itembank: '기존 문항 검토부터 AI 후보 생성·검토, 검사지 확정까지 5단계로 진행합니다.', itemqa: '난이도·변별도·신뢰도로 고칠 문항을 고릅니다.', forms: 'A형·B형 검사지를 구성하고 점수를 같은 척도로 맞춥니다.',
-  integration: '학사정보시스템과 수강편람 자료를 연결합니다.', attend: '학생 개인별·과목별 출결을 등록해 조기 경보에 반영합니다.', majortt: '학과·학기·반별 전공 교과목 시간표를 등록·수정·삭제합니다.', electt: '교양·융합과정 분반을 공통 또는 학과·학년·반 대상으로 배치합니다.', ncopen: '비교과 개설 정보를 등록하고 대상 학생에게 수강을 알립니다.', grades: '이수 결과를 학점과 기록에 반영합니다.', notify: '일정에 맞춰 학생에게 안내 메일을 보냅니다.',
+  integration: '학사정보시스템과 수강편람 자료를 연결합니다.', attend: '학생 개인별·과목별 출결을 등록해 조기 경보에 반영합니다.', majortt: '학과·학기·반별 전공 교과목 시간표를 등록·수정·삭제합니다.', electt: '교양·융합과정 분반을 공통 또는 학과·학년·반 대상으로 배치합니다.', ncopen: '비교과 개설 정보를 등록하고 대상 학생에게 수강을 알립니다.', users: '교직원 관리 권한을 부여하고 학생 이용 현황을 봅니다(총괄 전용).', grades: '이수 결과를 학점과 기록에 반영합니다.', notify: '일정에 맞춰 학생에게 안내 메일을 보냅니다.',
   gain: '재진단으로 역량 향상도를 평가합니다.', impact: '교양·융합·비교과별 효과를 비교해 개편 판단을 붙입니다.', ask: '질문을 집계로 바꿔 데이터를 바로 확인합니다.',
   specmap: '교과목 명세서로 과목–역량 매핑을 만들고 승인합니다.', coverage: '교과과정이 21개 능력을 고르게 다루는지 점검합니다.', studio: '부족한 능력을 채울 교과목 개선안을 설계합니다.',
   committee: '효과성 결과로 위원회 안건을 정리합니다.', report: '위원회 보고서를 PDF·Word로 만듭니다.', settings: '판정·알림·졸업 요건 기준과 학기 일정을 관리합니다.', auditlog: '설정 변경·발송·열람 기록을 확인합니다.'
@@ -12936,6 +13078,29 @@ function ncInfo(p) {
   return `${sum ? `<p>${esc(sum)}</p>` : '<p class="meta">과정 개요가 아직 등록되지 않았습니다.</p>'}<dl class="rinfo-dl">${p.cat ? `<dt>구분</dt><dd>${esc(p.cat)}</dd>` : ''}<dt>단계</dt><dd>${p.in}-IN ${IN_AXIS[p.in]}</dd><dt>연계 역량</dt><dd>${(L => L.map(k => esc((SUBNAMES.includes(k) ? shortSub(k) : k) + (p.w && p.w[k] ? ` ${p.w[k]}%` : ''))).join(', ') || '-')([...(p.subs || []), ...(p.facs || [])])}</dd>${p.hrs ? `<dt>교육시간</dt><dd>약 ${p.hrs}시간</dd>` : ''}<dt>주관</dt><dd>${esc(p.host || '-')}</dd>
     ${o ? `<dt>올해 개설</dt><dd>${esc(st.t || '')} · 신청 ${esc(o.applyFrom || '-')} ~ ${esc(o.applyTo || '-')} · 운영 ${esc(o.runFrom || '-')} ~ ${esc(o.runTo || '-')}${o.cap ? ` · 정원 ${o.cap}명` : ''}${o.mode ? ` · ${esc(o.mode)}` : ''}</dd>` : '<dt>올해 개설</dt><dd>아직 개설 전입니다. 관심 등록하면 개설될 때 알려 드립니다.</dd>'}</dl>`;
 }
+/* 표 열 자동 분류: 숫자(c-num) · 짧은 값(c-nw) · 보통(c-mid) · 긴 글(c-long). 열 너비를 직접 정한 표(table-layout: fixed)는 건너뜀 */
+function tuneTables(root) {
+  (root || document).querySelectorAll('table.tbl:not(.tt-done)').forEach(t => {
+    t.classList.add('tt-done');
+    if (getComputedStyle(t).tableLayout === 'fixed' || t.classList.contains('no-tune')) return;
+    const rows = [...t.rows].filter(r => ![...r.cells].some(c => c.colSpan > 1)), head = t.tHead ? [...t.tHead.rows].pop() : null;
+    const body = rows.filter(r => r.parentElement.tagName !== 'THEAD');
+    const n = Math.max(0, ...rows.map(r => r.cells.length)); if (!n || !body.length) return;
+    const NUM = /^[-+−]?\s*[\d.,]+\s*(점|명|%|%p|개|학점|시간|건|회|과목|일|분|위|배)?$/, DASH = /^[-–—·]$|^$/;
+    let long = false; const kind = [];
+    for (let k = 0; k < n; k++) {
+      const tx = body.map(r => r.cells[k]).filter(Boolean).map(c => c.innerText.replace(/\s+/g, ' ').trim());
+      const vals = tx.filter(x => !DASH.test(x)), mx = Math.max(0, ...tx.map(x => x.length)), hasCtl = body.some(r => r.cells[k] && r.cells[k].querySelector('button,select,input,textarea'));
+      const kd = vals.length && vals.every(x => NUM.test(x) && !/^\d{6,}$/.test(x)) ? 'c-num' : hasCtl ? 'c-nw' : mx <= 14 ? 'c-nw' : mx > 40 ? 'c-long' : 'c-mid';
+      if (kd === 'c-long') long = true; kind.push(kd);
+    }
+    t.classList.add('tt-auto'); if (long) t.classList.add('tt-has-long'); else if (kind.every(k => k !== 'c-mid')) t.classList.add('tt-fit');
+    rows.forEach(r => [...r.cells].forEach((c, k) => { c.classList.add(kind[k]); if (r !== head && DASH.test(c.innerText.trim()) && c.innerText.trim()) c.classList.add('c-dash'); }));
+  });
+}
+{ let tq = 0; const mo = new MutationObserver(() => { if (tq) return; tq = requestAnimationFrame(() => { tq = 0; tuneTables(document.getElementById('view')); }); });
+  const on = () => { const v = document.getElementById('view'); if (v) { mo.observe(v, { childList: true, subtree: true }); tuneTables(v); } };
+  document.getElementById('view') ? on() : addEventListener('DOMContentLoaded', on); }
 function bindInfo() { $view.querySelectorAll('[data-rinfo]').forEach(b => { b.onclick = () => openInfo(b.dataset.rtitle, b.nextElementSibling.innerHTML); }); }
 
 /* ---------- 지도교수 상담 기록: 학생별 누적, 학기가 바뀌어도 보존, 메모는 기록한 교원 본인만 ---------- */
@@ -13806,7 +13971,7 @@ const NAV = {
     { id: 'sup', t: '학생 지원', steps: [['stulookup', '학생별 결과 조회'], ['followup', '후속조치 이행'], ['risk', '조기 경보'], ['counselstat', '상담 현황']] },
     { id: 'out', t: '성과 분석', steps: [['gain', '역량 향상도', null, '역량 향상도'], ['impact', '교육과정 효과성', 'gain'], ['ask', 'AI 데이터 비서', 'gain'], ['evals', '강의평가 연계'], ['axkpi', 'AX 성과']] },
     { id: 'imp', t: '교육과정 개선', steps: [['deptdash', '학과별 개선'], ['coverage', '개선 설계', null, '교과과정 점검'], ['studio', '개선안 설계', 'coverage'], ['committee', '위원회', null, '위원회 안건'], ['report', '위원회 보고서', 'committee']] },
-    { id: 'cfg', t: '운영 관리', steps: [['settings', '기준값·일정'], ['integration', '학사·수강편람 연동'], ['grades', '이수 결과(학점 연계)'], ['attend', '출결 연계'], ['notify', '알림 발송'], ['auditlog', '변경 이력']] }]
+    { id: 'cfg', t: '운영 관리', steps: [['settings', '기준값·일정'], ['integration', '학사·수강편람 연동'], ['grades', '이수 결과(학점 연계)'], ['attend', '출결 연계'], ['notify', '알림 발송'], ['users', '사용자·권한 관리'], ['auditlog', '변경 이력']] }]
 };
 const ROLE_NAME = { student: '학생', faculty: '교원', admin: '관리자' };
 const STEP_ALIAS = { quiz: 'intro', dbreak: 'intro', retake: 'result', needdiag: 'home' };
@@ -13822,7 +13987,7 @@ const PHASES = [['start', '학기 초 · 진단 기간'], ['mid', '학기 중 ·
 /* 헤더 펼침 메뉴: 메뉴를 누르면 그 아래 화면들(열)과 화면 안의 보기(작은 목록), 한 줄 설명을 보여 줌.
    순서가 실제로 있는 메뉴(학생: 진단 → 설계, 관리자: 학기 초 → 학기 중 → 학기말 → 교육과정 개선)는 위에 사용 순서를 함께 표시 */
 /* 관리자 업무 흐름: 학사 자료 준비 → 진단 → 학생 지원(후속조치) → 비교과 → 성과 분석 → 교육과정 개선. 메뉴마다 언제 쓰는지(NAV_WHEN) */
-const NAV_FLOW = { student: ['diag', 'plan'], admin: ['dgn', 'sup', 'edu', 'out', 'imp'] };
+const NAV_FLOW = { student: ['diag', 'plan'], admin: ['dgn', 'edu', 'sup', 'out', 'imp'] };
 const NAV_WHEN = { dgn: '학기 초 진단 · 학기말 재진단', sup: '진단 직후부터 학기 내내, 학생 한 명 단위', edu: '학기 전 편성 · 학기 중 운영', out: '학기말 재진단 뒤', imp: '학기말 · 다음 학년도 교육과정 편성 전', cfg: '학기 전 기준·자료 준비, 수시 알림' };
 const navTops = g => g.steps.filter(s => !s[2]);
 const navSingle = g => navTops(g).length === 1 && !g.steps.some(s => s[2]);
@@ -13833,7 +13998,7 @@ const NAV_CAT = {
   edu: [['교과 준비', ['specmap']], ['교과 시간표', ['majortt', 'electt']], ['비교과', ['ncopen', 'ncprepost']]],
   out: [['역량 성과', ['gain']], ['수업·운영 성과', ['evals', 'axkpi']]],
   imp: [['진단·분석', ['deptdash']], ['개선 설계', ['coverage']], ['위원회', ['committee']]],
-  cfg: [['기준', ['settings']], ['자료 연동', ['integration', 'grades', 'attend']], ['알림·기록', ['notify', 'auditlog']]]
+  cfg: [['기준', ['settings']], ['자료 연동', ['integration', 'grades', 'attend']], ['사용자', ['users']], ['알림·기록', ['notify', 'auditlog']]]
 };
 function megaHtml(role, gid) {
   const groups = navOf(role), g = groups.find(x => x.id === gid);
@@ -14109,11 +14274,11 @@ function render() {
   document.body.classList.toggle('no-demo', !demoOn());
   document.body.classList.toggle('ops', !!u && opsMode());
   watchTerms(); closeHelp();
-  document.body.classList.toggle('dash', ['home', 'fhome', 'ahome', 'result', 'analysis', 'plan', 'planmap', 'timetable', 'gap', 'recs', 'roadmap', 'studio', 'counsel', 'career', 'sections', 'advisor', 'diagops', 'grades', 'gain', 'impact', 'itembank', 'forms', 'settings', 'integration', 'majortt', 'electt', 'ncopen', 'notify', 'auditlog', 'axkpi', 'specmap', 'report', 'ask', 'itemqa', 'portfolio', 'risk', 'evals', 'deptdash', 'fdept', 'counselstat'].includes(state.step));
+  document.body.classList.toggle('dash', ['home', 'fhome', 'ahome', 'result', 'analysis', 'plan', 'planmap', 'timetable', 'gap', 'recs', 'roadmap', 'studio', 'counsel', 'career', 'sections', 'advisor', 'diagops', 'grades', 'gain', 'impact', 'itembank', 'forms', 'settings', 'integration', 'majortt', 'electt', 'ncopen', 'notify', 'users', 'auditlog', 'axkpi', 'specmap', 'report', 'ask', 'itemqa', 'portfolio', 'risk', 'evals', 'deptdash', 'fdept', 'counselstat'].includes(state.step));
   renderNav();
   const R = { consent: renderConsent, followup: renderFollowup, ffollowup: renderFollowup, ncprepost: renderNcPrePost, ncsurvey: renderNcSurvey, supsurvey: renderSupSurvey, stulookup: renderStuLookup, fstulookup: renderStuLookup, partic: renderPartic, classprof: renderClassProf, dbreak: renderDBreak, jobkit: renderJobKit, counselstat: renderCounselStat, portfolio: renderPortfolio, risk: renderRisk, evals: renderEvals, deptdash: renderDeptDash, fdept: renderDeptDash, login: renderLogin, home: renderHome, fhome: renderFHome, ahome: renderAHome, needdiag: renderNeedDiag, intro: renderIntro, quiz: renderQuiz, coverage: renderCoverage, roadmap: renderRoadmap,
     committee: renderCommittee, growth: renderGrowth, impact: renderImpact, plan: renderPlan, studio: renderStudio, counsel: renderCounsel, career: renderCareer, sections: renderSections,
-    advisor: renderAdvisor, diagops: renderDiagOps, grades: renderGrades, attend: renderAttend, analysis: renderAnalysis, timetable: renderTimetable, gap: renderGap, recs: renderRecs, planmap: renderPlanMap, gain: renderGain, itembank: renderItemBank, forms: renderForms, settings: renderSettings, integration: renderIntegration, majortt: renderMajorTT, electt: renderElectTT, ncopen: renderNcOpen, notify: renderNotify, auditlog: renderAudit, axkpi: renderAxKpi, specmap: renderSpecMap, report: renderReport, ask: renderAsk, itemqa: renderItemQA, result: renderResult };
+    users: renderUsers, advisor: renderAdvisor, diagops: renderDiagOps, grades: renderGrades, attend: renderAttend, analysis: renderAnalysis, timetable: renderTimetable, gap: renderGap, recs: renderRecs, planmap: renderPlanMap, gain: renderGain, itembank: renderItemBank, forms: renderForms, settings: renderSettings, integration: renderIntegration, majortt: renderMajorTT, electt: renderElectTT, ncopen: renderNcOpen, notify: renderNotify, auditlog: renderAudit, axkpi: renderAxKpi, specmap: renderSpecMap, report: renderReport, ask: renderAsk, itemqa: renderItemQA, result: renderResult };
   const ph = document.getElementById('pagehead'); if (ph) ph.innerHTML = u ? crumbHtml() + viewSwitchHtml() : '';
   (R[state.step] || renderResult)();
   if (state.step === 'home') { bindCheckin(); bindCreq(); }
