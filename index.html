@@ -1754,6 +1754,9 @@ body.no-demo .demostrip .phase { display: none !important; }
 .smup { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 8px; }
 .smup > label:first-child { grid-column: 1 / -1; font-size: 13px; display: flex; gap: 8px; align-items: center; } .smup > label:first-child select { flex: 1; min-width: 0; }
 .smup .btn { width: 100%; min-width: 0; justify-content: center; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 8px; padding-right: 8px; }
+.p-smlist .smup .btn { display: flex; align-items: center; height: 32px; min-height: 0; padding: 0 8px; font-size: 13px; font-weight: 600; border-radius: 8px; }
+.p-smlist .smup select, .p-smlist .smfilt select, .p-smlist .smfilt input { height: 32px; min-height: 0; padding: 0 8px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.p-smlist .smup > label:first-child { font-size: 13px; color: var(--muted); }
 .p-smlist .pbody { display: flex; flex-direction: column; } .p-smlist .smlist { flex: 1 1 0; min-height: 320px; max-height: none; contain: size; }
 @media (max-width: 1000px) { .p-smlist .smlist { flex: none; height: 60vh; } }
 .smfilt { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; margin: 6px 0; } .smfilt select, .smfilt input { font-size: 13px; min-width: 0; }
