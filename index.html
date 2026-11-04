@@ -544,6 +544,17 @@ section.block { margin-top: 44px; }
 .aitem .sub { grid-template-columns: 7.6em 1fr 2.2em; font-size: 14px; }
 .p-dial .dial { max-width: 340px; margin: 0 auto; display: block; }
 .p-dial .legend { justify-content: center; margin-top: 4px; }
+.dgap { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.dgap .sub3 { margin: 0 0 4px; } .dgap > .meta { margin: 0 0 10px; }
+.dgap-l { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.dgap-l li { display: grid; grid-template-columns: 4.5em minmax(0, 1fr) 2.6em 7.6em; align-items: center; gap: 10px; font-size: 14px; }
+.dg-t { position: relative; height: 8px; background: var(--paper); border-radius: 4px; }
+.dg-t::after { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line-strong); }
+.dg-t b { position: absolute; top: 0; bottom: 0; background: var(--signal); border-radius: 4px; }
+.dgap-l li.neg .dg-t b, .dgap-l li.weak .dg-t b { background: var(--amber); }
+.dg-v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; } .dgap-l li.neg .dg-v { color: var(--muted); }
+.dg-a { font-size: 12.5px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .dgap-l li { grid-template-columns: 4.5em minmax(0, 1fr) 2.6em; } .dg-a { display: none; } }
 .tabs { display: flex; gap: 4px; margin: -4px 0 12px; border-bottom: 1px solid var(--line); position: sticky; top: -14px; background: var(--panel); z-index: 1; padding-top: 4px; }
 .tab { font: inherit; background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 12px; cursor: pointer; color: var(--muted); font-weight: 500; }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--signal); font-weight: 700; }
@@ -1740,7 +1751,9 @@ body.no-demo .demostrip .phase { display: none !important; }
 .p-rlib .pbody > .meta:first-child, .p-rmic .pbody > .meta:first-child, .p-rnc .pbody > .meta:first-child { min-height: 3.2em; margin-bottom: 6px; }
 /* v19: 비교과 개설·알림 */
 .p-ncform { grid-column: span 5; } .p-nclist { grid-column: span 7; } .p-ncal { grid-column: span 12; }
-.ncform { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.ncform { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; min-width: 0; }
+.ncform > *, .ncform fieldset { min-width: 0; } .ncform input, .ncform select, .ncform textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+@media (max-width: 560px) { .ncform { grid-template-columns: minmax(0, 1fr); } .ncform .ncsubs { grid-template-columns: minmax(0, 1fr); } .ncform label.ncsub { min-width: 0; } }
 .ncform label { display: grid; gap: 3px; font-size: 13px; color: var(--muted); }
 .ncform .full { grid-column: 1 / -1; }
 .ncform input, .ncform select { font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 8px; }
@@ -2280,7 +2293,7 @@ body:has(.tour-hl) .topbar:not(:has(.tour-hl)) { background: var(--paper); -webk
 /* 비교과 개설: 연계 역량 체크 상자와 글자를 한 줄로 */
 .ncform label.ncsub { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); padding: 5px 4px; border-radius: 6px; cursor: pointer; }
 .ncform label.ncsub:hover { background: var(--paper); }
-.ncform label.ncsub input { flex: none; width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--signal); }
+.ncform label.ncsub input { flex: none; width: 16px; min-width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--signal); }
 /* 같은 목표 선배의 이수 경로 */
 .p-rsen { grid-column: 1 / -1; }
 .srows { list-style: none; padding: 0; margin: 0 0 6px; }
@@ -4939,6 +4952,14 @@ function migrateAns(old, subVals) {
 const level = v => v >= HIGH ? '높음' : v >= MID ? '보통' : '낮음';
 
 /* ---------- 다이얼 ---------- */
+/* 다이얼 아래: 영역별로 대학 평균보다 얼마나 높고 낮은지(가운데 선 = 대학 평균) */
+function dialGap(vals, low) {
+  const rows = AREAS.map((a, k) => ({ k, n: a.short, d: vals[k] - AVG[k] })).filter(r => vals[r.k] != null).sort((x, y) => y.d - x.d);
+  if (!rows.length) return '';
+  const mx = Math.max(10, ...rows.map(r => Math.abs(r.d))), up = rows.filter(r => r.d > 0).length, dn = rows.filter(r => r.d < 0).length;
+  return `<div class="dgap"><h3 class="sub3">대학 평균과 비교</h3><p class="meta">7개 영역 중 ${up}개는 대학 평균보다 높고${dn ? `, ${dn}개는 낮습니다` : ', 낮은 영역은 없습니다'}. 가운데 선이 대학 평균입니다.</p>
+    <ul class="dgap-l">${rows.map(r => `<li class="${r.d < 0 ? 'neg' : ''}${low.includes(r.k) ? ' weak' : ''}"><span class="dg-n">${r.n}</span><span class="dg-t" aria-hidden="true"><b style="${r.d < 0 ? 'right:50%' : 'left:50%'};width:${Math.abs(r.d) / mx * 50}%"></b></span><span class="dg-v">${r.d > 0 ? '+' : ''}${r.d}</span><span class="dg-a meta">나 ${vals[r.k]} · 평균 ${AVG[r.k]}</span></li>`).join('')}</ul></div>`;
+}
 function dial(vals, opts) {
   opts = opts || {};
   const C = 190, R = 115, N = AREAS.length;
@@ -5889,7 +5910,7 @@ function renderResult() {
     ${pdBar}
     ${panel('p-fac', '직업기초진단검사 10개 요인', '137문항 · 요인별 점수와 5등급', facHtml())}
     ${panel('p-areas', '영역별 상세', '하위능력 점수', `<div class="agrid">${areaGrid}</div>`)}
-    ${panel('p-dial', '7영역 다이얼', `${state.dept}`, `${dial(vals, { poly: true, avg: true, weak: low })}<div class="legend"><span>나</span><span class="avg">대학 평균(가상)</span></div><p class="meta">노란 점이 보완 영역입니다.</p>`)}
+    ${panel('p-dial', '7영역 다이얼', `${state.dept}`, `${dial(vals, { poly: true, avg: true, weak: low })}<div class="legend"><span>나</span><span class="avg">대학 평균(가상)</span></div><p class="meta">노란 점이 보완 영역입니다.</p>${dialGap(vals, low)}`)}
     ${panel('p-cmp', '우리 대학·학과에서 내 위치', '', compareHtml(vals))}
     ${panel('p-int', '해석과 먼저 해 볼 것', '', `${top.map(k => `<p><b>${AREAS[k].key}</b> ${STRONG[k]}</p>`).join('')}${low.map(k => `<p><b>${AREAS[k].key}</b> ${WEAK[k]}</p>`).join('')}<h3 class="sub3">먼저 해 볼 것</h3><ul class="tips">${weakSubs.map(x => `<li><b>${x.s}</b> (${x.v}점) ${TIPS[x.s]}</li>`).join('')}</ul>`)}
     ${panel('p-crs', `${state.dept} 교양 교과목`, '', tabs, true)}
