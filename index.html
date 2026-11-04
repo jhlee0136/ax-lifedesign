@@ -1750,7 +1750,11 @@ body.no-demo .demostrip .phase { display: none !important; }
 .lpick { border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; margin: 6px 0; } .lpick .ncsubs { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .lpick label.ncsub:has(input:disabled) { opacity: .45; cursor: not-allowed; } .lpick label.ncfac .meta { font-size: 11px; }
 .etlink { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
-.smup { display: flex; flex-wrap: wrap; gap: 6px; align-items: end; margin: 0 0 8px; } .smup label { font-size: 12.5px; display: flex; gap: 4px; align-items: center; }
+.smup { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 8px; }
+.smup > label:first-child { grid-column: 1 / -1; font-size: 13px; display: flex; gap: 8px; align-items: center; } .smup > label:first-child select { flex: 1; min-width: 0; }
+.smup .btn { width: 100%; min-width: 0; justify-content: center; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 8px; padding-right: 8px; }
+.p-smlist .pbody { display: flex; flex-direction: column; } .p-smlist .smlist { flex: 1 1 0; min-height: 320px; max-height: none; contain: size; }
+@media (max-width: 1000px) { .p-smlist .smlist { flex: none; height: 60vh; } }
 .smfilt { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; margin: 6px 0; } .smfilt select, .smfilt input { font-size: 13px; min-width: 0; }
 .smplanf { display: grid; gap: 6px; margin: 0 0 8px; } .smplanf textarea { width: 100%; font: inherit; font-size: 13.5px; }
 .ncsixline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; } .ncsix { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: var(--signal-soft); color: var(--ink); } .ncsix.none { background: var(--paper); color: var(--muted); }
@@ -9351,7 +9355,7 @@ const TOUR_NC = [
 const TOUR_CUR = [
   S_('교육과정 담당 · 홈', '이 계정은 역량 매핑, 학과별 개선, 교육과정 개선 설계, 위원회, 강의평가 메뉴를 봅니다. 역량 매핑은 교과·비교과 운영 메뉴 맨 앞(교과 준비)에 있습니다.', '.p-todo', adm('cur')),
   S_('역량 매핑 · 과목 목록과 상태', '교양·융합·전공 과목을 구분·상태(검토 대기·재검토·매핑 전·승인·직접 입력·명세서 없음)·이름으로 걸러 봅니다. 2026학년도 교양 교과목 프로파일·강의계획서 72과목(학점·시수·NCS 능력단위·주차별 내용)이 기본으로 들어 있고, 새 학기 명세서가 올라오면 승인한 과목도 재검토로 바뀝니다.', '.p-smlist', async () => go('specmap')),
-  S_('역량 매핑 · 학기별 명세서·강의계획서 올리기', "학년도-학기를 고르고 교과목 명세서(CSV)를 올리거나, 강의계획서 내용을 붙여 넣어(텍스트 파일 가능) 저장하면 AI가 바로 분석합니다. '검토 대기 초안 만들기'로 여러 과목을 한꺼번에 분석합니다.", '.smup', async () => go('specmap')),
+  S_('역량 매핑 · 학기별 명세서·강의계획서 올리기', "학년도-학기를 고르고 교과목 명세서(CSV)를 올리거나, 강의계획서 내용을 붙여 넣어(텍스트 파일 가능) 저장하면 AI가 바로 분석해 검토 대기 초안을 만듭니다. 분석이 안 된 과목은 '남은 과목 분석'으로 한꺼번에 다시 분석합니다.", '.smup', async () => go('specmap')),
   S_('역량 매핑 · AI 분석 제안', 'AI가 명세서 문장을 근거로 과목이 기르는 하위능력과 핵심역량 요인을 주·부와 근거 문장으로 제안합니다. 과목명만으로는 몰랐던 연결은 새로 찾음으로 표시됩니다. 초안은 서버에 승인 대기로 저장돼 다른 담당자도 이어서 검토합니다.', '.p-smed', async () => go('specmap')),
   S_('역량 매핑 · 연계 역량 확정', '제안 중 근거가 강한 것이 미리 골라져 있습니다. 대학 6대 핵심역량별로 묶은 목록에서 최대 4개를 확인해 승인하면, 영향을 주는 6대 핵심역량이 함께 보이고 학생 추천·분석에 바로 반영됩니다. 명세서가 없는 과목은 직접 입력합니다.', '.lpick', async () => go('specmap')),
   S_('역량 매핑 · NCS 능력단위 매칭', '같은 명세서로 과목이 가르치는 NCS 능력단위를 근거와 함께 찾습니다. 승인하면 학생 차이 분석에 교과로 채울 수 있는 능력단위로 표시됩니다.', '.p-smncs', async () => go('specmap')),
@@ -9630,7 +9634,7 @@ function renderSpecMap() {
         <label>학기<select id="smver">${opt(vers, ver)}</select></label>
         <button class="btn ghost sm" id="smtpl" type="button">명세서 양식</button><label class="btn ghost sm filebtn">명세서 올리기(CSV)<input type="file" id="smfile" accept=".csv" hidden></label>
         <button class="btn ghost sm" id="smplan" type="button" aria-expanded="${!!state.smPlanOpen}">강의계획서 올리기</button>
-        <button class="btn ghost sm" id="small" type="button">검토 대기 초안 만들기</button></div>
+        <button class="btn ghost sm" id="small" type="button" title="자동 분석이 안 된 과목(매핑 전·재검토)만 다시 분석합니다">남은 과목 분석</button></div>
       ${state.smPlanOpen ? `<form class="smplanf" id="smpf"><label>과목<select id="smpn">${all.map(x => `<option ${x.n === sel ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}</select></label>
         <label class="full">강의계획서 내용<textarea id="smpt" rows="6" placeholder="수업 개요, 학습목표, 주차별 내용, 평가 방법을 붙여 넣거나 텍스트 파일을 고르세요."></textarea></label>
         <div class="actions full"><label class="btn ghost sm filebtn">텍스트 파일<input type="file" id="smptf" accept=".txt,.md" hidden></label><button class="btn sm" type="submit">${esc(ver)} 강의계획서로 저장하고 분석</button></div></form>` : ''}
@@ -9679,7 +9683,13 @@ function renderSpecMap() {
       if (!rows.length) { say('읽을 수 있는 행이 없습니다. 양식을 확인하세요.'); return; }
       const out = { ...(sGet('org', 'specs') || {}) }, at = todayISO();
       rows.forEach(r => { out[r[0].trim()] = { cat: r[1], cr: Number(r[2]) || null, overview: r[3] || '', goals: String(r[4] || '').split('|').map(x => x.trim()).filter(Boolean), weeks: r[5] || '', kind: '교과목 명세서', term: ver, at }; });
-      sSet('org', 'specs', out, `${ver} 명세서 ${rows.length}개`); say(`${ver} 명세서 ${rows.length}개를 올렸습니다. '검토 대기 초안 만들기'로 한꺼번에 분석하세요.`);
+      sSet('org', 'specs', out, `${ver} 명세서 ${rows.length}개`);
+      /* 올리면 바로 AI 분석 → 초안은 '검토 대기' */
+      const ns = [...new Set(rows.map(r => r[0].trim()))];
+      (async () => {
+        let k = 0; for (const n of ns) { say(`${ver} 명세서 ${ns.length}개를 올렸습니다. AI 분석 중… (${++k}/${ns.length})`); await gen(n); }
+        state.smSt = '검토 대기'; say(`${ver} 명세서 ${ns.length}개를 올리고 AI로 분석했습니다. 상태 '검토 대기'에서 확인해 승인하세요.`);
+      })();
     };
     rd.readAsText(f, 'utf-8');
   };
