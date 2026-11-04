@@ -1759,7 +1759,7 @@ body.no-demo .demostrip .phase { display: none !important; }
 .tt-term select { font: inherit; font-size: 14px; padding: 3px 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); color: var(--ink); }
 .p-rlib .pbody > .meta:first-child, .p-rmic .pbody > .meta:first-child, .p-rnc .pbody > .meta:first-child { min-height: 3.2em; margin-bottom: 6px; }
 /* v19: 비교과 개설·알림 */
-.p-ustaff, .p-ustu, .p-ulog { grid-column: 1 / -1; } .ustu-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px 32px; align-items: start; } .ustu-grid .sub3 { margin-top: 0; } @media (max-width: 1100px) { .ustu-grid { grid-template-columns: minmax(0, 1fr); } } .ulist { max-height: 460px; overflow: auto; } .utbl select, .utbl input[type=date] { font: inherit; font-size: 13px; height: 30px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); color: var(--ink); padding: 0 6px; } .utbl tr[hidden], .ulist tr[hidden] { display: none; }
+.p-ustaff, .p-ustu, .p-ulog, .p-uteach { grid-column: 1 / -1; } .ustu-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px 32px; align-items: start; } .ustu-grid .sub3 { margin-top: 0; } @media (max-width: 1100px) { .ustu-grid { grid-template-columns: minmax(0, 1fr); } } .ulist { max-height: 460px; overflow: auto; } .utbl select, .utbl input[type=date] { font: inherit; font-size: 13px; height: 30px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); color: var(--ink); padding: 0 6px; } .utbl tr[hidden], .ulist tr[hidden] { display: none; }
 .p-ncform { grid-column: span 5; } .p-nclist { grid-column: span 7; } .p-ncal { grid-column: span 12; }
 .ncform { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; min-width: 0; }
 .ncform > *, .ncform fieldset { min-width: 0; } .ncform input, .ncform select, .ncform textarea { width: 100%; min-width: 0; box-sizing: border-box; }
@@ -2411,6 +2411,8 @@ html[lang=en] #kbtn kbd { display: none; }
 @media (max-width: 760px) { .pflow.dflow ol { grid-template-columns: minmax(0, 1fr); } .pflow .pf-t span { display: none; } }
 
 .pf-step.wait { background: var(--paper); } .pf-step.wait .pf-t b { color: var(--muted); }
+
+.pflow.fflow ol { grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); } .pflow.fflow ol:has(> li:nth-child(2):last-child) { --n: 2; }
 </style>
 </head>
 <body>
@@ -7071,16 +7073,36 @@ function renderCommittee() {
   document.getElementById('print').onclick = () => window.print();
 }
 
+/* ---------- 담당 강좌(강의 배정): 교원은 자기 강좌만 봄 ----------
+   기준은 학사 연동의 강의 배정(수강편람 교강사). 지금은 관리자가 '사용자·권한 관리'에서 CSV(교직원번호·교과목·분반)로 올림.
+   org 'teaching' = { rows: [{ staff, n, sec }], at }. 이름 대신 교직원번호로 저장. 시연 교원 계정(번호 없음)은 예시 배정을 씀 */
+const teachKey = u => (u && u.staff) || (u ? 'demo:' + u.name : '');
+const courseByName = n => { for (const cs of Object.values(CURRICULUM.byDept)) { const c = cs.find(x => x.n === n); if (c) return c; } for (const m of CURRICULUM.micro) { const c = m.courses.find(x => x.n === n); if (c) return { n: c.n, c: '융합과정', subs: c.subs || [], t: [{ credit: c.cr || 2 }] }; } return null; };
+function demoTeaching(u) {
+  /* 시연: 이번 학기 개설 분반이 있는 교양 가운데 이름으로 정한 2~3개(실제 배정과 무관) */
+  const sem = curTerm().split('-')[1], cat = (catalogNow() || {}).courses || {}, h = hashStr(teachKey(u));
+  const pool = Object.keys(cat).filter(n => { const c = courseByName(n); return c && c.subs && c.subs.length && cat[n].some(x => x.sem === sem); }).sort();
+  if (!pool.length) return [];
+  const pick = [...new Set([0, 1, 2].map(i => pool[(h + i * 37) % pool.length]))];
+  return pick.map(n => ({ staff: teachKey(u), n, sec: cat[n].find(x => x.sem === sem).sec, demo: true }));
+}
+function teachOf(u = state.user) {
+  const T = (sGet('org', 'teaching') || {}).rows || [], key = teachKey(u);
+  const mine = T.filter(r => r.staff === key || (u && u.staff && r.staff === u.staff));
+  return mine.length ? mine : (!u || u.staff ? [] : demoTeaching(u));
+}
 /* ---------- 교원: 수업 안 수준별 조편성 ---------- */
 const LV3 = v => (v >= HIGH ? '상' : v >= MID ? '중' : '하');
 /* ---------- 교과 담당: 고른 과목·분반의 수강생 명단(시연: 가상 신입생 중 신청 인원만큼) ---------- */
 function classCtx() {
-  const co = cohort();
-  const list = offered(state.dept, 1).filter(c => c.subs.length);
-  if (!state.secCourse || !list.some(c => c.n === state.secCourse)) state.secCourse = (list.find(c => c.c === '직업기초') || list[0]).n;
-  const course = list.find(c => c.n === state.secCourse);
-  const sem = curTerm().split('-')[1], real = (((catalogNow() || {}).courses || {})[course.n] || []).filter(s => secFits(s, state.dept, '1', '', sem));
-  const secs = real.length ? real : sectionsDemo({ n: course.n, cr: course.t[0] ? course.t[0].credit : 2 });
+  const co = cohort(), T = teachOf();
+  if (!T.length) return null;
+  const list = [...new Set(T.map(r => r.n))].map(n => courseByName(n)).filter(c => c && c.subs && c.subs.length);
+  if (!list.length) return null;
+  if (!state.secCourse || !list.some(c => c.n === state.secCourse)) state.secCourse = list[0].n;
+  const course = list.find(c => c.n === state.secCourse), mySecs = T.filter(r => r.n === course.n).map(r => r.sec);
+  const sem = curTerm().split('-')[1], real = (((catalogNow() || {}).courses || {})[course.n] || []).filter(s => (!s.sem || s.sem === sem) && mySecs.includes(s.sec)).filter((s, i, a) => a.findIndex(x => x.sec === s.sec) === i);
+  const secs = real.length ? real : sectionsDemo({ n: course.n, cr: course.t[0] ? course.t[0].credit : 2 }).filter(s => !mySecs.length || mySecs.includes(s.sec)).concat([]).slice(0, Math.max(1, mySecs.length));
   if (!secs.some(s => s.sec === state.secSec)) state.secSec = secs[0].sec;
   const idx = course.subs.map(sn => SUBNAMES.indexOf(sn));
   const rosterOf = si => co.filter((st, i) => i % 20 === (hashStr(course.n) + si) % 20).slice(0, Math.min(secs[si].cap || 40, secs[si].enr || 34))
@@ -7088,10 +7110,11 @@ function classCtx() {
   const si = secs.findIndex(s => s.sec === state.secSec);
   return { co, list, course, real, secs, si, S0: secs[si], idx, roster: rosterOf(si), rosterOf };
 }
+const noTeachHtml = () => `<div class="empty-state"><h1>담당 강좌가 아직 없습니다</h1><p class="lede">수준별 조편성과 수업 역량 프로필은 내가 맡은 강좌만 다룹니다. 강의 배정은 학사정보시스템(수강편람 교강사) 연동으로 들어오며, 지금은 관리자가 '사용자·권한 관리'에서 강의 배정 CSV를 올립니다.</p></div>`;
 function classPickHtml(C) {
   return `<div class="pick" style="margin:10px 0 0">
-    <label>교과목<select id="cpcourse">${C.list.map(c => `<option ${c.n === C.course.n ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
-    <label>분반<select id="cpsec">${C.secs.map(s => `<option value="${esc(s.sec)}" ${s.sec === C.S0.sec ? 'selected' : ''}>${esc(s.sec)}분반 · ${DAYS[s.d]} ${pStart(s.s)}</option>`).join('')}</select></label></div>`;
+    <label>내 담당 교과목<select id="cpcourse">${C.list.map(c => `<option ${c.n === C.course.n ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
+    <label>내 분반<select id="cpsec">${C.secs.map(s => `<option value="${esc(s.sec)}" ${s.sec === C.S0.sec ? 'selected' : ''}>${esc(s.sec)}분반 · ${s.d == null ? '온라인' : `${DAYS[s.d]} ${pStart(s.s)}`}</option>`).join('')}</select></label>${teachOf().some(r => r.demo) ? '<span class="meta">시연: 예시 강의 배정입니다(실제 배정은 학사 연동).</span>' : ''}</div>`;
 }
 function bindClassPick(rerender) {
   const a = document.getElementById('cpcourse'), b = document.getElementById('cpsec');
@@ -7100,6 +7123,7 @@ function bindClassPick(rerender) {
 }
 /* ---------- 수업 역량 프로필: 우리 반 수강생의 역량 분포·수업 전 유의점·학기말 향상(분반 단위 통계만) ---------- */
 function renderClassProf() {
+  if (!classCtx()) { $view.innerHTML = noTeachHtml(); return; }
   const C = classCtx(), R = C.roster, n = R.length, mean0 = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
   const head = `<section class="panel p-sum"><p class="summary">수업 역량 프로필</p>
       <p class="meta">담당 분반 수강생의 진단 결과를 반 단위 통계로 보고 수업 운영에 반영합니다. 개인 점수는 조편성에 필요한 수준까지만 쓰고, 여기서는 집계만 보여 줍니다. 수강생이 ${MIN_GROUP}명 미만이면 분포를 숨깁니다. <span class="badge amber">가상 예시 데이터</span></p>
@@ -7136,6 +7160,7 @@ function renderClassProf() {
 }
 function renderSections() {
   /* 분반은 수강신청 전에 정해지므로 수준으로 나누지 않습니다. 이미 편성된 분반 수업 안에서 수강생을 진단 수준별 조로 나눠 수준별 학습을 합니다 */
+  if (!classCtx()) { $view.innerHTML = noTeachHtml(); return; }
   const C = classCtx(), { list, course, real, secs, S0, roster } = C;
   const unc = roster.filter(r => r.st.rel === '재실시');
   const ok = roster.filter(r => r.st.rel !== '재실시').sort((a, b) => b.v - a.v);
@@ -9302,6 +9327,9 @@ async function renderUsers() {
       ${L.length ? `<div class="rfind"><input type="search" id="uq" placeholder="이름·번호·소속 검색" value="${esc(U.q)}"><select id="ukind"><option value="">구분 전체</option><option ${U.kind === '교원' ? 'selected' : ''}>교원</option><option ${U.kind === '직원' ? 'selected' : ''}>직원</option></select><select id="ueff"><option value="">권한 전체</option><option value="admin" ${U.eff === 'admin' ? 'selected' : ''}>관리자</option><option value="faculty" ${U.eff === 'faculty' ? 'selected' : ''}>교원</option><option value="none" ${U.eff === 'none' ? 'selected' : ''}>권한 없음</option></select></div>
       <div class="scrollx"><table class="tbl utbl"><thead><tr><th>이름</th><th>구분</th><th>소속</th><th>상태</th><th>지금 권한</th><th>관리 권한</th><th>만료일</th><th>최근 로그인</th><th></th></tr></thead><tbody>${L.map(srow).join('')}</tbody></table></div>
       <p class="meta">관리 권한을 주면 교원 기본 권한보다 우선합니다. 만료일을 비우면 기한 없이 유지되며, 학기마다 다시 확인하기를 권합니다. 마지막 총괄관리자는 해제할 수 없습니다.</p>` : '<p class="meta">교직원 명단이 없습니다. 양식에 맞춘 CSV를 올리세요. 명단에 있는 재직자만 이메일 인증번호로 로그인할 수 있습니다.</p>'}`)}
+    ${panelH('p-uteach', '강의 배정(담당 강좌)', `${((sGet('org', 'teaching') || {}).rows || []).length}건`, `<p class="meta">교원은 여기 배정된 강좌만 수준별 조편성·수업 역량 프로필에서 봅니다. 학사정보시스템의 강의 배정(수강편람 교강사)이 연동되면 자동으로 채워지고, 지금은 CSV로 올립니다. 이름 대신 교직원번호로 저장합니다.</p>
+      <div class="actions"><label class="btn sm filebtn">강의 배정 올리기(CSV)<input type="file" id="utfile" accept=".csv" hidden></label><button class="btn ghost sm" id="uttpl" type="button">양식 내려받기</button>${L.length ? '<button class="btn ghost sm" id="utdemo" type="button">시연용 배정 채우기</button>' : ''}</div>
+      ${(() => { const T = (sGet('org', 'teaching') || {}).rows || []; if (!T.length) return '<p class="meta">배정된 강좌가 없습니다.</p>'; const by = {}; T.forEach(r => { (by[r.staff] = by[r.staff] || []).push(`${r.n} ${r.sec}`); }); const nm = id => (L.find(x => x.id === id) || {}).name || id; return `<div class="scrollx"><table class="tbl"><thead><tr><th>교원</th><th>담당 강좌</th></tr></thead><tbody>${Object.entries(by).map(([k, v]) => `<tr><td>${esc(nm(k))}</td><td>${esc(v.join(', '))}</td></tr>`).join('')}</tbody></table></div>`; })()}`)}
     ${panelH('p-ustu', '학생 이용 현황', `학생 명단 ${stu.length}명 기준`, `
       <div class="ustu-grid"><div><h3 class="sub3">학과별</h3><div class="scrollx"><table class="tbl"><thead><tr><th>학과</th><th>명단</th><th>가입</th><th>가입률</th><th>진단 응시</th><th>이수 계획</th><th>최근 30일 접속</th></tr></thead><tbody>${deptRows || '<tr><td colspan="7">학생 명단이 없습니다.</td></tr>'}</tbody></table></div></div>
       <div><h3 class="sub3">학생별</h3><div class="rfind"><input type="search" id="usq" placeholder="학번·이름·학과 검색" value="${esc(U.sq)}"></div>
@@ -9317,6 +9345,17 @@ async function renderUsers() {
   q('usq').oninput = sf; sf();
   const imp = async (rows, source) => { msg('반영하는 중…'); const r = await usersApi('staff-import', { rows, source, retireMissing: q('uretire').checked });
     state.umsg = r.status === 200 ? `${r.data.added}명을 반영했습니다.${r.data.retired ? ` 명단에 없는 ${r.data.retired}명은 퇴직 처리했습니다.` : ''}${r.data.bad && r.data.bad.length ? ` 읽지 못한 행: ${r.data.bad.slice(0, 3).join(', ')}` : ''}` : (r.data.error || '반영하지 못했습니다.'); renderUsers(); };
+  const saveTeach = (rows, note) => { sSet('org', 'teaching', { rows, at: localTime() }, note); logLocal('강의 배정 반영', note, `${rows.length}건`); state.umsg = `강의 배정 ${rows.length}건을 반영했습니다.`; renderUsers(); };
+  q('uttpl').onclick = () => download('강의배정_양식.csv', [['교직원번호', '교과목명', '분반'], ['S1001', '영어회화', '01']]);
+  if (q('utdemo')) q('utdemo').onclick = () => { const sem = curTerm().split('-')[1], cat = (catalogNow() || {}).courses || {}, pool = Object.keys(cat).filter(n => cat[n].some(x => x.sem === sem)).sort(), rows = [];
+    L.filter(x => x.kind === '교원' && x.status === '재직').forEach((x, i) => [0, 1].forEach(k => { const n = pool[(hashStr(x.id) + k * 41) % pool.length]; if (n) rows.push({ staff: x.id, n, sec: cat[n].find(y => y.sem === sem).sec }); }));
+    saveTeach(rows, '시연 배정'); };
+  q('utfile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const rows = parseCSV(await f.text()).filter(r => r.some(c => String(c).trim())); if (rows.length < 2) { msg('CSV에 배정이 없습니다. 양식을 확인하세요.'); return; }
+    const H = rows[0].map(h => String(h).trim()), col = (r, h) => { const i = H.indexOf(h); return i < 0 ? '' : String(r[i] ?? '').trim(); };
+    const out = rows.slice(1).map(r => ({ staff: col(r, '교직원번호'), n: col(r, '교과목명'), sec: col(r, '분반') })).filter(x => x.staff && x.n && x.sec);
+    if (!out.length) { msg('읽을 수 있는 배정이 없습니다. 교직원번호·교과목명·분반 열을 확인하세요.'); return; }
+    saveTeach(out, 'CSV'); };
   q('utpl').onclick = () => download('교직원명단_양식.csv', [STAFF_COLS, ['S1001', '홍길동', 'hong@example.ac.kr', '교원', '기계공학과', '재직']]);
   if (q('udemo')) q('udemo').onclick = () => imp(demoStaffRows(), 'demo');
   q('ufile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -11709,7 +11748,23 @@ function diagFlowHtml(cur) {
     return `<li><button type="button" class="pf-step${on ? ' on' : ''}${done[i] ? ' done' : ''}${avail[i] ? '' : ' wait'}" data-go="${k}" ${on ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done[i] && !on ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : esc(st[i])}</span></button></li>`;
   }).join('')}</ol></nav>`;
 }
+/* 교원 흐름: 수업 운영(① 수업 역량 프로필 → ② 수준별 조편성), 지도 학생(① 결과 조회 → ② 상담 → ③ 후속조치) */
+const FAC_FLOW = {
+  sec: [['classprof', '수업 역량 프로필', '담당 분반 수강생의 역량 분포와 수업 전 유의점을 봅니다'], ['sections', '수준별 조편성', '분반 수업 안에서 진단 수준별로 조를 나눕니다']],
+  adv: [['fstulookup', '학생별 결과 조회', '지도 학생 한 명의 3종 진단 결과와 변화를 봅니다'], ['advisor', '지도 학생 상담', '상담이 필요한 학생을 보고 상담을 요청·기록합니다'], ['ffollowup', '후속조치 이행', '상담 뒤 처방을 실제로 했는지 확인합니다']]
+};
+function facFlowHtml(gid, cur) {
+  const v = sGet('user', 'fvisit') || {}, S = FAC_FLOW[gid], T = gid === 'sec' ? teachOf() : null;
+  if (!v[cur]) { v[cur] = todayISO(); sSet('user', 'fvisit', v); }
+  const done = S.map(([k]) => !!v[k]), next = (S.find(([k], i) => !done[i]) || [])[0];
+  const st = k => k === 'classprof' ? (T.length ? `담당 ${new Set(T.map(r => r.n)).size}과목 · ${T.length}분반` : '담당 강좌 없음') : v[k] ? '확인함' : '볼 차례';
+  return `<nav class="pflow dflow fflow no-print" aria-label="${gid === 'sec' ? '수업 운영' : '지도 학생'} 단계"><ol>${S.map(([k, t, d], i) => {
+    const on = cur === k, nx = next === k && !on;
+    return `<li><button type="button" class="pf-step${on ? ' on' : ''}${done[i] ? ' done' : ''}" data-go="${k}" ${on ? 'aria-current="step"' : ''}><span class="pf-n" aria-hidden="true">${done[i] && !on ? '✓' : i + 1}</span><span class="pf-t"><b>${t}</b><span>${d}</span></span><span class="pf-st${nx ? ' nx' : ''}">${nx ? '다음 할 일' : esc(st(k))}</span></button></li>`;
+  }).join('')}</ol></nav>`;
+}
 function viewSwitchHtml() {
+  { const g0 = groupOf(state.step), c0 = STEP_ALIAS[state.step] || state.step; if (g0 && state.user && state.user.role === 'faculty' && FAC_FLOW[g0.g.id] && FAC_FLOW[g0.g.id].some(([k]) => k === c0)) return facFlowHtml(g0.g.id, c0); }
   { const g0 = groupOf(state.step); if (g0 && g0.g.id === 'diag' && state.user && state.user.role === 'student' && ['intro', 'result', 'analysis', 'growth'].includes(STEP_ALIAS[state.step] || state.step)) return diagFlowHtml(STEP_ALIAS[state.step] || state.step); }
   const gi = groupOf(state.step); if (!gi) return '';
   const cur = STEP_ALIAS[state.step] || state.step, st = gi.g.steps.find(s => s[0] === cur); if (!st) return '';
@@ -14092,7 +14147,7 @@ const NAV = {
     { id: 'diag', t: '내 진단', steps: [['intro', '진단 받기'], ['result', '진단 결과', null, '결과 요약'], ['analysis', 'AI 분석', 'result'], ['growth', '성장 리포트']] },
     { id: 'plan', t: '내 설계', steps: [['career', '설계하기', null, '① 목표 직무'], ['gap', '② 차이 분석', 'career'], ['recs', '③ 추천 교육과정', 'career'], ['planmap', '④ 이수 계획·시간표', 'career'], ['timetable', '이번 학기 시간표', 'career', null, 'planmap'], ['plan', '계획 고치기', 'career', null, 'planmap'], ['roadmap', '융합과정 현황'], ['jobkit', '입사지원서 꾸러미'], ['portfolio', '성장 포트폴리오']] },
     { id: 'cns', t: '상담', steps: [['counsel', 'AI 상담']] }],
-  faculty: [{ id: 'fhome', t: '홈', steps: [['fhome', '홈']] }, { id: 'sec', t: '수업 운영', steps: [['sections', '수준별 조편성'], ['classprof', '수업 역량 프로필']] }, { id: 'adv', t: '지도 학생', steps: [['advisor', '지도 학생 상담'], ['ffollowup', '후속조치 이행'], ['fstulookup', '학생별 결과 조회']] }, { id: 'fdp', t: '학과 현황', steps: [['fdept', '학과 개선 현황']] }],
+  faculty: [{ id: 'fhome', t: '홈', steps: [['fhome', '홈']] }, { id: 'sec', t: '수업 운영', steps: [['classprof', '수업 역량 프로필'], ['sections', '수준별 조편성']] }, { id: 'adv', t: '지도 학생', steps: [['fstulookup', '학생별 결과 조회'], ['advisor', '지도 학생 상담'], ['ffollowup', '후속조치 이행']] }, { id: 'fdp', t: '학과 현황', steps: [['fdept', '학과 개선 현황']] }],
   /* 관리자: 업무 흐름(진단 → 교과·비교과 운영 → 학생 지원 → 성과 분석 → 교육과정 개선) + 기반(운영 관리) */
   admin: [{ id: 'ahome', t: '홈', steps: [['ahome', '지금 할 일']] },
     { id: 'dgn', t: '진단', steps: [['diagops', '진단 운영'], ['partic', '참여율 현황'], ['itembank', '문항 관리', null, '문항 은행·AI 고도화'], ['itemqa', '문항 분석', 'itembank'], ['forms', 'B형 검사지·동등화', 'itembank']] },
