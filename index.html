@@ -12660,8 +12660,15 @@ function unitCoverHtml(job) {
   if (!job || !job.nd) return '';
   const M = ncsMapNow(), units = job.nd.units.map(([u]) => ({ u, by: Object.entries(M).filter(([, v]) => (v.units || []).some(x => x.unit === u)).map(([c]) => c) }));
   const n = units.filter(x => x.by.length).length;
-  return `<p class="meta">목표 직무의 능력단위 ${units.length}개 중 <b>${n}개</b>를 우리 대학 교과목으로 배울 수 있습니다(교육과정위원회가 승인한 명세서 매칭 기준).</p>
-    <ul class="ucover">${units.map(x => `<li class="${x.by.length ? 'on' : ''}"><b>${esc(x.u)}</b><span class="meta">${x.by.length ? x.by.map(esc).join(', ') : '연결된 교과 없음 · 전공 교과·현장실습으로'}</span></li>`).join('')}</ul>`;
+  /* 소속 학과 전공 교과목(시간표 기준) 중 명세서가 올라간 과목이 하나도 없으면, 매칭 실패가 아니라 자료가 없는 것 */
+  const majorNames = new Set(Object.values((catalogNow().majors || {})[state.dept] || {}).flat().map(b => b.n)), sp = specsNow();
+  const noMajorSpec = majorNames.size > 0 && ![...majorNames].some(c => sp[c]);
+  const head = noMajorSpec && !n
+    ? `<p class="meta"><b>${esc(state.dept)} 전공 교과목 명세서가 아직 등록되지 않았습니다.</b> 지금은 교양 교과목 명세서만 매칭되어 있어, 목표 직무의 능력단위 ${units.length}개와 연결된 교과가 없습니다. 학과에서 교과목 프로파일·강의계획서를 올리고 교육과정위원회가 승인하면 여기에 표시됩니다.</p>`
+    : `<p class="meta">목표 직무의 능력단위 ${units.length}개 중 <b>${n}개</b>를 우리 대학 교과목으로 배울 수 있습니다(교육과정위원회가 승인한 명세서 매칭 기준).${noMajorSpec ? ` ${esc(state.dept)} 전공 교과목 명세서는 아직 등록되지 않았습니다.` : ''}</p>`;
+  const none = noMajorSpec ? '전공 명세서 등록 전' : '연결된 교과 없음 · 전공 교과·현장실습으로';
+  return `${head}
+    <ul class="ucover">${units.map(x => `<li class="${x.by.length ? 'on' : ''}"><b>${esc(x.u)}</b><span class="meta">${x.by.length ? x.by.map(esc).join(', ') : none}</span></li>`).join('')}</ul>`;
 }
 const unitHint = n => { const T = designTarget(); if (!T.job || !T.job.nd) return ''; const ju = new Set(T.job.nd.units.map(([u]) => u)), hit = courseUnits(n).filter(x => ju.has(x.unit)); return hit.length ? ` · <span class="uhint">직무 능력단위 ${hit.map(x => esc(x.unit)).join(', ')}</span>` : ''; };
 
