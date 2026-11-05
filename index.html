@@ -2424,7 +2424,8 @@ html[lang=en] #kbtn kbd { display: none; }
 @media (max-width: 760px) { .pflow.hflow ol { grid-template-columns: minmax(0, 1fr); } }
 
 /* 가상 데이터 안내 줄 */
-.virtbar { margin: 0 0 12px; } .virtbar:empty { display: none; }
+.virtbar { margin: 4px 0 0; } .virtbar:empty { display: none; }
+.virtbar:not(:empty) + .demostrip { margin-top: 16px; }
 .virt-in { margin: 0; padding: 8px 14px; font-size: 13px; line-height: 1.55; color: var(--warn-ink, #7a4b00); background: var(--amber-soft, #fbf1dc); border: 1px solid color-mix(in srgb, var(--amber, #c08a1e) 45%, transparent); border-radius: 10px; }
 .virt-in b { font-weight: 700; }
 @media print { .virtbar { display: block !important; } .virt-in { font-size: 11px; padding: 4px 8px; } }
