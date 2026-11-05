@@ -2422,6 +2422,12 @@ html[lang=en] #kbtn kbd { display: none; }
 .pflow.hflow .pf-step.wait { cursor: default; }
 @media (max-width: 1100px) { .pflow.hflow ol { grid-template-columns: repeat(3, minmax(0, 1fr)); } .pflow.hflow li + li .pf-step::before { display: none; } }
 @media (max-width: 760px) { .pflow.hflow ol { grid-template-columns: minmax(0, 1fr); } }
+
+/* 가상 데이터 안내 줄 */
+.virtbar { margin: 0 0 12px; } .virtbar:empty { display: none; }
+.virt-in { margin: 0; padding: 8px 14px; font-size: 13px; line-height: 1.55; color: var(--warn-ink, #7a4b00); background: var(--amber-soft, #fbf1dc); border: 1px solid color-mix(in srgb, var(--amber, #c08a1e) 45%, transparent); border-radius: 10px; }
+.virt-in b { font-weight: 700; }
+@media print { .virtbar { display: block !important; } .virt-in { font-size: 11px; padding: 4px 8px; } }
 </style>
 </head>
 <body>
@@ -2431,6 +2437,7 @@ html[lang=en] #kbtn kbd { display: none; }
     <nav class="appnav" id="appnav" aria-label="주요 메뉴"></nav>
     <div class="roles" id="roles" aria-label="사용자"></div>
   </header>
+  <div class="virtbar" id="virtbar" role="note"></div>
   <div class="demostrip no-print" id="demostrip"></div>
   <nav class="subnav" id="subnav" aria-label="세부 메뉴"></nav>
   <div id="pagehead"></div>
@@ -10806,6 +10813,7 @@ function renderLogin() {
     <section class="login-intro">
       <div class="lockup"><p class="lockup-org">인하공업전문대학</p><h1>대학 생활 설계 플랫폼</h1></div>
       <p class="lede">3종 진단으로 내 역량을 확인하고, 교양·융합·비교과 교육과정을 추천받아 학기별 이수 계획을 세웁니다. 학기말 재진단으로 성장을 확인합니다.</p>
+      <p class="virt-in login-virt">시연 사이트입니다. 학생·진단·이수 기록은 가상 예시 데이터이고, 교과과정표·시간표·비교과 목록은 실제 자료입니다.</p>
       <button class="btn tourbtn no-print" id="tourgo" type="button">기능 둘러보기 <span>학생 · 교원 · 직원(담당별)</span></button>
       ${showcaseHtml()}
     </section>
@@ -14205,6 +14213,8 @@ function groupOf(step) {
 }
 const roleOf = step => (groupOf(step) || { role: 'student' }).role;
 /* 시연 표시(가상 데이터 안내·시연 시점): 보는 사람마다 켜고 끔 */
+/* 가상 데이터 안내: 운영 모드(기준값·일정의 '운영 시작')를 켜기 전까지 모든 화면 위에 표시. 무엇이 가상이고 무엇이 실제 자료인지 함께 알림 */
+const virtNoteHtml = () => `<p class="virt-in"><b>가상 예시 데이터로 시연 중입니다.</b> 학생·진단 결과·이수 기록·대학 평균 같은 비교 수치는 가상이고, 교과과정표·전공 시간표·교양 개설강좌·비교과 목록은 실제 자료입니다. 실제 데이터로 바꾸면 이 안내가 사라집니다.</p>`;
 const demoOn = () => lsGet('demo_ui') !== false;
 const PHASES = [['start', '학기 초 · 진단 기간'], ['mid', '학기 중 · 이수'], ['end', '학기말 · 재진단·분석']];
 /* 헤더 펼침 메뉴: 메뉴를 누르면 그 아래 화면들(열)과 화면 안의 보기(작은 목록), 한 줄 설명을 보여 줌.
@@ -14261,7 +14271,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.mega
 const aiDotSlot = u => (u.role === 'faculty' ? '' : '<span id="aidot" class="aidot chk" role="status" aria-live="polite">AI 확인 중</span>');
 function renderNav() {
   const u = state.user, nav = document.getElementById('appnav'), box = document.getElementById('roles'), sub = document.getElementById('subnav');
-  const strip = document.getElementById('demostrip');
+  const strip = document.getElementById('demostrip'), vb = document.getElementById('virtbar');
+  if (vb) vb.innerHTML = u && !opsMode() ? virtNoteHtml() : '';
   if (!u) { state.mega = null; syncMega(); nav.innerHTML = ''; box.innerHTML = langSwitchHtml(); bindLangSwitch(box); sub.innerHTML = ''; strip.innerHTML = ''; return; }
   const gi = groupOf(state.step), cur = STEP_ALIAS[state.step] || state.step;
   nav.innerHTML = `<div class="navgroup" role="group" aria-label="${ROLE_NAME[u.role]} 메뉴">${navOf(u.role).map(g => navSingle(g)
