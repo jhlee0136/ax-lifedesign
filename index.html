@@ -1982,7 +1982,7 @@ details.tech summary { cursor: pointer; color: var(--muted); font-size: 13.5px; 
 .p-ucover { grid-column: span 12; }
 .uhint { color: var(--signal); font-weight: 600; }
 .p-evq { grid-column: span 7; } .p-evup { grid-column: span 5; } .p-evquad, .p-equad { grid-column: span 12; }
-.evq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 14px; } .evq label { display: grid; gap: 3px; font-size: 12.5px; color: var(--muted); min-width: 0; }
+.evq { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 14px; } .evq label { display: grid; gap: 3px; font-size: 12.5px; color: var(--muted); min-width: 0; }
 .evq .evq-h { grid-column: 1 / -1; margin: 6px 0 0; font-size: 13px; font-weight: 650; color: var(--ink); } .evq .evq-h:first-child { margin-top: 0; }
 .evq label.evqi { grid-template-columns: 1.7em minmax(0, 1fr); align-items: center; gap: 6px; }
 .evq label.evqi span { display: grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); font-size: 11.5px; font-weight: 650; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -9844,7 +9844,7 @@ const TOUR_CUR = [
   S_('개선 설계 · 효과 시뮬레이션', '개선안을 적용하면 학생 역량과 졸업 요건 충족이 어떻게 바뀔지 미리 계산해 봅니다.', '.p-sim2', async () => go('studio')),
   S_('위원회 안건', '개선 설계와 효과성 분석에서 담은 안을 위원회 안건 초안으로 모읍니다.', 'section.block', async () => go('committee')),
   S_('위원회 보고서', '진단·향상도·효과성·매핑 결과를 보고서로 정리해 PDF·Word로 내려받습니다.', '.p-rdoc', async () => go('report')),
-  S_('강의평가 연계 · 문항과 척도', '강의평가 문항 10개와 만족도 척도(최저·최고점, 척도 이름, 기준)를 정합니다.', '.p-evq', async () => go('evals')),
+  S_('강의평가 연계 · 문항과 척도', '학사지원팀 강의향상설문 문항 11개와 5점 척도(배점 100~20), 만족도 기준을 정합니다. 문항은 시행 안내에 맞춰 이미 채워져 있습니다.', '.p-evq', async () => go('evals')),
   S_('강의평가 연계 · 효과 × 만족도', '과목별 결과를 올리면 효과와 만족도로 유지·확산, 수업 운영 개선, 재설계 판단을 붙입니다.', '.p-evquad', async () => go('evals'))
 ];
 const TOUR_OPS = [
@@ -13273,9 +13273,12 @@ function unitCoverHtml(job) {
 const unitHint = n => { const T = designTarget(); if (!T.job || !T.job.nd) return ''; const ju = new Set(T.job.nd.units.map(([u]) => u)), hit = courseUnits(n).filter(x => ju.has(x.unit)); return hit.length ? ` · <span class="uhint">직무 능력단위 ${hit.map(x => esc(x.unit)).join(', ')}</span>` : ''; };
 
 /* ---------- 강의평가 연계 ---------- */
-const EVAL_DEFAULT = { questions: Array.from({ length: 10 }, (_, i) => `문항 ${i + 1}`), scale: { min: 1, max: 5, labels: ['매우 그렇지 않다', '그렇지 않다', '보통이다', '그렇다', '매우 그렇다'] }, cut: 70, draft: true, rows: {} };
-const evalsNow = () => { const e = sGet('org', 'evals') || {}; return { ...EVAL_DEFAULT, ...e, scale: { ...EVAL_DEFAULT.scale, ...(e.scale || {}) }, rows: e.rows || {} }; };
-const evalPct = (E, v) => Math.round((v - E.scale.min) / Math.max(1, E.scale.max - E.scale.min) * 100);
+/* 강의향상설문평가(학사지원팀-1526, 2026학년도 1학기 시행안): 11문항, 5점 척도, 배점 100·80·60·40·20 */
+const EVAL_QUESTIONS = ['교수는 본 수업의 목표를 명확히 제시하였다.', '수업 목표를 달성하기 위한 수업이 계획대로 진행되었다.', '교수는 수업목표의 달성을 위하여 적절한 내용으로 강의하였다.', '수업환경(강의실, 기자재, 수업재료 등)은 적절하였으며, 강의 향상에 도움이 되었다.', '교재 및 강의 자료는 적절하였다.', '교수는 학생들의 이해정도를 파악해 수업에 반영하여 진행하였다.', '강의방법(표현과 설명 및 질의응답 등)은 적절하였다.', '교수는 수업관리(수업시간 엄수, 출석관리, 과제 피드백 등)를 철저히 하였다.', '수업평가는 평가계획서에 따라 공정하게 시행되고 관리되었다.', '평가항목 및 과제 등은 수업목표를 잘 반영하였다.', '나는 이 강의를 통해 수업목표를 달성하였으며, 수업과 관련된 지식과 관심이 향상되었다.'];
+const EVAL_DEFAULT = { questions: EVAL_QUESTIONS, scale: { min: 1, max: 5, labels: ['매우 그렇지 않다', '그렇지 않다', '보통이다', '그렇다', '매우 그렇다'], pts: [20, 40, 60, 80, 100] }, cut: 70, draft: false, src: '학사지원팀-1526 · 2026학년도 1학기 강의향상설문평가 시행(안)', rows: {} };
+const evalsNow = () => { const e = sGet('org', 'evals') || {}, own = e.draft === false && Array.isArray(e.questions) && e.questions.length; return { ...EVAL_DEFAULT, ...(own ? { questions: e.questions, cut: e.cut ?? EVAL_DEFAULT.cut, scale: { ...EVAL_DEFAULT.scale, ...(e.scale || {}) } } : {}), rows: e.rows || {} }; };
+/* 만족도 = 문항 평균의 배점(매우 그렇다 100 … 매우 그렇지 않다 20). 척도를 바꾸면 배점 없이 0~100으로 환산 */
+const evalPct = (E, v) => { const pts = E.scale.pts, span = Math.max(1, E.scale.max - E.scale.min); return Math.round(pts && pts.length > 1 ? pts[0] + (v - E.scale.min) / span * (pts[pts.length - 1] - pts[0]) : (v - E.scale.min) / span * 100); };
 const evalOf = n => { const E = evalsNow(), r = E.rows[n]; if (!r) return null; const avg = r.q.reduce((a, b) => a + b, 0) / r.q.length; return { ...r, avg, pct: evalPct(E, avg) }; };
 function quadOf(r, ev, cut) {
   const eff = r.verdict === '효과 뚜렷' || r.decision === '유지·확산' || r.decision === '확대 검토', sat = ev.pct >= cut;
@@ -13289,25 +13292,27 @@ function evalQuadHtml(withLink) {
   return `<svg class="quad" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="교육과정 효과와 강의 만족도"><line x1="${x(E.cut)}" x2="${x(E.cut)}" y1="${P}" y2="${Hh - P}" class="qaxis"/><line x1="${P}" x2="${W - P}" y1="${y(EFF_MIN)}" y2="${y(EFF_MIN)}" class="qaxis"/>
       <text x="${W - P}" y="${P - 8}" text-anchor="end" class="qlab">유지·확산</text><text x="${P}" y="${P - 8}" class="qlab">수업 운영 개선</text><text x="${W - P}" y="${Hh - 8}" text-anchor="end" class="qlab">내용 개선</text><text x="${P}" y="${Hh - 8}" class="qlab">재설계 검토</text>
       ${rows.map(o => `<circle cx="${x(o.ev.pct)}" cy="${y(o.r.eff)}" r="5" class="qdot q-${o.r.kind === '교양' ? 'lib' : o.r.kind === '융합과정' ? 'mic' : 'nc'}"><title>${esc(o.r.nm)} · 효과 ${o.r.eff.toFixed(1)}점 · 만족도 ${o.ev.pct}</title></circle>`).join('')}
-      <text x="${W / 2}" y="${Hh - 18}" text-anchor="middle" class="qaxt">강의 만족도(0~100, 기준 ${E.cut}) →</text><text x="12" y="${Hh / 2}" class="qaxt" transform="rotate(-90 12 ${Hh / 2})" text-anchor="middle">보정 효과(점) →</text></svg>
+      <text x="${W / 2}" y="${Hh - 18}" text-anchor="middle" class="qaxt">강의 만족도(배점 20~100, 기준 ${E.cut}) →</text><text x="12" y="${Hh / 2}" class="qaxt" transform="rotate(-90 12 ${Hh / 2})" text-anchor="middle">보정 효과(점) →</text></svg>
     <div class="qgroups">${['유지·확산', '수업 운영 개선', '내용 개선', '재설계 검토'].map(k => `<div><b>${k} ${(groups[k] || []).length}개</b><p class="meta">${(groups[k] || []).slice(0, 4).map(o => esc(o.r.nm)).join(', ') || '-'}</p></div>`).join('')}</div>`;
 }
 function renderEvals() {
   const E = evalsNow(), F = effectiveness(), names = F.rows.filter(r => r.kind !== '비교과').map(r => r.nm), D = state.evDraft || (state.evDraft = JSON.parse(JSON.stringify({ questions: E.questions, scale: E.scale, cut: E.cut })));
   const rows = Object.entries(E.rows).map(([n, r]) => ({ n, ...evalOf(n) })).sort((a, b) => a.pct - b.pct);
+  /* 표준점수 = (과목 점수 − 전체 평균) ÷ 표준편차 × 5 + 70 (평균 70, 표준편차 5). 3과목 이상일 때만 */
+  const mu = rows.length ? rows.reduce((x, r) => x + r.pct, 0) / rows.length : 0, sd = rows.length > 2 ? Math.sqrt(rows.reduce((x, r) => x + (r.pct - mu) ** 2, 0) / rows.length) : 0, stdOf = v => (sd > 0 ? ((v - mu) / sd * 5 + 70).toFixed(1) : '-');
   $view.innerHTML = `
   <div class="dash-grid">
     <section class="panel p-sum"><p class="eyebrow">성과 분석 · 강의평가 연계</p>
       <p class="summary">강의평가 만족도를 교육과정 효과성과 함께 보고, "효과는 있는데 만족도가 낮은 과목"까지 찾습니다.</p>
-      <div class="stats"><div class="stat"><b>${rows.length}과목</b><span>평가 결과 반영</span></div><div class="stat"><b>${rows.length ? Math.round(rows.reduce((a, r) => a + r.pct, 0) / rows.length) : '-'}</b><span>평균 만족도(0~100)</span></div><div class="stat"><b>${rows.filter(r => r.pct < E.cut).length}과목</b><span>기준(${E.cut}) 미만</span></div></div>
-      ${E.draft ? '<p class="meta"><span class="badge amber">문항·척도 가안</span> 확정된 강의평가 문항 10개와 만족도 척도를 받으면 아래 설정에서 바꿉니다.</p>' : ''}</section>
-    ${panelH('p-evq', '문항과 척도', '설정', `<form id="evqf" class="evq"><p class="evq-h">평가 문항 10개</p>${D.questions.map((q, i) => `<label class="evqi"><span aria-hidden="true">${i + 1}</span><input data-evq="${i}" value="${esc(q)}" maxlength="120" aria-label="문항 ${i + 1}"></label>`).join('')}
+      <div class="stats"><div class="stat"><b>${rows.length}과목</b><span>평가 결과 반영</span></div><div class="stat"><b>${rows.length ? Math.round(rows.reduce((a, r) => a + r.pct, 0) / rows.length) : '-'}</b><span>평균 만족도(배점 20~100)</span></div><div class="stat"><b>${rows.filter(r => r.pct < E.cut).length}과목</b><span>기준(${E.cut}) 미만</span></div></div>
+      <p class="meta"><span class="badge">출처</span> ${esc(E.src)}. 과목 단위로만 집계하며 교원 개인의 순위·인사 평가에는 쓰지 않습니다.</p></section>
+    ${panelH('p-evq', '문항과 척도', '설정', `<form id="evqf" class="evq"><p class="evq-h">평가 문항 ${D.questions.length}개</p>${D.questions.map((q, i) => `<label class="evqi"><span aria-hidden="true">${i + 1}</span><input data-evq="${i}" value="${esc(q)}" maxlength="120" aria-label="문항 ${i + 1}"></label>`).join('')}
       <p class="evq-h">만족도 척도</p>
       <div class="evscale"><label>최저점<input type="number" id="evmin" value="${D.scale.min}"></label><label>최고점<input type="number" id="evmax" value="${D.scale.max}"></label><label class="wide">척도 이름(낮은 점수부터, 쉼표로)<input id="evlab" value="${esc(D.scale.labels.join(', '))}"></label><label>만족도 기준(0~100)<input type="number" id="evcut" min="0" max="100" value="${D.cut}"></label></div>
       <div class="actions"><button class="btn sm" type="submit">문항·척도 저장</button><span class="meta" id="evmsg" aria-live="polite">${esc(state.evMsg || '')}</span></div></form>`)}
-    ${panelH('p-evup', '결과 올리기', 'CSV', `<p class="meta">과목별 문항 평균을 올립니다. 열: 교과목, 응답 수, 문항1~문항10 평균(척도 점수).</p>
+    ${panelH('p-evup', '결과 올리기', 'CSV', `<p class="meta">과목별 문항 평균을 올립니다. 열: 교과목, 응답 수, 문항1~문항${E.questions.length} 평균(5점 척도 점수). 설문 제외 과목(P/NP·온라인·팀티칭·현장실습 등)과 성적 하위 10% 응답은 평가 점수에서 뺀 뒤 올립니다.</p>
       <div class="actions no-print"><button class="btn ghost sm" id="evtpl" type="button">양식 내려받기</button><label class="btn ghost sm filebtn">CSV 올리기<input type="file" accept=".csv" id="evfile" hidden></label><button class="btn ghost sm" id="evdemo" type="button">시연용 결과 채우기</button>${rows.length ? '<button class="linkbtn" id="evclear" type="button">결과 비우기</button>' : ''}</div>
-      ${rows.length ? `<div class="scrollx"><table class="tbl"><thead><tr><th>교과목</th><th>응답</th><th>만족도</th><th>가장 낮은 문항</th></tr></thead><tbody>${rows.slice(0, 40).map(r => { const lo = r.q.indexOf(Math.min(...r.q)); return `<tr class="${r.pct < E.cut ? 'conf' : ''}"><td><b>${esc(r.n)}</b></td><td>${r.cnt}명</td><td>${r.pct} <span class="meta">(${r.avg.toFixed(2)})</span></td><td class="wrap meta">${esc(E.questions[lo])} ${r.q[lo].toFixed(2)}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="meta">올린 결과가 없습니다.</p>'}`)}
+      ${rows.length ? `<div class="scrollx"><table class="tbl"><thead><tr><th>교과목</th><th>응답</th><th>만족도</th><th>표준점수</th><th>가장 낮은 문항</th></tr></thead><tbody>${rows.slice(0, 40).map(r => { const lo = r.q.indexOf(Math.min(...r.q)); return `<tr class="${r.pct < E.cut ? 'conf' : ''}"><td><b>${esc(r.n)}</b></td><td>${r.cnt}명</td><td class="nw">${r.pct} <span class="meta">(${r.avg.toFixed(2)})</span></td><td>${stdOf(r.pct)}</td><td class="meta nw" title="${esc(E.questions[lo])}">문항 ${lo + 1} · ${r.q[lo].toFixed(2)}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="meta">올린 결과가 없습니다.</p>'}`)}
     ${panelH('p-evquad', '효과 × 만족도', '교육과정 효과성과 함께 보기', evalQuadHtml(false))}
   </div>`;
   const q = id => document.getElementById(id);
@@ -13323,14 +13328,14 @@ function renderEvals() {
     const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
     rd.onload = () => {
       const R = { ...E.rows }, bad = []; let ok = 0;
-      parseCSV(String(rd.result)).slice(1).forEach((c, i) => { const n = (c[0] || '').trim(), qv = c.slice(2, 12).map(Number); if (!n || qv.length < 10 || qv.some(v => !(v >= E.scale.min && v <= E.scale.max))) { if (n) bad.push(`${i + 2}행`); return; } R[n] = { cnt: +c[1] || 0, q: qv, at: localTime().slice(0, 10) }; ok++; });
+      parseCSV(String(rd.result)).slice(1).forEach((c, i) => { const n = (c[0] || '').trim(), qv = c.slice(2, 2 + E.questions.length).map(Number); if (!n || qv.length < E.questions.length || qv.some(v => !(v >= E.scale.min && v <= E.scale.max))) { if (n) bad.push(`${i + 2}행`); return; } R[n] = { cnt: +c[1] || 0, q: qv, at: localTime().slice(0, 10) }; ok++; });
       save({ ...evalsNow(), rows: R }, `강의평가 ${ok}과목 반영`); state.evMsg = `${ok}과목을 반영했습니다.${bad.length ? ` 범위를 벗어나 건너뛴 줄: ${bad.slice(0, 3).join(', ')}` : ''}`; renderEvals();
     };
     rd.readAsText(f, 'utf-8');
   };
   q('evdemo').onclick = () => {
     const R = {}, span = E.scale.max - E.scale.min;
-    F.rows.filter(r => r.kind !== '비교과').forEach(r => { const h = hashStr(r.nm), base = 0.66 + ((h % 29) / 100) + (r.eff > 2 ? 0.04 : -0.04); R[r.nm] = { cnt: 20 + (h % 40), q: E.questions.map((_, i) => +(E.scale.min + span * Math.min(0.98, Math.max(0.2, base + (((h >> i) % 9) - 4) / 60))).toFixed(2)), at: localTime().slice(0, 10) }; });
+    F.rows.filter(r => r.kind !== '비교과').forEach(r => { const h = hashStr(r.nm), base = 0.58 + ((h % 29) / 100) + (r.eff > 2 ? 0.04 : -0.04); R[r.nm] = { cnt: 20 + (h % 40), q: E.questions.map((_, i) => +(E.scale.min + span * Math.min(0.98, Math.max(0.2, base + (((h >> i) % 9) - 4) / 60))).toFixed(2)), at: localTime().slice(0, 10) }; });
     save({ ...evalsNow(), rows: R }, `시연용 강의평가 ${Object.keys(R).length}과목`); state.evMsg = '시연용 결과를 채웠습니다(가상 값).'; renderEvals();
   };
   if (q('evclear')) q('evclear').onclick = () => { if (!confirm('올린 강의평가 결과를 모두 지울까요?')) return; save({ ...evalsNow(), rows: {} }, '강의평가 결과 비움'); renderEvals(); };
